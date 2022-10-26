@@ -1,7 +1,11 @@
 import {useState,CSSProperties} from 'react'
 import PropTypes from 'prop-types'
 import { Chessboard } from 'react-chessboard'
-import {Chess,Square,Move,Piece} from "chess.js"
+import {Chess,Square,Move} from "chess.js"
+
+import EmptyTileOverlayHint from "./../assets/overlays/emptyTileHint.png"
+import OccupiedTileOverlayHint from "./../assets/overlays/occupiedTileHint.png"
+
 
 const ChessGame = () => {
   const [game,setGame] = useState(new Chess())
@@ -9,18 +13,20 @@ const ChessGame = () => {
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
 
   function updateMovementHints(selectedSquare:Square){
-    const customCSS : CSSProperties = {
-      "backgroundImage":`url('')`,
+    const defaultOverlayCSS : CSSProperties = {
+      "backgroundImage":`url('${EmptyTileOverlayHint}')`,
       "backgroundPosition":"center",
       "backgroundSize":"cover",
-      "cursor":"pointer",
-      "backgroundColor":"red",
+      "cursor":"pointer"
     }
     
     setCustomSquareStyles(()=>{
       let generatedCustomSquareStyles : {[key:string]:CSSProperties} = {}
-      for(const move of game.moves({square:selectedSquare}) as string[]){
-        generatedCustomSquareStyles[move.slice(-2)] = customCSS
+      for(const move of game.moves({square:selectedSquare,verbose:true}) as Move[]){
+        generatedCustomSquareStyles[move.to] = {...defaultOverlayCSS}
+        if(game.get(move.to as Square)){
+          generatedCustomSquareStyles[move.to].backgroundImage = `url('${OccupiedTileOverlayHint}')`
+        }
       }
       return generatedCustomSquareStyles
     })
