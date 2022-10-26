@@ -1,7 +1,7 @@
 import {useState,CSSProperties} from 'react'
 import PropTypes from 'prop-types'
-import { Chessboard } from 'react-chessboard'
-import {Chess,Square,Move} from "chess.js"
+import {Chessboard} from "react-chessboard"
+import {Chess,Square,Move,PieceSymbol} from "chess.js"
 
 import EmptyTileOverlayHint from "./../assets/overlays/emptyTileHint.png"
 import OccupiedTileOverlayHint from "./../assets/overlays/occupiedTileHint.png"
@@ -11,6 +11,12 @@ const ChessGame = () => {
   const [game,setGame] = useState(new Chess())
   const [customSquareStyles,setCustomSquareStyles] = useState({})
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
+
+  function doesRequirePromotion(sourceSquare:Square,targetSquare:Square) : boolean{
+    const moves : Array<Move>= game.moves({verbose:true,square:sourceSquare}) as Move[]
+
+    return moves.filter((verboseMove:Move)=>{ return  verboseMove.to === targetSquare && verboseMove.promotion !== undefined}).length !== 0
+  }
 
   function updateMovementHints(selectedSquare:Square){
     const defaultOverlayCSS : CSSProperties = {
@@ -36,8 +42,8 @@ const ChessGame = () => {
     setCustomSquareStyles({})
   }
 
-  function attemptMove(sourceSquare:Square,targetSquare:Square){
-    const result = game.move({from:sourceSquare,to:targetSquare})
+  function attemptMove(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PieceSymbol} = {}){
+    const result = game.move({from:sourceSquare,to:targetSquare,promotion:promotion})
     if(result != null){
       clearMovementHints()
     }
