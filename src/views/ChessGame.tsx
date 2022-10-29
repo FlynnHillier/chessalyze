@@ -8,6 +8,9 @@ import EmptyTileOverlayHint from "./../assets/overlays/emptyTileHint.png"
 import OccupiedTileOverlayHint from "./../assets/overlays/occupiedTileHint.png"
 
 import "./../styles/chessBoard.css"
+import GameOverOverlay from '../components/GameOverOverlay'
+
+import { GameConclusion,GameConclusionReason,GameConclusionType } from '../types/chessboard'
 
 const ChessGame = () => {
   const [game,setGame] = useState(new Chess())
@@ -16,11 +19,53 @@ const ChessGame = () => {
 
   const [isDisplayingPromotionSelect,setIsDisplayingPromotionSelect] = useState<boolean>(false)
   const [selectedPromotionPiece,setSelectedPromotionPiece] = useState<null | PieceSymbol>(null)
-
   const [pendingPromotionMove,setPendingPromotionMove] = useState<null | {sourceSquare:Square,targetSquare:Square}>(null)
 
   const [currentTurn,setCurrentTurn] = useState<Color>("w")
 
+  const [gameSummary,setGameSummary] = useState<null | GameConclusion>(null)
+  const [gameIsOver,setGameIsOver] = useState<boolean>(false)
+  const [isDisplayingGameSummary,setIsDisplayingGameSummary] = useState<boolean>(false)
+
+
+  //### GAME OVER ###
+  function onGameOver(){    
+    setGameSummary(generateGameSummary())
+    setGameIsOver(true)
+    showGameSummaryOverlay()
+  }
+
+  function showGameSummaryOverlay(){
+    setIsDisplayingGameSummary(true)
+  }
+
+  function hideGameSummmaryOverlay(){
+    setIsDisplayingGameSummary(false)
+  }
+
+  function generateGameSummary() : GameConclusion{
+    if(game.isCheckmate()){
+      return {type:getCurrentTurnDisplayName(),reason:"checkmate"}
+    }
+
+    if(game.isStalemate()){
+      return {type:"draw",reason:"stalemate"}
+    }
+
+    if(game.isInsufficientMaterial()){
+      return {type:"draw",reason:"insufficient material"}
+    }
+
+    if(game.isThreefoldRepetition()){
+      return {type:"draw",reason:"3-move repitition"}
+    }
+
+    return {type:"draw",reason:"50-move rule"}
+  }
+
+  function getCurrentTurnDisplayName(){
+    return currentTurn === "w" ? "white" : "black"
+  }
   
   //### PROMOTION ###
   function doesRequirePromotion(sourceSquare:Square,targetSquare:Square) : boolean{
@@ -87,12 +132,24 @@ const ChessGame = () => {
       return null
     }
     
-    const result = game.move({from:sourceSquare,to:targetSquare,promotion:promotion})
-    if(result != null){
-      clearMovementHints()
-      setCurrentTurn(game.turn())
+    if(!gameIsOver){
+      const result = game.move({from:sourceSquare,to:targetSquare,promotion:promotion})
+      if(result != null){
+        onSuccessfullMove()
+      }
+      return result
     }
-    return result
+    
+    return false
+  }
+
+  function onSuccessfullMove(){
+    clearMovementHints()
+    setCurrentTurn(game.turn())
+
+    if(game.isGameOver() || game.isDraw()){
+      onGameOver()
+    }
   }
 
   function onDrop(sourceSquare:Square,targetSquare:Square,piece:string){
@@ -112,7 +169,6 @@ const ChessGame = () => {
     updateMovementHints(square)
   }
 
-
   return (
       <>
         <div className="chessboard-container">
@@ -122,7 +178,13 @@ const ChessGame = () => {
             setPromotionSelectionState={setSelectedPromotionPiece}
             hideSelf={hidePromotionOverlay}
           />
+          <GameOverOverlay 
+            conclusionState={gameSummary}
+            isHidden={!isDisplayingGameSummary}
+            hideSelf={hideGameSummmaryOverlay}
+          />
           <Chessboard
+            arePiecesDraggable={!gameIsOver}
             customBoardStyle={{}}
             position={game.fen()} 
             onPieceDrop={onDrop}

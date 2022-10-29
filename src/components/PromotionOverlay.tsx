@@ -31,7 +31,7 @@ const PromotionOverlay = ({isHidden,currentTurn,setPromotionSelectionState,hideS
 
   return (
     <div className="chessboard-promotion-overlay-container" style={isHidden ? {"display":"none"} : {}}>
-      <div className="chessboard-promotion-overlay"
+      <div className="chessboard-overlay"
         onClick={(e)=>{
           if(e.target == e.currentTarget){
             hideSelf()

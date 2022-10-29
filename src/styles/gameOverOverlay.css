@@ -1,0 +1,15 @@
+.chessboard-game-over-popup {
+    width:240px;
+    height:150px;
+    background-color: rgb(241, 241, 241);
+    border-radius: 20px;
+    display:grid;
+    grid-template: 20% 100% / 80% 100% ;
+    grid-template-columns: 100% ;
+    grid-template-rows: 35% 40% 25%;
+    text-align: center;
+}
+
+.chessboard-game-over-popup .chessboard-game-over-header {
+    font-size: large;
+}
