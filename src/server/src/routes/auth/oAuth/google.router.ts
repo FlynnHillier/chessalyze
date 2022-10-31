@@ -10,6 +10,4 @@ google_router.get("/redirect",passport.authenticate("google",{
     failureRedirect:"/login"
 }))
 
-google_router.get("/h",(req,res)=>{res.send("h")})
-
 export default google_router

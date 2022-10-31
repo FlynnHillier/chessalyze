@@ -1,14 +1,14 @@
 import * as dotenv from "dotenv"
 dotenv.config({path:"./../../.env"})
 
-import express from "express"
-const app = express()
-
+import express,{Express} from "express"
 import mongoose from "mongoose"
-
-import {router} from "./routes/router"
-
 import session from "express-session"
+import MongoStore from "connect-mongo"
+import {router} from "./routes/router"
+import passport from "passport"
+
+const app = express()
 
 async function startServer(port:number,callback:() => void = ()=>{}) {
     try {
@@ -50,7 +50,7 @@ function initialiseMongooseConnectionEvents(setConnectionStatus:(value:boolean)=
 
 
 function checkEnvVars() : void{
-    const requiredEnvKeys = ["PORT","OAUTH_CLIENT_ID","OAUTH_CLIENT_SECRET","MONGO_ACCESS_URI"]
+    const requiredEnvKeys = ["PORT","OAUTH_CLIENT_ID","OAUTH_CLIENT_SECRET","MONGO_ACCESS_URI","NODE_ENV"]
     
     const undefinedKeys = []
     for(let key of requiredEnvKeys){
@@ -65,6 +65,30 @@ function checkEnvVars() : void{
 }
 
 
+function initialiseSessionStorage(application:Express){
+    application.use(session({
+        secret:"secret!",
+        saveUninitialized:true,
+        resave: true,
+        cookie:{
+            sameSite: false,
+            secure: process.env.NODE_ENV === "production",
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24 * 14,
+        },
+        store:MongoStore.create({
+            mongoUrl:process.env.MONGO_ACCESS_URI,
+            ttl: 60 * 60 * 24 * 14,
+            autoRemove:"interval",
+            autoRemoveInterval:10,
+        }),
+    }))
+
+    app.use(passport.initialize())
+    app.use(passport.session())
+}
+
+
 async function init(){
     checkEnvVars()
     let mongoIsConnected : boolean = false
@@ -73,13 +97,7 @@ async function init(){
 
     initialiseMongooseConnectionEvents((value:boolean)=>{mongoIsConnected = value})
     await establishMongoConnection()
-
-    app.use(session({
-        secret: 'keyboard cat',
-        resave: false,
-        saveUninitialized: true,
-        cookie: { secure: true }
-      }))
+    initialiseSessionStorage(app)
 
     app.use(router)
 }

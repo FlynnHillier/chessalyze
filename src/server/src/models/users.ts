@@ -1,12 +1,6 @@
-import { OAuthProvider } from "../types/auth"
+import { OAuthProvider,IUser } from "./../types/auth"
 import mongoose,{Schema} from "mongoose"
 
-interface IUser {
-    id:string,
-    name:string,
-    email:string,
-    oAuthProvider:OAuthProvider,
-}
 
 export const userSchema = new Schema<IUser>({
     id:{type:String,required:true},
