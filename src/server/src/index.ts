@@ -7,8 +7,14 @@ import session from "express-session"
 import MongoStore from "connect-mongo"
 import {router} from "./routes/router"
 import passport from "passport"
+import cors from "cors"
+
+import {Server} from "socket.io"
+import sockets from "./sockets/index.socket"
+import { socketWrapper,sessionMiddleware } from "./controllers/sessions"
 
 const app = express()
+app.use(cors())
 
 async function startServer(port:number,callback:() => void = ()=>{}) {
     try {
@@ -66,26 +72,10 @@ function checkEnvVars() : void{
 
 
 function initialiseSessionStorage(application:Express){
-    application.use(session({
-        secret:"secret!",
-        saveUninitialized:true,
-        resave: true,
-        cookie:{
-            sameSite: false,
-            secure: process.env.NODE_ENV === "production",
-            httpOnly: true,
-            maxAge: 1000 * 60 * 60 * 24 * 14,
-        },
-        store:MongoStore.create({
-            mongoUrl:process.env.MONGO_ACCESS_URI,
-            ttl: 60 * 60 * 24 * 14,
-            autoRemove:"interval",
-            autoRemoveInterval:10,
-        }),
-    }))
+    application.use(sessionMiddleware)
 
-    app.use(passport.initialize())
-    app.use(passport.session())
+    application.use(passport.initialize())
+    application.use(passport.session())
 }
 
 
@@ -93,13 +83,17 @@ async function init(){
     checkEnvVars()
     let mongoIsConnected : boolean = false
 
-    const server = await startServer(Number(process.env.PORT),()=>{console.log(`now listening on port ${process.env.PORT}`)})
+    const serverInstance = await startServer(Number(process.env.PORT),()=>{console.log(`now listening on port ${process.env.PORT}`)})
+    const io = new Server(serverInstance,{cors:{origin:"http://localhost:3000",methods:["GET","POST"]}})
+    
+    initialiseSessionStorage(app)
+    io.use(socketWrapper(sessionMiddleware))
 
     initialiseMongooseConnectionEvents((value:boolean)=>{mongoIsConnected = value})
     await establishMongoConnection()
-    initialiseSessionStorage(app)
 
     app.use(router)
+    sockets(io)
 }
 
 
