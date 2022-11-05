@@ -1,8 +1,11 @@
 export type OAuthProvider = "google"
 
 export interface IUser {
-    id:string,
+    uuid:string,
     name:string,
     email:string,
-    oAuthProvider:OAuthProvider,
+    oAuth:{
+        provider:OAuthProvider,
+        id:string,
+    }
 }

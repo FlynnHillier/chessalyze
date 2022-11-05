@@ -1,6 +1,7 @@
 import passport from "passport"
 import {Strategy} from "passport-google-oauth20"
 import {UserModel} from "./../models/users"
+import {v1 as uuidv1} from "uuid"
 
 
 passport.use(new Strategy({
@@ -10,7 +11,7 @@ passport.use(new Strategy({
 },async function(accessToken, refreshToken, profile, done){
     try {
         const existingUserCredentials = await UserModel.findOne({
-            id:profile.id,
+            oAuthID:profile.id,
             oAuthProvider:"google"
         })
 
@@ -23,10 +24,13 @@ passport.use(new Strategy({
             }
 
             const newUserCredentials = await UserModel.create({
-                id:profile.id,
-                oAuthProvider:"google",
+                uuid:uuidv1(),
                 name:profile.displayName,
-                email:email
+                email:email,
+                oAuth:{
+                    provider:"google",
+                    id:profile.id,
+                }
             })
 
             return done(null,newUserCredentials)

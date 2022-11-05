@@ -9,6 +9,8 @@ import {router} from "./routes/router"
 import passport from "passport"
 import cors from "cors"
 
+import "./types/custom"
+
 import {Server} from "socket.io"
 import sockets from "./sockets/index.socket"
 import { socketWrapper,sessionMiddleware } from "./controllers/sessions"
