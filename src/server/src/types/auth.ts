@@ -9,3 +9,5 @@ export interface IUser {
         id:string,
     }
 }
+
+export type UUID = string
