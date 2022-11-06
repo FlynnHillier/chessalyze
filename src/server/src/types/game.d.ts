@@ -23,3 +23,9 @@ export interface GameConclusion {
     victor:null | "w" | "b",
     boardState:FEN
 } 
+
+
+export interface GameLobby {
+    playerID:UUID
+    lobbyID:UUID
+}
