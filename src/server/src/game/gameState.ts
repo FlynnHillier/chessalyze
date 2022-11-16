@@ -1,5 +1,5 @@
 import {UUID} from "../types/auth"
-import {Chess, ChessInstance, PieceType, Square} from "chess.js"
+import {Chess, Square,Move} from "chess.js"
 import {v1 as uuidv1} from "uuid"
 import {GameSummary,GameConclusion,GameTermination} from "../types/game"
 
@@ -22,7 +22,7 @@ export class GameState {
     public id : UUID
     private startTime : number
     private summary : GameSummary | null = null
-    private game : ChessInstance = new Chess()
+    private game : Chess = new Chess()
     private events:EventCallBacks = {conclusion:()=>{}}
 
     constructor(p1:NewGamePlayer,p2:NewGamePlayer,){
@@ -36,7 +36,7 @@ export class GameState {
         if(moveResult === false){
             return false
         }
-        if(this.game.game_over() || this.game.in_draw()){
+        if(this.game.isGameOver() || this.game.isDraw()){
             this.onGameEnd()
         }
         return true
@@ -57,9 +57,10 @@ export class GameState {
             "q":0,
             "r":0,
             "p":0,
+            "k":0,
         }
 
-        for(let move of this.game.history({verbose:true})){
+        for(let move of this.game.history({verbose:true}) as Move[]){
             if(move.captured && move.color === color){
                 captures[move.captured] ++
             }
@@ -83,7 +84,7 @@ export class GameState {
         const summary : GameSummary = {
             players:this.players,
             conclusion: this._generateGameConclusion(),
-            moves:this.game.history(),
+            moves:this.game.history() as string[],
             time:{
                 start:this.startTime,
                 end:dateMS,
@@ -95,18 +96,19 @@ export class GameState {
     }
 
     public isValidMove(sourceSquare:Square,targetSquare:Square,promotion?:"n" | "b" | "r" | "q"){
-        return this.game.moves({verbose:true}).some(((move)=>{move.from === sourceSquare && move.to === targetSquare && move.promotion === promotion}))
+        const verboseMoves : Move[] = this.game.moves({verbose:true}) as Move[]
+        return verboseMoves.some(((move)=>{move.from === sourceSquare && move.to === targetSquare && move.promotion === promotion}))
     }
 
     private _generateGameConclusion() : GameConclusion {
         let termination : GameTermination
-            if(this.game.in_checkmate()){
+            if(this.game.isCheckmate()){
                 termination = "checkmate"
-            } else if(this.game.in_stalemate()){
+            } else if(this.game.isStalemate()){
                 termination = "stalemate"
-            } else if(this.game.in_threefold_repetition()){
+            } else if(this.game.isThreefoldRepetition()){
                 termination = "3-fold repition"
-            } else if(this.game.insufficient_material()) {
+            } else if(this.game.isInsufficientMaterial()) {
                 termination = "insufficient material"
             } else {
                 termination = "50 move rule"
