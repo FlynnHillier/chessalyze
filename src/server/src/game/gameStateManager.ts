@@ -10,7 +10,7 @@ interface NewGamePlayer {
     preference: null | "w" | "b"
 }
 
-class GameStateManager {
+export class GameStateManager {
     public gameStates:GameState[]  = []
     public gameLobbys : GameLobby[] = []
     
