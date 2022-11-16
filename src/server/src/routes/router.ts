@@ -1,12 +1,15 @@
-import {Router,NextFunction,Request,Response} from "express"
+import {Router,NextFunction,Request,Response,urlencoded} from "express"
+import bodyParser from "body-parser"
+
 import {api_router} from "./api/api.router"
 import {auth_router} from "./auth/auth.router"
 
 export const router = Router()
 
-//router.use("/",()=>{console.log("joe")})
+router.use(bodyParser.json())
+router.use(urlencoded({extended:true}))
 
-router.use("/api",api_router)
+router.use("/a",api_router)
 router.use("/auth",auth_router)
 
 router.use("*",(req,res)=>{

@@ -6,8 +6,8 @@ export const google_router = Router()
 
 google_router.get("/",passport.authenticate("google",{scope:["email","profile"]}))
 google_router.get("/redirect",passport.authenticate("google",{
-    successRedirect:"/",
-    failureRedirect:"/login"
+    successRedirect:"/auth/success",
+    failureRedirect:"/auth/failure"
 }))
 
 export default google_router

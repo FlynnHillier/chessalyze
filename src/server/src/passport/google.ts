@@ -11,8 +11,10 @@ passport.use(new Strategy({
 },async function(accessToken, refreshToken, profile, done){
     try {
         const existingUserCredentials = await UserModel.findOne({
-            oAuthID:profile.id,
-            oAuthProvider:"google"
+            oAuth:{
+                provider:"google",
+                id:profile.id
+            }
         })
 
         if(existingUserCredentials){

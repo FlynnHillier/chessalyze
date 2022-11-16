@@ -1,4 +1,4 @@
-export type OAuthProvider = "google"
+export type OAuthProvider = "vanilla" | "google" 
 
 export interface IUser {
     uuid:string,
@@ -8,6 +8,7 @@ export interface IUser {
         provider:OAuthProvider,
         id:string,
     }
+    password:string
 }
 
 export type UUID = string

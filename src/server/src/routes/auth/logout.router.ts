@@ -7,7 +7,7 @@ logout_router.get("/",(req,res,next)=>{
         if(err){
             return next(err)
         }
-        res.redirect("/")
+        res.status(204).send()
     })
 })
 
