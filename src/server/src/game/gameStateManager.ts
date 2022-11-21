@@ -41,7 +41,7 @@ export class GameStateManager {
     }
 
     public getLobby(lobbyID:UUID) : null | GameLobby {
-        const lobby = this.gameLobbys.find((lobby)=>lobby.lobbyID === lobbyID)
+        const lobby = this.gameLobbys.find((lobby)=>lobby.id === lobbyID)
         return lobby === undefined ? null : lobby 
     }   
 
@@ -52,7 +52,7 @@ export class GameStateManager {
         }
         const newLobby : GameLobby = { //create new lobby
             playerID:playerID,
-            lobbyID:uuidv1()
+            id:uuidv1()
         }
         this.gameLobbys.push(newLobby)
         return newLobby
@@ -63,7 +63,7 @@ export class GameStateManager {
         if(lobby === null){
             return null
         }
-        this.endLobby(lobby.lobbyID) //on join cease lobby existence as game is created.
+        this.endLobby(lobby.id) //on join cease lobby existence as game is created.
         return this.newGame({uuid:lobby.playerID,preference:null},{uuid:joiningPlayerID,preference:null})
     }
 
@@ -72,5 +72,9 @@ export class GameStateManager {
         if(lobby !== null){
             this.gameLobbys.splice(this.gameLobbys.indexOf(lobby),1)
         }
+    }
+
+    public playerIsInLobby(playerID:UUID) : boolean {
+        return this.getPlayerLobby(playerID) === null
     }
 }

@@ -27,5 +27,5 @@ export interface GameConclusion {
 
 export interface GameLobby {
     playerID:UUID
-    lobbyID:UUID
+    id:UUID
 }
