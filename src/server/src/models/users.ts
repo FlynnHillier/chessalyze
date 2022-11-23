@@ -4,6 +4,7 @@ import mongoose,{Schema} from "mongoose"
 
 export const userSchema = new Schema<IUser>({
     uuid:{type:String,required:true},
+    permission:{type:String,required:true,default:"standard"},
     name:{type:String,required:true},
     email:{type:String},
     oAuth:{

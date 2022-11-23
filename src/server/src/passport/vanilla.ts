@@ -15,6 +15,22 @@ async function locateExisingUser(name:string) : Promise<null | IUser>{
     })
 }
 
+
+async function createUser(name : string,password : string) : Promise<IUser>{
+    const user = await UserModel.create({
+        uuid:uuidv1(),
+        name:name,
+        email:"",
+        oAuth:{
+            provider:"vanilla"
+        },
+        password:password
+    })
+    return user
+}
+
+
+
 passport.use("local-login",new Strategy({usernameField:"username"},async function(username,password, done){
     try {
         const existingUserCredentials = await locateExisingUser(username)
@@ -23,7 +39,7 @@ passport.use("local-login",new Strategy({usernameField:"username"},async functio
             return done(null,null,{message:"user does not exist."})
         }
 
-        if(!bcrypt.compareSync(password,existingUserCredentials.password)){
+        if(!bcrypt.compareSync(password,existingUserCredentials.password as string)){
             return done(null,null,{message:"incorrect password"})
         }
 
@@ -42,14 +58,7 @@ passport.use("local-signup",new Strategy({usernameField:"username"},async functi
             return done(null,null,{message:"user already exists."})
         }
 
-        const userCredentials = await UserModel.create({
-            uuid:uuidv1(),
-            name:username,
-            oAuth:{
-                provider:"vanilla",
-            },
-            password:bcrypt.hashSync(password,13)
-        })
+        const userCredentials = await createUser(username,bcrypt.hashSync(password,13))
 
         return done(null,userCredentials)
                 

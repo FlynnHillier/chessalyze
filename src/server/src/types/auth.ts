@@ -2,13 +2,14 @@ export type OAuthProvider = "vanilla" | "google"
 
 export interface IUser {
     uuid:string,
+    permission:string
     name:string,
-    email:string,
+    email?:string,
     oAuth:{
         provider:OAuthProvider,
-        id:string,
+        id?:string,
     }
-    password:string
+    password?:string
 }
 
 export type UUID = string

@@ -2,7 +2,22 @@ import passport from "passport"
 import {Strategy} from "passport-google-oauth20"
 import {UserModel} from "./../models/users"
 import {v1 as uuidv1} from "uuid"
+import { IUser,UUID } from "../types/auth"
 
+
+
+async function createUser(name : string,email : string,id : UUID) : Promise<IUser>{
+    const user = await UserModel.create({
+        uuid:uuidv1(),
+        name:name,
+        email:email,
+        oAuth:{
+            provider:"google",
+            id:id,
+        }
+    })
+    return user
+}
 
 passport.use(new Strategy({
     clientID:process.env.OAUTH_CLIENT_ID as string,
@@ -25,15 +40,7 @@ passport.use(new Strategy({
                 email = profile.emails![0].value
             }
 
-            const newUserCredentials = await UserModel.create({
-                uuid:uuidv1(),
-                name:profile.displayName,
-                email:email,
-                oAuth:{
-                    provider:"google",
-                    id:profile.id,
-                }
-            })
+            const newUserCredentials = await createUser(profile.displayName,email,profile.id)
 
             return done(null,newUserCredentials)
         }
