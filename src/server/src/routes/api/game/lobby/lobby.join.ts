@@ -1,7 +1,7 @@
 import  {Router,Request,Response} from "express"
 import {GameManager} from "./../../../../game/game"
-import {checkSchema,Schema} from "express-validator"
-import { notInGame } from "./game.middleware"
+import { Schema } from "express-validator"
+import { notInGame } from "../game.middleware"
 import { validateSchema } from "../../../../controllers/schemaValidation"
 
 export const lobby_join_router = Router()
@@ -16,13 +16,13 @@ const joinLobby = (req:Request,res:Response) => {
     }
 }
 
-const schema_join_post : Schema = {
+const schema : Schema = {
     lobbyID:{
         isString:true
     }
 }
 
-lobby_join_router.post("/",validateSchema(schema_join_post),notInGame,joinLobby)
+lobby_join_router.post("/",validateSchema(schema),notInGame,joinLobby)
 
 
 export default lobby_join_router
