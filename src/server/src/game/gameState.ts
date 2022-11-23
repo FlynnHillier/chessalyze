@@ -42,6 +42,10 @@ export class GameState {
         return true
     }
 
+    public getFEN() : string {
+        return this.game.fen()
+    }
+
     public isConcluded() : boolean {
         return this.summary !== null
     }
