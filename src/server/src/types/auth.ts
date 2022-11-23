@@ -2,7 +2,7 @@ export type OAuthProvider = "vanilla" | "google"
 
 export interface IUser {
     uuid:string,
-    permission:string
+    permission:"admin" | "standard"
     name:string,
     email?:string,
     oAuth:{

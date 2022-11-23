@@ -39,3 +39,9 @@ export class InvalidSchemaException extends HttpException {
     this.invalidities = errors.array()
   }
 }
+
+export class PermissionException extends HttpException {
+  constructor({status = 403,message = "permission denied."} : {status?:number,message?:string} = {}){
+    super(status,message,"insufficientPermissions")
+  }
+}
