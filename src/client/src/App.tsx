@@ -6,6 +6,7 @@ import SocketProvider from './contexts/socket.context';
 import ChessGame from './views/ChessGame';
 import AuthLogin from './views/auth/Auth.login';
 import Name from './components/user/Name';
+import Status from './components/Status';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <ChessGame/>
         <AuthLogin/>
         <Name/>
+        <Status/>
       </SocketProvider>
     </div>
   );

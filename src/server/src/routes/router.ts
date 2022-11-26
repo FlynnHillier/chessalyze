@@ -6,9 +6,12 @@ import passport from "passport"
 import {api_router} from "./api/api.router"
 import {auth_router} from "./auth/auth.router"
 import { HttpException } from "../types/errors"
+import { corsConfig } from "../init/init.config"
+import cors from "cors"
 
 export const router = Router()
 
+router.use(cors(corsConfig))
 router.use(sessionMiddleware)
 router.use(passport.initialize())
 router.use(passport.session())
