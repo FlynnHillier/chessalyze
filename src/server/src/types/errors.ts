@@ -40,7 +40,16 @@ export class LobbyIsPresentException extends HttpException {
     this.message = message
   }
 }
- 
+
+export class LobbyIsNotPresentException extends HttpException {
+  public status: number
+  public message : string
+  constructor({status = 403,message = "user is not in lobby"} : {status?:number,message?:string} = {}) {
+    super(status,message,"isNotLobbyPresent")
+    this.status = status
+    this.message = message
+  }
+}
 
 export class InvalidSchemaException extends HttpException {
   public invalidities : ValidationError[] 

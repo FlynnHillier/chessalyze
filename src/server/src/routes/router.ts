@@ -1,5 +1,7 @@
 import {Router,NextFunction,Request,Response,urlencoded} from "express"
 import bodyParser from "body-parser"
+import { sessionMiddleware } from "../controllers/sessions"
+import passport from "passport"
 
 import {api_router} from "./api/api.router"
 import {auth_router} from "./auth/auth.router"
@@ -7,6 +9,9 @@ import { HttpException } from "../types/errors"
 
 export const router = Router()
 
+router.use(sessionMiddleware)
+router.use(passport.initialize())
+router.use(passport.session())
 router.use(bodyParser.json())
 router.use(urlencoded({extended:true}))
 
