@@ -3,8 +3,6 @@ dotenv.config({path:"./../../.env"})
 
 import express,{Express} from "express"
 import mongoose from "mongoose"
-import session from "express-session"
-import MongoStore from "connect-mongo"
 import {router} from "./routes/router"
 import passport from "passport"
 import cors from "cors"
@@ -72,14 +70,6 @@ function checkEnvVars() : void{
 }
 
 
-function initialiseSessionStorage(application:Express){
-    application.use(sessionMiddleware)
-
-    application.use(passport.initialize())
-    application.use(passport.session())
-}
-
-
 function getCORSconfig() {
     return {
         origin:process.env.NODE_ENV === "development" && process.env.REACT_APP_URL ? process.env.REACT_APP_URL : process.env.HOST_URL,
@@ -95,8 +85,12 @@ async function init(){
     const serverInstance = await startServer(Number(process.env.PORT),()=>{console.log(`now listening on port ${process.env.PORT}`)})
     const io = new Server(serverInstance,{cors:getCORSconfig()})
     
-    initialiseSessionStorage(app)
+    app.use(sessionMiddleware)
+    app.use(passport.initialize())
+    app.use(passport.session())
     io.use(socketWrapper(sessionMiddleware))
+    io.use(socketWrapper(passport.initialize()))
+    io.use(socketWrapper(passport.session()))
 
     initialiseMongooseConnectionEvents((value:boolean)=>{mongoIsConnected = value})
     await establishMongoConnection()
