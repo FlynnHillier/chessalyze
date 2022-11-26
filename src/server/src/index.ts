@@ -16,7 +16,6 @@ import sockets from "./sockets/index.socket"
 import { socketWrapper,sessionMiddleware } from "./controllers/sessions"
 
 const app = express()
-app.use(cors())
 
 async function startServer(port:number,callback:() => void = ()=>{}) {
     try {
@@ -81,12 +80,20 @@ function initialiseSessionStorage(application:Express){
 }
 
 
+function getCORSconfig() {
+    return {
+        origin:process.env.NODE_ENV === "development" && process.env.REACT_APP_URL ? process.env.REACT_APP_URL : process.env.HOST_URL,
+        credentials:true,
+    }
+}
+
+
 async function init(){
     checkEnvVars()
     let mongoIsConnected : boolean = false
 
     const serverInstance = await startServer(Number(process.env.PORT),()=>{console.log(`now listening on port ${process.env.PORT}`)})
-    const io = new Server(serverInstance,{cors:{origin:"http://localhost:3000",methods:["GET","POST"]}})
+    const io = new Server(serverInstance,{cors:getCORSconfig()})
     
     initialiseSessionStorage(app)
     io.use(socketWrapper(sessionMiddleware))
@@ -94,6 +101,7 @@ async function init(){
     initialiseMongooseConnectionEvents((value:boolean)=>{mongoIsConnected = value})
     await establishMongoConnection()
 
+    app.use(cors(getCORSconfig()))
     app.use(router)
     sockets(io)
 }

@@ -7,8 +7,8 @@ import {sessionIsUserless,sessionIsUser} from "../../controllers/sessionOccupanc
 
 export const auth_router = Router()
 
-auth_router.get("/failure",(req,res)=>{res.send("action failed.")})
-auth_router.get("/success",(req,res)=>{res.send("action successfull.")})
+auth_router.get("/failure",(req,res)=>{res.status(501).send()})
+auth_router.get("/success",(req,res)=>{res.status(204).send()})
 
 auth_router.use("/o",sessionIsUserless,oAuth_router)
 auth_router.use("/v",sessionIsUserless,vanilla_router)
