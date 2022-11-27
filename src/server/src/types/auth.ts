@@ -1,7 +1,9 @@
+import {UUID} from "chessalyze-common"
+
 export type OAuthProvider = "vanilla" | "google" 
 
 export interface IUser {
-    uuid:string,
+    uuid:UUID,
     permission:"admin" | "standard"
     name:string,
     email?:string,
@@ -11,5 +13,3 @@ export interface IUser {
     }
     password?:string
 }
-
-export type UUID = string

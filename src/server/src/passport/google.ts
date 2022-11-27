@@ -2,7 +2,9 @@ import passport from "passport"
 import {Strategy} from "passport-google-oauth20"
 import {UserModel} from "./../models/users"
 import {v1 as uuidv1} from "uuid"
-import { IUser,UUID } from "../types/auth"
+import { IUser } from "../types/auth"
+import {UUID} from "chessalyze-common"
+
 
 
 

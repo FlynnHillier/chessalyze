@@ -47,7 +47,6 @@
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
-    "@types/chess.js": "^0.13.3",
     "cross-env": "^7.0.3"
   }
 }

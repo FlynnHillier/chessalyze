@@ -1,4 +1,4 @@
-import { UUID } from "./auth";
+import { UUID } from "chessalyze-common";
 import { Result,ValidationError } from "express-validator";
 
 

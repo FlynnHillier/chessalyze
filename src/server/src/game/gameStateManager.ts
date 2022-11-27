@@ -1,4 +1,4 @@
-import {UUID} from "../types/auth"
+import {UUID} from "chessalyze-common"
 import {v1 as uuidv1} from "uuid"
 
 import {GameState} from "./gameState"

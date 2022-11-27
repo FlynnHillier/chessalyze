@@ -1,5 +1,5 @@
-import {UUID} from "../types/auth"
-import {Chess, Square,Move} from "chess.js"
+import {UUID} from "chessalyze-common"
+import {Chess, Square,Move, Color} from "chess.js"
 import {v1 as uuidv1} from "uuid"
 import {GameSummary,GameConclusion,GameTermination} from "../types/game"
 
@@ -99,9 +99,22 @@ export class GameState {
         return summary
     }
 
+    public getPlayerColor(playerUUID:UUID) : Color {
+        if(this.players.w === playerUUID){
+            return "w"
+        } else{
+            return "b"
+        }
+    }
+
+
+    public isPlayerTurn(playerUUID:UUID) : boolean {
+        return this.game.turn() === this.getPlayerColor(playerUUID)
+    }
+
     public isValidMove(sourceSquare:Square,targetSquare:Square,promotion?:"n" | "b" | "r" | "q"){
         const verboseMoves : Move[] = this.game.moves({verbose:true}) as Move[]
-        return verboseMoves.some(((move)=>{move.from === sourceSquare && move.to === targetSquare && move.promotion === promotion}))
+        return verboseMoves.some((move)=>{return move.from === sourceSquare && move.to === targetSquare && move.promotion === promotion})
     }
 
     private _generateGameConclusion() : GameConclusion {

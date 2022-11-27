@@ -1881,11 +1881,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/chess.js@^0.13.3":
-  version "0.13.4"
-  resolved "https://registry.yarnpkg.com/@types/chess.js/-/chess.js-0.13.4.tgz#6cb3ee550c74a5934fc7be55d89482833253727f"
-  integrity sha512-rPmTVffnepx/TVe9ZzOf8bXxyCkYQ+h+VTSiI4JKjoKWzCFkPgPRJL7Cz15qslksOcVGEYCPYLbG0NLO4yzbrg==
-
 "@types/connect-history-api-fallback@^1.3.5":
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/@types/connect-history-api-fallback/-/connect-history-api-fallback-1.3.5.tgz#d1f7a8a09d0ed5a57aee5ae9c18ab9b803205dae"
