@@ -1,6 +1,6 @@
 import { UUID } from "./misc";
 
-export type FEN = String
+export type FEN = string
 
 export type GameTermination = "checkmate" | "3-fold repition" | "50 move rule" | "insufficient material" | "stalemate" | "resignation" | "timeout"
 
