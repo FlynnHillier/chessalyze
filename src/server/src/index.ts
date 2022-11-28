@@ -1,3 +1,6 @@
-import {world} from "chessalyze-common"
+import * as dotenv from "dotenv"
+dotenv.config({path:"./../../.env"})
 
-console.log(world)
+import {init} from "./init/init.index"
+
+init()

@@ -10,5 +10,9 @@
   "scripts": {
     "preinstall": "cd ./src/common/ && yarn build",
     "build":"cd src/client/ && yarn build && cd ../server/ && yarn build"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0"
   }
 }

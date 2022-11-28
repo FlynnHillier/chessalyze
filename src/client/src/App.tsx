@@ -1,12 +1,21 @@
 import React from 'react';
 import logo from './logo.svg';
 
-import ChessGame from './views/ChessGame';
+import SocketProvider from './contexts/socket.context';
+import AuthLogin from './views/auth/Auth.login';
+import Name from './components/user/Name';
+import Status from './components/Status';
+import ChessInterface from './views/ChessInterface';
 
 function App() {
   return (
     <div className="App">
-      <ChessGame/>
+      <SocketProvider>
+        <ChessInterface/>
+        <AuthLogin/>
+        <Name/>
+        <Status/>
+      </SocketProvider>
     </div>
   );
 }

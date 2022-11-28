@@ -5,25 +5,22 @@ import { Color, PieceSymbol } from 'chess.js'
 import "./../styles/promotionOverlay.css"
 
 import {pieceImages,PieceImages} from "./../assets/images/chesspieces/index"
+import { PromotionSymbol } from 'chessalyze-common'
 
 interface Props {
     isHidden:boolean,
-    currentTurn:Color,
-    setPromotionSelectionState:Function,
+    turn:Color,
+    onPieceSelection:(piece:PromotionSymbol) => void,
     hideSelf:Function,
 }
 
-const PromotionOverlay = ({isHidden,currentTurn,setPromotionSelectionState,hideSelf}:Props) => {
+const PromotionOverlay = ({isHidden,onPieceSelection,hideSelf,turn}:Props) => {
   function generateBannerCSS() : CSSProperties{
       const styling : CSSProperties = {
-          "color": currentTurn === "w" ? "white" : "black",
-          "backgroundColor":currentTurn === "w" ? "black" : "white",
+          "color": turn === "w" ? "white" : "black",
+          "backgroundColor":turn === "w" ? "black" : "white",
       }
       return styling
-  }
-
-  function onPieceSelection(pieceSymbol:PieceSymbol){
-    setPromotionSelectionState(pieceSymbol)
   }
 
 
@@ -43,11 +40,11 @@ const PromotionOverlay = ({isHidden,currentTurn,setPromotionSelectionState,hideS
             displayPieceCodes.map((pieceSymbol)=>{
               return (
                 <div className="chessboard-promotion-overlay-icon-frame"
-                  onClick={()=>{onPieceSelection(pieceSymbol as PieceSymbol)}}
+                  onClick={()=>{onPieceSelection(pieceSymbol as PromotionSymbol)}}
                 >
                   <img
                     className="chessboard-promotion-overlay-icon"
-                    src={pieceImages[currentTurn][pieceSymbol as keyof PieceImages]}
+                    src={pieceImages[turn][pieceSymbol as keyof PieceImages]}
                     alt={pieceSymbol}
                   />
                 </div>
