@@ -5,7 +5,7 @@ import { notInGame,inLobby } from "../game.middleware"
 import { socketMap } from "../../../../sockets/index.socket"
 import { Socket } from "socket.io"
 
-export const lobby_get_router = Router()
+export const lobby_leave_router = Router()
 
 const leaveLobby = (req:Request,res:Response) => {
     const lobby = GameManager.getPlayerLobby(req.user!.uuid)
@@ -13,6 +13,6 @@ const leaveLobby = (req:Request,res:Response) => {
     res.status(204).send()
 }
 
-lobby_get_router.get("/",notInGame,inLobby,leaveLobby)
+lobby_leave_router.get("/",notInGame,inLobby,leaveLobby)
 
-export default lobby_get_router
+export default lobby_leave_router
