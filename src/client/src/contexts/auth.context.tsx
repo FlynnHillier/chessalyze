@@ -22,6 +22,8 @@ function userReducer(auth:AuthState,action:UserReducerAction) : AuthState{
     switch (action.type){
         case "LOGIN":
             return {...auth,userInfo:action.payload, isLoggedIn:true}
+        case "SIGNUP":
+            return {...auth,userInfo:action.payload, isLoggedIn:true}
         default:
             return {...auth}
     }

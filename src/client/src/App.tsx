@@ -7,6 +7,7 @@ import Name from './components/user/Name';
 import Status from './components/Status';
 import ChessInterface from './views/ChessInterface';
 import AuthLogin from './components/auth/Auth.Login';
+import AuthSignup from './components/auth/Auth.Signup';
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <AuthLogin/>
           <Name/>
           <Status/>
+          <AuthSignup/>
         </AuthProvider>
       </SocketProvider>
     </div>
