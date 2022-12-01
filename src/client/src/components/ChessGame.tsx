@@ -147,6 +147,9 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
   }
 
   function onSquareClick(square:Square){
+    if(selectedSquare !== null){
+      onMovement(selectedSquare,square)
+    }
     setSelectedSquare(square)
   }
 
