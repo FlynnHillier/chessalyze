@@ -4,17 +4,15 @@ import { Chess, Square ,Color,Move} from 'chess.js'
 import axios from 'axios'
 import { socket } from '../contexts/socket.context'
 import {UUID,PromotionSymbol,FEN} from "chessalyze-common"
-
+import { useGame } from '../hooks/useGame'
 
 const ChessInterface = () => {
-    const [game,_setGame] = useState<Chess>(new Chess())
-    const [fen,setFen ] = useState<FEN>(game.fen())
-    const [turn,setTurn] = useState<Color>(game.turn())
+    const {gameStatus,dispatchGameStatus} = useGame()
+    const {instance} = gameStatus
+
 
     socket.on("game:movement",(gameID:UUID,{sourceSquare,targetSquare,promotion} : {sourceSquare:Square,targetSquare:Square,promotion?:PromotionSymbol} )=>{
-        game.move({from:sourceSquare,to:targetSquare,promotion:promotion})
-        setFen(game.fen())
-        setTurn(game.turn())
+        dispatchGameStatus({type:"MOVE",payload:{moveDetails:{sourceSquare,targetSquare,promotion}}})
     })
 
     async function proposeMoveToServer(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) : Promise<boolean> {
@@ -32,7 +30,7 @@ const ChessInterface = () => {
     }
 
     function queryMove({source,target} : {source:Square,target:Square}) : {valid:boolean,promotion:boolean} {
-        const targetMove = (game.moves({verbose:true}) as Move[]).find((move)=>{return move.to === target && move.from === source})
+        const targetMove = (instance.moves({verbose:true}) as Move[]).find((move)=>{return move.to === target && move.from === source})
         if(!targetMove){
             return {valid:false,promotion:false}
         }
@@ -40,18 +38,19 @@ const ChessInterface = () => {
     }
 
     function generateMovementOverlays({source} : {source:Square}) : {tile:Square,occupied:boolean}[] {
-        return (game.moves({square:source,verbose:true}) as Move[]).map((move)=>{return {tile:(move.to as Square),occupied:move.captured !== undefined}})
+        return (instance.moves({square:source,verbose:true}) as Move[]).map((move)=>{return {tile:(move.to as Square),occupied:move.captured !== undefined}})
     }
   
     return (
     <ChessGame
+        isActive={gameStatus.isInGame}
         queryMove={queryMove}
         proposeMovement={proposeMoveToServer}
-        fen={fen}
-        turn={turn}
+        fen={gameStatus.instance.fen()}
+        turn={instance.turn()}
         generateMovementOverlays={generateMovementOverlays}
         summary={null}
-        perspective={"w"}
+        perspective={gameStatus.gameDetails.colour}
     />
   )
 }

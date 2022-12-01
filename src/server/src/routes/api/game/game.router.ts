@@ -7,7 +7,7 @@ import gameMove from "./game.move"
 export const game_router = Router()
 
 game_router.use("/lobby",lobby_router)
-game_router.use("/getState",inGame,getGameState)
+game_router.use("/getState",getGameState)
 game_router.use("/move",gameMove)
 
 export default game_router

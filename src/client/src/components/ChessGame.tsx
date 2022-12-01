@@ -23,10 +23,11 @@ interface Props {
   turn:Color,
   summary:GameConclusion | null,
   perspective:Color,
+  isActive:boolean,
 }
 
 
-const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective} : Props) => {
+const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive} : Props) => {
   const [customSquareStyles,setCustomSquareStyles] = useState({})
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
 
@@ -89,7 +90,7 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
   }
 
   function updateMovementHints(){
-    if(selectedSquare === null || perspective !== turn){
+    if(!isActive || selectedSquare === null || perspective !== turn){
       return setCustomSquareStyles({})
     }
 
@@ -168,7 +169,7 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
             hideSelf={hideGameSummmaryOverlay}
           />
           <Chessboard
-            arePiecesDraggable={!summary && !isDisplayingPromotionSelect && !moveIsProposed}
+            arePiecesDraggable={isActive &&!summary && !isDisplayingPromotionSelect && !moveIsProposed}
             customBoardStyle={{}}
             position={fen} 
             onPieceDrop={onDrop}
