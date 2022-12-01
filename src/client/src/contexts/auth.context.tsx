@@ -13,17 +13,21 @@ const initialAuthState = {
 
 type AuthState = typeof initialAuthState
 
+type AuthReducerPayload = AuthState["userInfo"]
+
 export interface UserReducerAction {
     type:"LOGIN" | "LOGOUT" | "SIGNUP"
-    payload:User
+    payload?:AuthReducerPayload
 }
 
 function userReducer(auth:AuthState,action:UserReducerAction) : AuthState{
     switch (action.type){
         case "LOGIN":
-            return {...auth,userInfo:action.payload, isLoggedIn:true}
+            return {...auth,userInfo:action.payload as AuthReducerPayload, isLoggedIn:true}
         case "SIGNUP":
-            return {...auth,userInfo:action.payload, isLoggedIn:true}
+            return {...auth,userInfo:action.payload as AuthReducerPayload, isLoggedIn:true}
+        case "LOGOUT":
+            return {...initialAuthState}
         default:
             return {...auth}
     }
