@@ -46,6 +46,10 @@ export class GameState {
         return this.game.fen()
     }
 
+    public getTurn() : Color {
+        return this.game.turn()
+    }
+
     public isConcluded() : boolean {
         return this.summary !== null
     }

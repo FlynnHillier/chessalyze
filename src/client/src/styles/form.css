@@ -1,0 +1,9 @@
+.form.error {
+    background-color: lightpink;
+    width: 100%;
+}
+
+.form.title {
+    text-align: center;
+    width:100%
+}

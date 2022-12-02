@@ -60,8 +60,7 @@ const gameMove = (req:Request,res:Response,next:NextFunction) => {
         const sourceSquare = req.body.sourceSquare as Square
         const promotion = req.body.promotion !== null ? req.body.promotion as PromotionSymbol : undefined
 
-
-        if(gameState.isPlayerTurn(req.user!.uuid)){
+        if(!gameState.isPlayerTurn(req.user!.uuid)){
             return res.send({result:false})
         }
         if(gameState.isValidMove(sourceSquare,targetSquare,promotion)){ //if move is valid
