@@ -13,6 +13,7 @@ import GameProvider from './contexts/game.context';
 import TempLoadGame from './components/TempLoadGame';
 
 import IndexRoute from './Routes/Index.Router';
+import NavigationBar from './layout/NavigationBar';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <AuthSignup/>
             <AuthLogout/>
             <TempLoadGame/> */}
+            <NavigationBar/>
             <IndexRoute/>
           </GameProvider>
         </AuthProvider>
