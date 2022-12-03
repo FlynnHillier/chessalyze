@@ -1,6 +1,6 @@
 import React,{useEffect} from 'react'
 import { Button } from 'react-bootstrap'
-import { useLogout } from '../../hooks/useLogout'
+import { useLogout } from '../../hooks/auth/useLogout'
 
 const AuthLogout = () => {
     const {isLoading,errorMessage,clearErrorMessage,logout} = useLogout()

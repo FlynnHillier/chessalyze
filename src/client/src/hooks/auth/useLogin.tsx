@@ -1,7 +1,7 @@
 import {useState} from "react"
-import {useAuth} from "./useAuth"
+import {useAuth} from "../useAuth"
 import axios from "axios"
-import { retrieveAxiosErrorMessage } from "../util/util.axios"
+import { retrieveAxiosErrorMessage } from "../../util/util.axios"
 
 export const useLogin = () => {
     const [error,setError] = useState<any>(null)
@@ -20,9 +20,11 @@ export const useLogin = () => {
             const response = await axios.post("/auth/v/login",({username,password}))
             if(response.data.result){
                 dispatchAuth({type:"LOGIN",payload:{
-                    email:response.data.userInfo.email,
-                    username:response.data.userInfo.username,
-                    id:response.data.userInfo.id,
+                    userInfo:{
+                        email:response.data.userInfo.email,
+                        username:response.data.userInfo.username,
+                        id:response.data.userInfo.id,
+                    }
                 }})
             } else{
                 setErrorMessage("user not found.")
