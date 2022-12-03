@@ -3,7 +3,7 @@ import { useLogin } from '../../hooks/useLogin'
 import Form from "../util/Form"
 
 const AuthLogin = () => {
-    const {errorMessage,isLoading,clearErrorMessage,login,} = useLogin()
+    const {errorMessage,isLoading,clearErrorMessage,login} = useLogin()
 
     const [username,setUsername] = useState<string>("")
     const [password,setPassword] = useState<string>("")
@@ -24,7 +24,7 @@ const AuthLogin = () => {
                 value:errorMessage,
                 clear:clearErrorMessage
             }}
-            submitButtonText={"signup"}
+            submitButtonText={"login"}
             fields={[
                 {
                     label:"username",

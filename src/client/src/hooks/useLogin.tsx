@@ -24,6 +24,8 @@ export const useLogin = () => {
                     username:response.data.userInfo.username,
                     id:response.data.userInfo.id,
                 }})
+            } else{
+                setErrorMessage("user not found.")
             }
         } catch(err){
             setError(err)
