@@ -1,6 +1,6 @@
 import React,{useState} from 'react'
 import Form from "./../../components/util/Form"
-import { useSignup } from "../../hooks/useSignup"
+import { useSignup } from "../../hooks/auth/useSignup"
 
 const AuthSignup = () => {
     const {signup,isLoading,errorMessage,clearErrorMessage} = useSignup()

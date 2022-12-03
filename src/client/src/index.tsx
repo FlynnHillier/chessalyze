@@ -4,6 +4,8 @@ import './index.css';
 import App from './App';
 import applyAxiosDefaultHeaders from './util/util.axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import {BrowserRouter} from "react-router-dom"
+
 
 applyAxiosDefaultHeaders()
 const root = ReactDOM.createRoot(
@@ -11,6 +13,8 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );

@@ -1,9 +1,9 @@
 import {useState} from "react"
-import {useAuth} from "./useAuth"
+import {useAuth} from "../useAuth"
 import axios from "axios"
-import { retrieveAxiosErrorMessage } from "../util/util.axios"
+import { retrieveAxiosErrorMessage } from "../../util/util.axios"
 
-export const useLogin = () => {
+export const useSignup = () => {
     const [error,setError] = useState<any>(null)
     const [errorMessage,setErrorMessage] = useState<string>("")
     const [isLoading,setIsLoading] = useState<boolean>(false)
@@ -13,16 +13,18 @@ export const useLogin = () => {
         setErrorMessage("")
     }
 
-    const login = async (username:string,password:string) => {
+    const signup = async (username:string,password:string) => {
         setIsLoading(true)
         setError(null)
         try {
-            const response = await axios.post("/auth/v/login",({username,password}))
+            const response = await axios.post("/auth/v/signup",({username,password}))
             if(response.data.result){
                 dispatchAuth({type:"LOGIN",payload:{
-                    email:response.data.userInfo.email,
-                    username:response.data.userInfo.username,
-                    id:response.data.userInfo.id,
+                    userInfo:{
+                        email:response.data.userInfo.email,
+                        username:response.data.userInfo.username,
+                        id:response.data.userInfo.id,
+                    }
                 }})
             }
         } catch(err){
@@ -38,5 +40,5 @@ export const useLogin = () => {
     }
 
 
-    return {error,errorMessage,isLoading,login,clearErrorMessage}
+    return {error,isLoading,signup,errorMessage,clearErrorMessage}
 }

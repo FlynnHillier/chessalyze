@@ -1,7 +1,7 @@
 import {useState} from "react"
-import {useAuth} from "./useAuth"
+import {useAuth} from "../useAuth"
 import axios from "axios"
-import { retrieveAxiosErrorMessage } from "../util/util.axios"
+import { retrieveAxiosErrorMessage } from "../../util/util.axios"
 
 export const useLogout = () => {
     const [error,setError] = useState<any>(null)
@@ -19,7 +19,7 @@ export const useLogout = () => {
         try {
             const response = await axios.get("/auth/logout")
             if(response.status >= 200 && response.status < 300){
-                dispatchAuth({type:"LOGOUT"})
+                dispatchAuth({type:"LOGOUT",payload:{}})
             }
         } catch(err){
             setError(err)

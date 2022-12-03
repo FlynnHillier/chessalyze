@@ -4,7 +4,7 @@ import { retrieveAxiosErrorMessage } from "../util/util.axios"
 import { useGame } from "./useGame"
 
 
-export const useFetchGameState = () => {
+export const usePersistGame = () => {
     const [isLoading,setIsLoading] = useState<boolean>(false)
     const [error,setError] = useState<any>(null)
     const [errorMessage,setErrorMessage] = useState<string>("")
@@ -15,20 +15,19 @@ export const useFetchGameState = () => {
     }
 
 
-    const fetchGameState = async () => {
+    const persistGame = async () => {
         setIsLoading(true)
         try {
-            const response = await axios.get("/a/game/getState")
-            console.log(response.data)
+            const response = await axios.get("/a/game/getState")            
             
-            if(response.data.isInGame){
-                dispatchGameStatus({
-                    type:"LOAD",
-                    payload:{
-                        gameDetails:{...response.data.gameDetails}
-                    }
-                })
-            }
+            console.log(response)
+            dispatchGameStatus({
+                type:"PERSIST",
+                payload:{
+                    onPersistIsInGame:response.data.isInGame,
+                    gameDetails:{...response.data.gameDetails}
+                }
+            })
         } catch(err){
             setError(err)
             if(axios.isAxiosError(err)){
@@ -41,5 +40,5 @@ export const useFetchGameState = () => {
         }
     }
 
-    return {isLoading,error,errorMessage,fetchGameState,clearErrorMessage}
+    return {isLoading,error,errorMessage,persistGame,clearErrorMessage}
 }

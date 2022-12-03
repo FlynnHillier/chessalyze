@@ -12,19 +12,24 @@ import AuthLogout from './components/auth/Auth.logout';
 import GameProvider from './contexts/game.context';
 import TempLoadGame from './components/TempLoadGame';
 
+import IndexRoute from './Routes/Index.Router';
+import NavigationBar from './layout/NavigationBar';
+
 function App() {
   return (
     <div className="App">
       <SocketProvider>
         <AuthProvider>
           <GameProvider>
-            <ChessInterface/>
+            {/* <ChessInterface/>
             <AuthLogin/>
             <Name/>
             <Status/>
             <AuthSignup/>
             <AuthLogout/>
-            <TempLoadGame/>
+            <TempLoadGame/> */}
+            <NavigationBar/>
+            <IndexRoute/>
           </GameProvider>
         </AuthProvider>
       </SocketProvider>
