@@ -4,6 +4,7 @@ import { PromotionSymbol } from "chessalyze-common"
 import { Color } from "chess.js"
 
 const initialGameStatus = {
+    hasPersisted:false,
     isInGame:false,
     gameDetails:{
         colour:"w" as Color,
@@ -31,10 +32,13 @@ const initialGameStatus = {
 
 type GameStatus = typeof initialGameStatus
 
+type GameReducerActionGameStatus = GameStatus["gameDetails"] & {fen:string}
+
 export interface GameReducerAction {
-    type:"JOIN" | "LOAD" | "END" | "MOVE",
+    type:"JOIN" | "LOAD" | "END" | "MOVE" | "PERSIST",
     payload:{
-        gameDetails?:GameStatus["gameDetails"] & {fen:string},
+        onPersistIsInGame?:boolean,
+        gameDetails?:GameReducerActionGameStatus,
         moveDetails?:{
             sourceSquare:Square,
             targetSquare:Square,
@@ -45,14 +49,23 @@ export interface GameReducerAction {
 
 function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
     switch(action.type){
-        case "LOAD":
-            if(!action.payload.gameDetails){
-                return {...game}
+        case "PERSIST":
+            if(!action.payload.onPersistIsInGame){
+                return {...game,hasPersisted:true}
             }
             return {
+                ...game,
                 isInGame:true,
-                instance:new Chess(action.payload.gameDetails.fen),
-                gameDetails:{...action.payload.gameDetails}
+                instance:new Chess((action.payload.gameDetails as GameReducerActionGameStatus).fen),
+                gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
+                hasPersisted:true,
+            } 
+        case "JOIN":
+            return {
+                ...game,
+                isInGame:true,
+                instance:new Chess((action.payload.gameDetails as GameReducerActionGameStatus).fen),
+                gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
             }
         case "END":
             return {...initialGameStatus}
