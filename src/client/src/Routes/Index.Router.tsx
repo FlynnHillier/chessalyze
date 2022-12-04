@@ -6,6 +6,7 @@ import { Login } from '../views/Login'
 import RequireAuthController from './controllers/RequireAuth.Controller'
 import PersistedAuthController from './controllers/PersistAuth.Controller'
 import PersistedGameController from './controllers/PersistGame.controller'
+import PersistedLobbyController from './controllers/PersistLobby.controller'
 
 const IndexRoute = () => {
   return (
@@ -13,7 +14,9 @@ const IndexRoute = () => {
         <Route element={<PersistedAuthController/>}>
           <Route element={<RequireAuthController/>}>
             <Route path="/game" element={<PersistedGameController/>}>
-              <Route path="/game/" element={<ChessInterface/>}/>
+              <Route element={<PersistedLobbyController/>}>
+                <Route path="/game/" element={<ChessInterface/>}/>
+              </Route>
             </Route>
           </Route>
           <Route path="/home" element={<Home/>}/>
