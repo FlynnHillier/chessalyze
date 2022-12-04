@@ -1,6 +1,7 @@
 .chessboard-container {
-    width:500px;
-    height:500px;
+    position: absolute;
+    width:560px;
+    height:560px;
     display: inline;
 }
 

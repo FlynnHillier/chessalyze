@@ -2,9 +2,9 @@ import React,{CSSProperties} from 'react'
 
 import { Color, PieceSymbol } from 'chess.js'
 
-import "./../styles/promotionOverlay.css"
+import "./../../styles/promotionOverlay.css"
 
-import {pieceImages,PieceImages} from "./../assets/images/chesspieces/index"
+import {pieceImages,PieceImages} from "../../assets/images/chesspieces/index"
 import { PromotionSymbol } from 'chessalyze-common'
 
 interface Props {

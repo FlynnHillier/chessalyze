@@ -1,0 +1,8 @@
+.chess-interface {
+    width:610px;
+    height:610px;
+    background-color: burlywood;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

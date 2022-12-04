@@ -1,10 +1,11 @@
 import React,{useEffect, useState} from 'react'
-import ChessGame from '../components/ChessGame'
+import ChessGame from '../components/game/ChessGame'
 import { Chess, Square ,Color,Move} from 'chess.js'
 import axios from 'axios'
 import { socket } from '../contexts/socket.context'
 import {UUID,PromotionSymbol,FEN} from "chessalyze-common"
-import { useGame } from '../hooks/useGame'
+import { useGame } from '../hooks/contexts/useGame'
+import "../styles/game/chessInterface.css"
 
 const ChessInterface = () => {
     const {gameStatus,dispatchGameStatus} = useGame()
@@ -42,16 +43,19 @@ const ChessInterface = () => {
     }
   
     return (
-    <ChessGame
-        isActive={gameStatus.isInGame}
-        queryMove={queryMove}
-        proposeMovement={proposeMoveToServer}
-        fen={gameStatus.instance.fen()}
-        turn={instance.turn()}
-        generateMovementOverlays={generateMovementOverlays}
-        summary={null}
-        perspective={gameStatus.gameDetails.colour}
-    />
+    <div className="chess-interface">
+        
+        <ChessGame
+            isActive={gameStatus.isInGame}
+            queryMove={queryMove}
+            proposeMovement={proposeMoveToServer}
+            fen={gameStatus.instance.fen()}
+            turn={instance.turn()}
+            generateMovementOverlays={generateMovementOverlays}
+            summary={null}
+            perspective={gameStatus.gameDetails.colour}
+        />
+    </div>
   )
 }
 

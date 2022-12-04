@@ -1,9 +1,9 @@
 import React,{useEffect} from 'react'
 import { Spinner,Button } from 'react-bootstrap'
-import "./../../styles/misc.css"
+import "./../../../styles/misc.css"
 import {Container} from 'react-bootstrap'
 
-import { usePersistLobby } from '../../hooks/usePersistLobby'
+import { usePersistLobby } from '../../../hooks/game/usePersistLobby'
 
 
 const LobbyPersist = () => {

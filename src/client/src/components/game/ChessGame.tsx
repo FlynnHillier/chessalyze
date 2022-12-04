@@ -2,17 +2,16 @@ import {useState,CSSProperties, useEffect} from 'react'
 import {Chessboard} from "react-chessboard"
 import PromotionOverlay from './PromotionOverlay'
 
-
-import {Chess,Square,Move,PieceSymbol, Color, SQUARES} from "chess.js"
+import {Square, Color} from "chess.js"
 import { FEN, PromotionSymbol } from 'chessalyze-common'
 
-import EmptyTileOverlayHint from "./../assets/overlays/emptyTileHint.png"
-import OccupiedTileOverlayHint from "../assets/overlays/occupiedTileHint.png"
+import EmptyTileOverlayHint from "./../../assets/overlays/emptyTileHint.png"
+import OccupiedTileOverlayHint from "../../assets/overlays/occupiedTileHint.png"
 
-import "./../styles/chessBoard.css"
+import "./../../styles/game/chessBoard.css"
 import GameOverOverlay from './GameOverOverlay'
 
-import { GameConclusion } from '../types/chessboard'
+import { GameConclusion } from '../../types/chessboard'
 
 
 interface Props {
@@ -172,6 +171,7 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
             hideSelf={hideGameSummmaryOverlay}
           />
           <Chessboard
+            boardOrientation={perspective === "w" ? "white" : "black"}
             arePiecesDraggable={isActive &&!summary && !isDisplayingPromotionSelect && !moveIsProposed}
             customBoardStyle={{}}
             position={fen} 

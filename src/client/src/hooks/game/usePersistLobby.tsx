@@ -1,31 +1,28 @@
 import axios from "axios"
 import {useState} from "react"
-import { retrieveAxiosErrorMessage } from "../util/util.axios"
-import { useGame } from "./useGame"
+import { retrieveAxiosErrorMessage } from "../../util/util.axios"
+import { useLobby } from "../contexts/useLobby"
 
 
-export const usePersistGame = () => {
+export const usePersistLobby = () => {
     const [isLoading,setIsLoading] = useState<boolean>(false)
     const [error,setError] = useState<any>(null)
     const [errorMessage,setErrorMessage] = useState<string>("")
-    const {dispatchGameStatus} = useGame()
+    const {dispatchLobbyStatus} = useLobby()
 
     const clearErrorMessage = () => {
         setErrorMessage("")
     }
 
-
-    const persistGame = async () => {
+    const persistLobby = async () => {
         setIsLoading(true)
         try {
-            const response = await axios.get("/a/game/getState")            
-            
-            console.log(response)
-            dispatchGameStatus({
+            const response = await axios.get("/a/game/lobby/status")            
+            dispatchLobbyStatus({
                 type:"PERSIST",
                 payload:{
-                    onPersistIsInGame:response.data.isInGame,
-                    gameDetails:{...response.data.gameDetails}
+                    onPersistIsInLobby:response.data.isInLobby,
+                    lobbyDetails:{...response.data.lobbyDetails}
                 }
             })
         } catch(err){
@@ -40,5 +37,5 @@ export const usePersistGame = () => {
         }
     }
 
-    return {isLoading,error,errorMessage,persistGame,clearErrorMessage}
+    return {isLoading,error,errorMessage,persistLobby,clearErrorMessage}
 }

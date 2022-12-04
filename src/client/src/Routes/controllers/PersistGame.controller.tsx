@@ -1,8 +1,8 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
-import GamePersist from '../../components/game/Game.Persist'
+import GamePersist from '../../components/game/persistors/Game.Persist'
 
-import { useGame } from '../../hooks/useGame'
+import { useGame } from '../../hooks/contexts/useGame'
 
 const PersistedGameController = () => {
   const {gameStatus} = useGame()

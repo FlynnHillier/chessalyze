@@ -1,9 +1,6 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-
-import "./../styles/gameOverOverlay.css"
-
-import {GameConclusion} from "./../types/chessboard"
+import "./../../styles/gameOverOverlay.css"
+import {GameConclusion} from "../../types/chessboard"
 
 interface Props {
     conclusionState:GameConclusion | null
