@@ -1,8 +1,65 @@
-.chess-interface {
-    width:610px;
-    height:610px;
-    background-color: burlywood;
+.chess-interface-container {
+    display: grid;
+    grid-template-columns: repeat(12,1fr);
+    grid-template-rows: 50px 560px 50px;
+    width:560px;
+    position: relative;
+}
+
+.chess-interface.layout-content {
     display: flex;
     justify-content: center;
     align-items: center;
+    grid-row-start:2;
+    grid-row-end:3;
+    grid-column: 1/-1;
+}
+
+.chess-interface.layout-player-strip {
+    padding: 5px;
+    background-color: burlywood;
+    grid-row:span 1;
+    grid-column: 1/-1;
+    display: flex;
+    justify-content: left;
+}
+
+.chess-interface.player-banner {
+    width:255px;
+    height: 100%;
+    display: grid;
+    column-gap: 10px;
+    grid-template-columns: repeat(5,1fr);
+    grid-template-rows: repeat(3,1fr);
+    border-radius: 10px;
+    outline: 2px groove black;
+    background-color: rgb(87, 87, 87);
+    color: white;
+    overflow: hidden;
+}
+
+/* .chess-interface.player-banner.black {
+}
+
+.chess-interface.player-banner.white {
+    background-color: black;
+    color: black;
+} */
+
+.chess-interface.player-banner .text-container {
+    grid-column-start: 2;
+    grid-column-end: 6;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
+.chess-interface.player-banner .image-container {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-right: 1px solid black;
 }

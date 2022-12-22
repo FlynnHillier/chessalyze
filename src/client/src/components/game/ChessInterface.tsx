@@ -1,16 +1,29 @@
 import React,{useEffect, useState} from 'react'
-import ChessGame from '../components/game/ChessGame'
+import ChessGame from './ChessGame'
 import { Chess, Square ,Color,Move} from 'chess.js'
 import axios from 'axios'
-import { socket } from '../contexts/socket.context'
+import { socket } from '../../contexts/socket.context'
 import {UUID,PromotionSymbol,FEN} from "chessalyze-common"
-import { useGame } from '../hooks/contexts/useGame'
-import "../styles/game/chessInterface.css"
+import { useGame } from '../../hooks/contexts/useGame'
+import "../../styles/game/chessInterface.css"
+import PlayerBanner from './PlayerBanner'
+
 
 const ChessInterface = () => {
     const {gameStatus,dispatchGameStatus} = useGame()
     const {instance} = gameStatus
+    let [colourConfiguration,setColourConfiguration] = useState<{native:Color,opponent:Color}>({
+        native:"w",
+        opponent:"b"
+    })
 
+
+    useEffect(()=>{
+        setColourConfiguration({
+                native:gameStatus.gameDetails.colour,
+                opponent:gameStatus.gameDetails.colour === "w" ? "b" : "w",
+            })
+    },[gameStatus.gameDetails])
 
     socket.on("game:movement",(gameID:UUID,{sourceSquare,targetSquare,promotion} : {sourceSquare:Square,targetSquare:Square,promotion?:PromotionSymbol} )=>{
         dispatchGameStatus({type:"MOVE",payload:{moveDetails:{sourceSquare,targetSquare,promotion}}})
@@ -41,22 +54,32 @@ const ChessInterface = () => {
     function generateMovementOverlays({source} : {source:Square}) : {tile:Square,occupied:boolean}[] {
         return (instance.moves({square:source,verbose:true}) as Move[]).map((move)=>{return {tile:(move.to as Square),occupied:move.captured !== undefined}})
     }
+
   
     return (
-    <div className="chess-interface">
-        
-        <ChessGame
-            isActive={gameStatus.isInGame}
-            queryMove={queryMove}
-            proposeMovement={proposeMoveToServer}
-            fen={gameStatus.instance.fen()}
-            turn={instance.turn()}
-            generateMovementOverlays={generateMovementOverlays}
-            summary={null}
-            perspective={gameStatus.gameDetails.colour}
-        />
-    </div>
-  )
+        <div className="chess-interface-container">
+            <PlayerBanner
+                colour={colourConfiguration.opponent}
+                playerName={gameStatus.gameDetails.players[colourConfiguration.opponent] || "---"}
+            />
+            <div className="chess-interface layout-content">
+                <ChessGame
+                    isActive={gameStatus.isInGame}
+                    queryMove={queryMove}
+                    proposeMovement={proposeMoveToServer}
+                    fen={gameStatus.instance.fen()}
+                    turn={instance.turn()}
+                    generateMovementOverlays={generateMovementOverlays}
+                    summary={null}
+                    perspective={gameStatus.gameDetails.colour}
+                />
+            </div>
+            <PlayerBanner
+                colour={colourConfiguration.native}
+                playerName={gameStatus.gameDetails.players[colourConfiguration.native] || "---"}
+            />
+        </div>
+    )
 }
 
 export default ChessInterface
