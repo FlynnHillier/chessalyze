@@ -23,10 +23,11 @@ interface Props {
   summary:GameConclusion | null,
   perspective:Color,
   isActive:boolean,
+  boardWidth:number,
 }
 
 
-const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive} : Props) => {
+const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive,boardWidth} : Props) => {
   const [customSquareStyles,setCustomSquareStyles] = useState({})
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
 
@@ -47,9 +48,13 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
 
   useEffect(()=>{
     updateMovementHints()
-  },[selectedSquare])
-  
-  
+  },[selectedSquare])  
+
+
+  useEffect(()=>{
+    console.log(boardWidth)
+  },[boardWidth])
+
 
   //### PIECE MOVEMEMENT###
   async function onMovement(source:Square,target:Square) : Promise<boolean> {
@@ -164,13 +169,16 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
             isHidden={!isDisplayingPromotionSelect}
             onPieceSelection={onPromotionSelection}
             hideSelf={hidePromotionOverlay}
+            width={boardWidth}
           />
           <GameOverOverlay 
+            width={boardWidth}
             conclusionState={summary}
             isHidden={!isDisplayingGameSummary}
             hideSelf={hideGameSummmaryOverlay}
           />
           <Chessboard
+            boardWidth={boardWidth}
             boardOrientation={perspective === "w" ? "white" : "black"}
             arePiecesDraggable={isActive &&!summary && !isDisplayingPromotionSelect && !moveIsProposed}
             customBoardStyle={{}}

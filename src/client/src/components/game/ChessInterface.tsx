@@ -7,7 +7,7 @@ import {UUID,PromotionSymbol,FEN} from "chessalyze-common"
 import { useGame } from '../../hooks/contexts/useGame'
 import "../../styles/game/chessInterface.css"
 import PlayerBanner from './PlayerBanner'
-
+import { useObserveElementWidth } from '../../hooks/util/useObserveElementWidth'
 
 const ChessInterface = () => {
     const {gameStatus,dispatchGameStatus} = useGame()
@@ -17,8 +17,9 @@ const ChessInterface = () => {
         opponent:"b"
     })
 
+    const { width, ref } = useObserveElementWidth<HTMLDivElement>();
 
-    useEffect(()=>{
+    useEffect(()=>{ //when gameDetails are ammended update native / opposition colour configuration state
         setColourConfiguration({
                 native:gameStatus.gameDetails.colour,
                 opponent:gameStatus.gameDetails.colour === "w" ? "b" : "w",
@@ -57,12 +58,14 @@ const ChessInterface = () => {
 
   
     return (
-        <div className="chess-interface-container">
+        <div className="chess-interface-container"
+            ref={ref}
+        >
             <PlayerBanner
                 colour={colourConfiguration.opponent}
                 playerName={gameStatus.gameDetails.players[colourConfiguration.opponent] || "---"}
             />
-            <div className="chess-interface layout-content">
+            {/* <div className="chess-interface layout-content"> */}
                 <ChessGame
                     isActive={gameStatus.isInGame}
                     queryMove={queryMove}
@@ -72,8 +75,9 @@ const ChessInterface = () => {
                     generateMovementOverlays={generateMovementOverlays}
                     summary={null}
                     perspective={gameStatus.gameDetails.colour}
+                    boardWidth={width}
                 />
-            </div>
+            {/* </div> */}
             <PlayerBanner
                 colour={colourConfiguration.native}
                 playerName={gameStatus.gameDetails.players[colourConfiguration.native] || "---"}

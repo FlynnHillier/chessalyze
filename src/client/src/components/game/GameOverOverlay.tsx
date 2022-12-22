@@ -6,6 +6,7 @@ interface Props {
     conclusionState:GameConclusion | null
     isHidden:boolean
     hideSelf:Function
+    width:number
 }
 
 const GameOverOverlay = (props:Props) => {  
@@ -17,7 +18,11 @@ const GameOverOverlay = (props:Props) => {
                 }
             }}
         >
-            <div className="chessboard-game-over-popup">
+            <div className="chessboard-game-over-popup"
+                style={{
+                    width:props.width,
+                }}
+            >
                 {props.conclusionState === null ? 
                     <> This game has not yet <br/> concluded.</> : 
                     <>
