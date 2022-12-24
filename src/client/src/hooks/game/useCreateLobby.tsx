@@ -17,11 +17,11 @@ export const useCreateLobby = () => {
     const createLobby = async () => {
         setIsLoading(true)
         try {
-            const response = await axios.get("/a/game/lobby/create")         
+            const response = await axios.get("/a/game/lobby/create") 
             dispatchLobbyStatus({
                 type:"START",
                 payload:{
-                    lobbyDetails:{...response.data.lobbyDetails}
+                    lobbyDetails:{id:response.data.lobbyID}
                 }
             })
         } catch(err){
