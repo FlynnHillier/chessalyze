@@ -29,6 +29,7 @@ function lobbyReducer(lobby:GameStatus,action:GameReducerAction) : GameStatus{
             return {
                 ...lobby,
                 isInLobby:true,
+                hasPersisted:true,
                 lobbyDetails:{...action.payload.lobbyDetails as LobbyReducerActionLobbyDetails}
             } 
         case "START":
