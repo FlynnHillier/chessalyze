@@ -21,7 +21,7 @@
 .connectivity .status-sub-header {
     grid-row-start: 2;
     grid-row-end: 3;
-    padding: 0px 20px;
+    padding: 0px 5px;
     text-align: center;
 }
 

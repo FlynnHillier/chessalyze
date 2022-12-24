@@ -64,7 +64,7 @@ const ConnectivityStatusInterface = () => {
   }
 
   function getLobbyInviteURL() : string{
-    return `${process.env.REACT_APP_BASE_URL}/game/join/${lobbyStatus.lobbyDetails.id}`
+    return `${window.location.origin}/game/join/${lobbyStatus.lobbyDetails.id}`
   }
 
   function onCopyInviteLink() : void {
