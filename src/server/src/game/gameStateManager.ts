@@ -3,8 +3,7 @@ import {v1 as uuidv1} from "uuid"
 
 import {GameState} from "./gameState"
 import { GameLobby } from "../types/game"
-import {socketMap} from "../sockets/index.socket"
-import { Socket } from "socket.io"
+import {socketManagment} from "../sockets/index.socket"
 import {io} from "./../init/init.socket"
 import { NewGamePlayer } from "./gameState"
 
@@ -29,9 +28,9 @@ export class GameStateManager {
         newGameState.setEventCallback("conclusion",()=>{
             this.gameStates.slice(this.gameStates.indexOf(newGameState),1)
         })
-
-        this._getPlayerSocket(p1.uuid).join(`game:${newGameState.id}`)
-        this._getPlayerSocket(p2.uuid).join(`game:${newGameState.id}`)
+        
+        socketManagment.join(p1.uuid,`game:${newGameState.id}`)
+        socketManagment.join(p2.uuid,`game:${newGameState.id}`)
 
         io.to(`game:${newGameState.id}`).emit("game:joined",
         {
@@ -71,7 +70,7 @@ export class GameStateManager {
             },
             id:uuidv1()
         }
-        this._getPlayerSocket(player.id).join(`lobby:${newLobby.id}`)
+        socketManagment.join(player.id,`lobby:${newLobby.id}`)
         io.to(`lobby:${newLobby.id}`).emit("lobby:joined",newLobby.id)
         
         this.gameLobbys.push(newLobby)
@@ -91,9 +90,8 @@ export class GameStateManager {
         const lobby = this.getLobby(lobbyID)
         if(lobby !== null){
             this.gameLobbys.splice(this.gameLobbys.indexOf(lobby),1)
-            const playerSocket = this._getPlayerSocket(lobby.player.id)
             io.to(`lobby:${lobby.id}`).emit("lobby:ended",lobby.id)
-            playerSocket.leave(`lobby:${lobby.id}`)
+            socketManagment.leave(lobby.player.id,`lobby:${lobby.id}`)
         }
     }
 
@@ -102,7 +100,7 @@ export class GameStateManager {
         return this.getPlayerLobby(playerID) === null
     }
 
-    private _getPlayerSocket(playerUUID:UUID) : Socket {
-        return socketMap.get(playerUUID) as Socket
-    }
+    // private _getPlayerSocket(playerUUID:UUID) : Socket {
+    //     return socketMap.get(playerUUID) as Socket
+    // }
 }

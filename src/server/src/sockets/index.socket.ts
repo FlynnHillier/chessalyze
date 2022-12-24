@@ -1,13 +1,14 @@
-import { UUID } from "../types/auth"
+import { UUID } from "chessalyze-common"
 import { Server,Socket } from "socket.io"
 import { socketWrapper,sessionMiddleware } from "../controllers/sessions"
 import passport from "passport"
+import { SocketManager } from "./socketManager"
 
-export const socketMap = new Map()
+export const socketManagment = new SocketManager()
 
 function onConnection(socket:Socket){
     if(socket.request.user){
-        socketMap.set(socket.request.user.uuid,socket)
+        socketManagment.registerConnection(socket.request.user!.uuid,socket)
     }
 }
 
@@ -19,7 +20,7 @@ export default (io:Server) => {
     io.on("connection",(socket)=>{
         onConnection(socket)
         socket.on("click",()=>{
-            console.log(socketMap)
+            console.log(socketManagment)
         })
     })
 }
