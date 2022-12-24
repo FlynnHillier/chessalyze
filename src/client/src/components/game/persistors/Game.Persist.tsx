@@ -1,7 +1,7 @@
 import React,{useEffect} from 'react'
-import { usePersistGame } from '../../hooks/usePersistGame'
+import { usePersistGame } from '../../../hooks/game/usePersistGame'
 import { Spinner,Button } from 'react-bootstrap'
-import "./../../styles/misc.css"
+import "./../../../styles/misc.css"
 import {Container} from 'react-bootstrap'
 
 

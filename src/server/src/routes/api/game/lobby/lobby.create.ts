@@ -5,7 +5,7 @@ import { notInGame, notInLobby } from "../game.middleware"
 export const lobby_create_router = Router()
 
 const createLobby = (req:Request,res:Response) => {
-    res.send({lobbyID:GameManager.createLobby(req.user!.uuid).id})
+    res.send({lobbyID:GameManager.createLobby({id:req.user!.uuid,displayName:req.user!.name}).id})
 }
 
 lobby_create_router.get("/",notInGame,notInLobby,createLobby)

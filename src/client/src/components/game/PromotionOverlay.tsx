@@ -1,10 +1,10 @@
-import React,{CSSProperties} from 'react'
+import React,{CSSProperties,useEffect} from 'react'
 
 import { Color, PieceSymbol } from 'chess.js'
 
-import "./../styles/promotionOverlay.css"
+import "./../../styles/promotionOverlay.css"
 
-import {pieceImages,PieceImages} from "./../assets/images/chesspieces/index"
+import {pieceImages,PieceImages} from "../../assets/images/chesspieces/index"
 import { PromotionSymbol } from 'chessalyze-common'
 
 interface Props {
@@ -12,9 +12,10 @@ interface Props {
     turn:Color,
     onPieceSelection:(piece:PromotionSymbol) => void,
     hideSelf:Function,
+    width:number,
 }
 
-const PromotionOverlay = ({isHidden,onPieceSelection,hideSelf,turn}:Props) => {
+const PromotionOverlay = ({isHidden,onPieceSelection,hideSelf,turn,width}:Props) => {
   function generateBannerCSS() : CSSProperties{
       const styling : CSSProperties = {
           "color": turn === "w" ? "white" : "black",
@@ -23,11 +24,21 @@ const PromotionOverlay = ({isHidden,onPieceSelection,hideSelf,turn}:Props) => {
       return styling
   }
 
+  useEffect(()=>{
+    console.log(isHidden,"")
+  },[isHidden])
+  
+
 
   const displayPieceCodes = ["q","b","r","n"]
 
   return (
-    <div className="chessboard-promotion-overlay-container" style={isHidden ? {"display":"none"} : {}}>
+    <div 
+      className="chessboard-promotion-overlay-container" 
+      style={{
+        width:width,
+        ...(isHidden ? {display:"none"} : {})
+      }}>
       <div className="chessboard-overlay"
         onClick={(e)=>{
           if(e.target == e.currentTarget){

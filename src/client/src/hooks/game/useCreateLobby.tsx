@@ -1,26 +1,29 @@
-import {useState} from "react"
-import {useAuth} from "../contexts/useAuth"
 import axios from "axios"
+import {useState} from "react"
 import { retrieveAxiosErrorMessage } from "../../util/util.axios"
+import { useLobby } from "../contexts/useLobby"
 
-export const useLogout = () => {
+
+export const useCreateLobby = () => {
+    const [isLoading,setIsLoading] = useState<boolean>(false)
     const [error,setError] = useState<any>(null)
     const [errorMessage,setErrorMessage] = useState<string>("")
-    const [isLoading,setIsLoading] = useState<boolean>(false)
-    const {dispatchAuth} = useAuth()
+    const {dispatchLobbyStatus} = useLobby()
 
     const clearErrorMessage = () => {
         setErrorMessage("")
     }
 
-    const logout = async () => {
+    const createLobby = async () => {
         setIsLoading(true)
-        setError(null)
         try {
-            const response = await axios.get("/auth/logout")
-            if(response.status >= 200 && response.status < 300){
-                dispatchAuth({type:"LOGOUT",payload:{}})
-            }
+            const response = await axios.get("/a/game/lobby/create") 
+            dispatchLobbyStatus({
+                type:"START",
+                payload:{
+                    lobbyDetails:{id:response.data.lobbyID}
+                }
+            })
         } catch(err){
             setError(err)
             if(axios.isAxiosError(err)){
@@ -33,6 +36,5 @@ export const useLogout = () => {
         }
     }
 
-
-    return {error,errorMessage,isLoading,logout,clearErrorMessage}
+    return {isLoading,error,errorMessage,createLobby,clearErrorMessage}
 }

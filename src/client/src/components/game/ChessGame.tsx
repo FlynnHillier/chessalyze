@@ -2,17 +2,16 @@ import {useState,CSSProperties, useEffect} from 'react'
 import {Chessboard} from "react-chessboard"
 import PromotionOverlay from './PromotionOverlay'
 
-
-import {Chess,Square,Move,PieceSymbol, Color, SQUARES} from "chess.js"
+import {Square, Color} from "chess.js"
 import { FEN, PromotionSymbol } from 'chessalyze-common'
 
-import EmptyTileOverlayHint from "./../assets/overlays/emptyTileHint.png"
-import OccupiedTileOverlayHint from "../assets/overlays/occupiedTileHint.png"
+import EmptyTileOverlayHint from "./../../assets/overlays/emptyTileHint.png"
+import OccupiedTileOverlayHint from "../../assets/overlays/occupiedTileHint.png"
 
-import "./../styles/chessBoard.css"
+import "./../../styles/game/chessBoard.css"
 import GameOverOverlay from './GameOverOverlay'
 
-import { GameConclusion } from '../types/chessboard'
+import { GameConclusion } from '../../types/chessboard'
 
 
 interface Props {
@@ -24,10 +23,11 @@ interface Props {
   summary:GameConclusion | null,
   perspective:Color,
   isActive:boolean,
+  boardWidth:number,
 }
 
 
-const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive} : Props) => {
+const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive,boardWidth} : Props) => {
   const [customSquareStyles,setCustomSquareStyles] = useState({})
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
 
@@ -48,9 +48,13 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
 
   useEffect(()=>{
     updateMovementHints()
-  },[selectedSquare])
-  
-  
+  },[selectedSquare])  
+
+
+  useEffect(()=>{
+    console.log(boardWidth)
+  },[boardWidth])
+
 
   //### PIECE MOVEMEMENT###
   async function onMovement(source:Square,target:Square) : Promise<boolean> {
@@ -165,13 +169,17 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
             isHidden={!isDisplayingPromotionSelect}
             onPieceSelection={onPromotionSelection}
             hideSelf={hidePromotionOverlay}
+            width={boardWidth}
           />
           <GameOverOverlay 
+            width={boardWidth}
             conclusionState={summary}
             isHidden={!isDisplayingGameSummary}
             hideSelf={hideGameSummmaryOverlay}
           />
           <Chessboard
+            boardWidth={boardWidth}
+            boardOrientation={perspective === "w" ? "white" : "black"}
             arePiecesDraggable={isActive &&!summary && !isDisplayingPromotionSelect && !moveIsProposed}
             customBoardStyle={{}}
             position={fen} 

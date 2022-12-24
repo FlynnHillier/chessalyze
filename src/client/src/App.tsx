@@ -1,16 +1,10 @@
 import React from 'react';
-import logo from './logo.svg';
 
 import AuthProvider from './contexts/auth.context';
 import SocketProvider from './contexts/socket.context';
-import Name from './components/user/Name';
-import Status from './components/Status';
-import ChessInterface from './views/ChessInterface';
-import AuthLogin from './components/auth/Auth.Login';
-import AuthSignup from './components/auth/Auth.Signup';
-import AuthLogout from './components/auth/Auth.logout';
 import GameProvider from './contexts/game.context';
-import TempLoadGame from './components/TempLoadGame';
+import LobbyProvider from './contexts/lobby.context';
+
 
 import IndexRoute from './Routes/Index.Router';
 import NavigationBar from './layout/NavigationBar';
@@ -20,17 +14,12 @@ function App() {
     <div className="App">
       <SocketProvider>
         <AuthProvider>
-          <GameProvider>
-            {/* <ChessInterface/>
-            <AuthLogin/>
-            <Name/>
-            <Status/>
-            <AuthSignup/>
-            <AuthLogout/>
-            <TempLoadGame/> */}
-            <NavigationBar/>
-            <IndexRoute/>
-          </GameProvider>
+          <LobbyProvider>
+            <GameProvider>
+              <NavigationBar/>
+              <IndexRoute/>
+            </GameProvider>
+          </LobbyProvider>
         </AuthProvider>
       </SocketProvider>
     </div>

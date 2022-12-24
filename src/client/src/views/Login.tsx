@@ -1,6 +1,6 @@
 import AuthLogin from "../components/auth/Auth.Login";
 import {Container,Row,Col} from "react-bootstrap"
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../hooks/contexts/useAuth";
 import { useEffect } from "react";
 import { useLocation,useNavigate } from "react-router-dom"
 

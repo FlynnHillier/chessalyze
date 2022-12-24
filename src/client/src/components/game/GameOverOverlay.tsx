@@ -1,14 +1,12 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-
-import "./../styles/gameOverOverlay.css"
-
-import {GameConclusion} from "./../types/chessboard"
+import "./../../styles/gameOverOverlay.css"
+import {GameConclusion} from "../../types/chessboard"
 
 interface Props {
     conclusionState:GameConclusion | null
     isHidden:boolean
     hideSelf:Function
+    width:number
 }
 
 const GameOverOverlay = (props:Props) => {  
@@ -20,7 +18,11 @@ const GameOverOverlay = (props:Props) => {
                 }
             }}
         >
-            <div className="chessboard-game-over-popup">
+            <div className="chessboard-game-over-popup"
+                style={{
+                    width:props.width,
+                }}
+            >
                 {props.conclusionState === null ? 
                     <> This game has not yet <br/> concluded.</> : 
                     <>

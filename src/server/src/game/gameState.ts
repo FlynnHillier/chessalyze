@@ -4,8 +4,9 @@ import {v1 as uuidv1} from "uuid"
 import {GameSummary,GameConclusion,GameTermination} from "../types/game"
 
 
-interface NewGamePlayer {
+export interface NewGamePlayer {
     uuid:UUID,
+    displayName:string,
     preference: null | "w" | "b"
 }
 
@@ -16,8 +17,14 @@ interface EventCallBacks {
 
 export class GameState {
     public players : {
-        w:UUID,
-        b:UUID
+        w:{
+            id:UUID,
+            displayName:string,
+        },
+        b:{
+            id:UUID,
+            displayName:string,
+        }
     }
     public id : UUID
     private startTime : number
@@ -103,8 +110,8 @@ export class GameState {
         return summary
     }
 
-    public getPlayerColor(playerUUID:UUID) : Color {
-        if(this.players.w === playerUUID){
+    public getPlayerColor(playerUUID:UUID) : Color { //unsafe, change in future.
+        if(this.players.w.id === playerUUID){
             return "w"
         } else{
             return "b"
@@ -141,14 +148,23 @@ export class GameState {
         }
     }
 
-    private _generateColorConfiguration(p1:NewGamePlayer,p2:NewGamePlayer) : {w:UUID,b:UUID} {
+    private _generateColorConfiguration(p1:NewGamePlayer,p2:NewGamePlayer) : {w:{id:UUID,displayName:string},b:{id:UUID,displayName:string}} {
         if(p1.preference === null && p2.preference === null || p2.preference === p1.preference){ //generate random configuration
-            return Math.random() < 0.5 ? {"b":p1.uuid,"w":p2.uuid} : {"b":p2.uuid,"w":p1.uuid}
+            return Math.random() < 0.5 ? 
+            {
+                b:{id:p1.uuid,displayName:p1.displayName},
+                w:{id:p2.uuid,displayName:p2.displayName}
+            }
+            : 
+            {
+                w:{id:p1.uuid,displayName:p1.displayName},
+                b:{id:p2.uuid,displayName:p2.displayName}
+            }
         }
 
         return { //configuration that honours preferences
-            w:p1.preference === "w" ? p1.uuid : p2.preference === null ? p2.uuid : p1.uuid,
-            b:p1.preference === "b" ? p1.uuid : p2.preference === null ? p2.uuid : p1.uuid
+            w:p1.preference === "w" ? {id:p1.uuid,displayName:p1.displayName} : p2.preference === null ? {id:p2.uuid,displayName:p2.displayName} : {id:p1.uuid,displayName:p1.displayName},
+            b:p1.preference === "b" ? {id:p1.uuid,displayName:p1.displayName} : p2.preference === null ? {id:p2.uuid,displayName:p2.displayName} : {id:p1.uuid,displayName:p1.displayName}
         }
     }
 }
