@@ -39,7 +39,7 @@ function lobbyReducer(lobby:GameStatus,action:GameReducerAction) : GameStatus{
                 lobbyDetails:{...action.payload.lobbyDetails as LobbyReducerActionLobbyDetails}
             } 
         case "END":
-            return {...initialLobbyStatus}
+            return {...lobby,isInLobby:false,lobbyDetails:initialLobbyStatus.lobbyDetails}
         default:
             return {...lobby}
     }

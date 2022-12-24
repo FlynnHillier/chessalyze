@@ -18,13 +18,24 @@
     justify-content: center;
 }
 
+.connectivity .status-sub-header {
+    grid-row-start: 2;
+    grid-row-end: 3;
+    padding: 0px 20px;
+    text-align: center;
+}
+
+.connectivity .status-sub-header > h3 {
+    font-size: 20px;
+}
+
 .connectivity .status-header > h1 {
     font-size: 30px;
 }
 
 .connectivity .status-players {
-    grid-row-start: 2;
-    grid-row-end: 5;
+    grid-row-start: 3;
+    grid-row-end: 6;
     overflow: hidden;
     display: flex;
     flex-direction: column;
