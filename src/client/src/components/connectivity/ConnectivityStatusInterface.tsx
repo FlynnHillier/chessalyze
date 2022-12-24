@@ -40,10 +40,10 @@ const ConnectivityStatusInterface = () => {
       return null
     }
 
-    return gameStatus.gameDetails.players.w === auth.userInfo.id ?
-    gameStatus.gameDetails.players.b
+    return gameStatus.gameDetails.players.w.id === auth.userInfo.id ?
+    gameStatus.gameDetails.players.b.displayName
     :
-    gameStatus.gameDetails.players.w
+    gameStatus.gameDetails.players.w.displayName
   }
 
   function getStatusDisplayText() { //covnerts from activity status state to display text 

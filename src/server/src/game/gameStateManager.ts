@@ -6,12 +6,7 @@ import { GameLobby } from "../types/game"
 import {socketMap} from "../sockets/index.socket"
 import { Socket } from "socket.io"
 import {io} from "./../init/init.socket"
-
-
-interface NewGamePlayer {
-    uuid:UUID,
-    preference: null | "w" | "b"
-}
+import { NewGamePlayer } from "./gameState"
 
 export class GameStateManager {
     public gameStates:GameState[]  = []
@@ -20,7 +15,7 @@ export class GameStateManager {
     constructor(){}
 
     public getPlayerGame(uuid:UUID) : null | GameState {
-        const game = this.gameStates.find((game)=>game.players.w === uuid || game.players.b === uuid)
+        const game = this.gameStates.find((game)=>game.players.w.id === uuid || game.players.b.id === uuid)
         return game !== undefined ? game : null
     }
 
@@ -38,14 +33,28 @@ export class GameStateManager {
         this._getPlayerSocket(p1.uuid).join(`game:${newGameState.id}`)
         this._getPlayerSocket(p2.uuid).join(`game:${newGameState.id}`)
 
-        io.to(`game:${newGameState.id}`).emit("game:joined",newGameState.id)
+        io.to(`game:${newGameState.id}`).emit("game:joined",
+        {
+            id:newGameState.id,
+            players:newGameState.players,
+            captured:{
+                w:newGameState.getCaptured("w"),
+                b:newGameState.getCaptured("b")
+            },
+            colours:{
+                [newGameState.players.w.id]:"w",
+                [newGameState.players.b.id]:"b"
+            },
+            fen:newGameState.getFEN(),
+        }
+        )
 
         this.gameStates.push(newGameState)
         return newGameState
     }
 
     public getPlayerLobby(uuid:UUID) : null | GameLobby {
-        const lobby = this.gameLobbys.find((lobby)=>lobby.playerID === uuid)
+        const lobby = this.gameLobbys.find((lobby)=>lobby.player.id === uuid)
         return lobby === undefined ? null : lobby
     }
 
@@ -54,32 +63,35 @@ export class GameStateManager {
         return lobby === undefined ? null : lobby 
     }   
 
-    public createLobby(playerID:UUID) : GameLobby {
+    public createLobby(player: {id:UUID,displayName:string}) : GameLobby {
         const newLobby : GameLobby = { //create new lobby
-            playerID:playerID,
+            player:{
+                id:player.id,
+                displayName:player.displayName
+            },
             id:uuidv1()
         }
-        this._getPlayerSocket(playerID).join(`lobby:${newLobby.id}`)
+        this._getPlayerSocket(player.id).join(`lobby:${newLobby.id}`)
         io.to(`lobby:${newLobby.id}`).emit("lobby:joined",newLobby.id)
         
         this.gameLobbys.push(newLobby)
         return newLobby
     }
 
-    public joinLobby(lobbyID:UUID,joiningPlayerID:UUID) : GameState | null {
+    public joinLobby(lobbyID:UUID,joiningPlayer:{id:UUID,displayName:string}) : GameState | null {
         const lobby = this.getLobby(lobbyID)
         if(lobby === null){
             return null
         }
         this.endLobby(lobby.id) //on join cease lobby existence as game is created.
-        return this.newGame({uuid:lobby.playerID,preference:null},{uuid:joiningPlayerID,preference:null})
+        return this.newGame({uuid:lobby.player.id,preference:null,displayName:lobby.player.displayName},{uuid:joiningPlayer.id,displayName:joiningPlayer.displayName,preference:null})
     }
 
     public endLobby(lobbyID:UUID) : void {
         const lobby = this.getLobby(lobbyID)
         if(lobby !== null){
             this.gameLobbys.splice(this.gameLobbys.indexOf(lobby),1)
-            const playerSocket = this._getPlayerSocket(lobby.playerID)
+            const playerSocket = this._getPlayerSocket(lobby.player.id)
             io.to(`lobby:${lobby.id}`).emit("lobby:ended",lobby.id)
             playerSocket.leave(`lobby:${lobby.id}`)
         }

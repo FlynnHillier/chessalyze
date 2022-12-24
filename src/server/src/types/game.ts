@@ -1,4 +1,4 @@
-import { UUID } from "./auth";
+import { UUID } from "./../../../common/dist/index";
 
 export type FEN = String
 
@@ -6,8 +6,14 @@ export type GameTermination = "checkmate" | "3-fold repition" | "50 move rule" |
 
 export interface GameSummary {
     players:{
-        w:UUID,
-        b:UUID
+        w:{
+            id:UUID,
+            displayName:string,
+        },
+        b:{
+            id:UUID,
+            displayName:string,
+        }
     }
     conclusion: GameConclusion,
     moves:string[]
@@ -26,6 +32,9 @@ export interface GameConclusion {
 
 
 export interface GameLobby {
-    playerID:UUID
+    player:{
+        id:UUID,
+        displayName:string
+    }
     id:UUID
 }

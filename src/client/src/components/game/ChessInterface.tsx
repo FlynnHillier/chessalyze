@@ -8,6 +8,7 @@ import { useGame } from '../../hooks/contexts/useGame'
 import "../../styles/game/chessInterface.css"
 import PlayerBanner from './PlayerBanner'
 import { useObserveElementWidth } from '../../hooks/util/useObserveElementWidth'
+import { useAuth } from '../../hooks/contexts/useAuth'
 
 const ChessInterface = () => {
     const {gameStatus,dispatchGameStatus} = useGame()
@@ -16,6 +17,7 @@ const ChessInterface = () => {
         native:"w",
         opponent:"b"
     })
+    const {auth} = useAuth()
 
     const { width, ref } = useObserveElementWidth<HTMLDivElement>();
 
@@ -28,6 +30,20 @@ const ChessInterface = () => {
 
     socket.on("game:movement",(gameID:UUID,{sourceSquare,targetSquare,promotion} : {sourceSquare:Square,targetSquare:Square,promotion?:PromotionSymbol} )=>{
         dispatchGameStatus({type:"MOVE",payload:{moveDetails:{sourceSquare,targetSquare,promotion}}})
+    })
+
+    socket.on("game:joined",(gameDetails)=>{
+        dispatchGameStatus({
+            type:"JOIN",
+            payload:{
+                gameDetails:{
+                    players:gameDetails.players,
+                    captured:gameDetails.captured,
+                    colour:gameDetails.colours[auth.userInfo.id],
+                    fen:gameDetails.fen,
+                }
+            }
+        })
     })
 
     async function proposeMoveToServer(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) : Promise<boolean> {
@@ -63,7 +79,7 @@ const ChessInterface = () => {
         >
             <PlayerBanner
                 colour={colourConfiguration.opponent}
-                playerName={gameStatus.gameDetails.players[colourConfiguration.opponent] || "---"}
+                playerName={gameStatus.gameDetails.players[colourConfiguration.opponent].displayName || "---"}
             />
             {/* <div className="chess-interface layout-content"> */}
                 <ChessGame
@@ -80,7 +96,7 @@ const ChessInterface = () => {
             {/* </div> */}
             <PlayerBanner
                 colour={colourConfiguration.native}
-                playerName={gameStatus.gameDetails.players[colourConfiguration.native] || "---"}
+                playerName={gameStatus.gameDetails.players[colourConfiguration.native].displayName || "---"}
             />
         </div>
     )

@@ -8,7 +8,7 @@ export const lobby_join_router = Router()
 
 const joinLobby = (req:Request,res:Response) => {
     const existingUserLobby = GameManager.getPlayerLobby(req.user!.uuid)
-    let gameJoinResult = GameManager.joinLobby(req.body.lobbyID,req.user!.uuid)
+    let gameJoinResult = GameManager.joinLobby(req.body.lobbyID,{id:req.user!.uuid,displayName:req.user!.name})
     
     if(gameJoinResult === null){
         return res.send({
