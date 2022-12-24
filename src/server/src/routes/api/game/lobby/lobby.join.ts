@@ -7,13 +7,30 @@ import { validateSchema } from "../../../../controllers/schemaValidation"
 export const lobby_join_router = Router()
 
 const joinLobby = (req:Request,res:Response) => {
-    const exisitingLobby = GameManager.getPlayerLobby(req.user!.uuid)
-    res.send({
-        gameID:GameManager.joinLobby(req.body.lobbyID,req.user!.uuid)?.id || null
-    })
-    if(exisitingLobby !== null){
-        GameManager.endLobby(exisitingLobby.id)
+    const existingUserLobby = GameManager.getPlayerLobby(req.user!.uuid)
+    let gameJoinResult = GameManager.joinLobby(req.body.lobbyID,req.user!.uuid)
+    
+    if(gameJoinResult === null){
+        return res.send({
+            success:false,
+            gameDetails:null
+        })
     }
+
+    if(existingUserLobby !== null){
+        GameManager.endLobby(existingUserLobby.id)
+    }
+    res.send({
+        success:true,
+        gameDetails:{
+            players:gameJoinResult.players,
+            captured:{
+                w:gameJoinResult.getCaptured("w"),
+                b:gameJoinResult.getCaptured("b"),
+            },
+            colour:gameJoinResult.getPlayerColor(req.user!.uuid)
+        }
+    })
 }
 
 const schema : Schema = {
