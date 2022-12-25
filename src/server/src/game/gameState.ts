@@ -35,7 +35,7 @@ export class GameState {
     constructor(p1:NewGamePlayer,p2:NewGamePlayer,){
         this.players = this._generateColorConfiguration(p1,p2)
         this.id = uuidv1()
-        this.startTime = new Date().getMilliseconds()
+        this.startTime = Date.now()
     }
 
     public move(sourceSquare:Square,targetSquare:Square,promotion?:"n" | "b" | "r" | "q") : boolean {
@@ -93,21 +93,19 @@ export class GameState {
         this.events.conclusion()
     }
 
-    private generateSummary(){
-        const dateMS = new Date().getMilliseconds()
-        
-        const summary : GameSummary = {
-            players:this.players,
-            conclusion: this._generateGameConclusion(),
-            moves:this.game.history() as string[],
-            time:{
-                start:this.startTime,
-                end:dateMS,
-                duration:this.startTime-dateMS,
+    private generateSummary() : GameSummary{
+            const dateMS = Date.now()
+            return  {
+                id:this.id,
+                players:this.players,
+                conclusion: this._generateGameConclusion(),
+                moves:this.game.history() as string[],
+                time:{
+                    start:this.startTime,
+                    end:dateMS,
+                    duration:dateMS-this.startTime,
+                }
             }
-        }
-        
-        return summary
     }
 
     public getPlayerColor(playerUUID:UUID) : Color { //unsafe, change in future.
@@ -144,7 +142,7 @@ export class GameState {
         return {
             boardState:this.game.fen(),
             termination:termination,
-            victor:this.game.turn()
+            victor:this.game.turn() === "w" ? "b" : "w"
         }
     }
 

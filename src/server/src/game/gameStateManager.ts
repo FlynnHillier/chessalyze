@@ -7,10 +7,12 @@ import {socketManagment} from "../sockets/index.socket"
 import {io} from "./../init/init.socket"
 import { NewGamePlayer } from "./gameState"
 
+import { GameTerimation } from "./game.end"
+
 export class GameStateManager {
     public gameStates:GameState[]  = []
     public gameLobbys : GameLobby[] = []
-    
+
     constructor(){}
 
     public getPlayerGame(uuid:UUID) : null | GameState {
@@ -27,6 +29,7 @@ export class GameStateManager {
         const newGameState = new GameState(p1,p2)
         newGameState.setEventCallback("conclusion",()=>{
             this.gameStates.slice(this.gameStates.indexOf(newGameState),1)
+            GameTerimation.terminate(newGameState)
         })
         
         socketManagment.join(p1.uuid,`game:${newGameState.id}`)
@@ -99,8 +102,4 @@ export class GameStateManager {
 
         return this.getPlayerLobby(playerID) === null
     }
-
-    // private _getPlayerSocket(playerUUID:UUID) : Socket {
-    //     return socketMap.get(playerUUID) as Socket
-    // }
 }
