@@ -13,13 +13,18 @@ import { useAuth } from '../../hooks/contexts/useAuth'
 const ChessInterface = () => {
     const {gameStatus,dispatchGameStatus} = useGame()
     const {instance} = gameStatus
+    const {auth} = useAuth()
+    const { width, ref } = useObserveElementWidth<HTMLDivElement>();
+
     let [colourConfiguration,setColourConfiguration] = useState<{native:Color,opponent:Color}>({
         native:"w",
         opponent:"b"
     })
-    const {auth} = useAuth()
+    let [showConclusionOverlay,setShowConclusionOverlay] = useState<boolean>(false)
 
-    const { width, ref } = useObserveElementWidth<HTMLDivElement>();
+    function hideConclusionOverlay(){
+        setShowConclusionOverlay(false)
+    }
 
     useEffect(()=>{ //when gameDetails are ammended update native / opposition colour configuration state
         setColourConfiguration({
@@ -46,11 +51,17 @@ const ChessInterface = () => {
         })
     })
 
-    socket.on("game:ended",()=>{
+    socket.on("game:ended",({termination,victor})=>{
         dispatchGameStatus({
             type:"END",
-            payload:{}
+            payload:{
+                conclusion:{
+                    type:victor === null ? "draw" : victor,
+                    reason:termination
+                }
+            }
         })
+        setShowConclusionOverlay(true)
     })
 
     async function proposeMoveToServer(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) : Promise<boolean> {
@@ -96,7 +107,11 @@ const ChessInterface = () => {
                     fen={gameStatus.instance.fen()}
                     turn={instance.turn()}
                     generateMovementOverlays={generateMovementOverlays}
-                    summary={null}
+                    conclusion={{
+                        details:gameStatus.conclusion,
+                        isShowing:showConclusionOverlay,
+                        hide:hideConclusionOverlay,
+                    }}
                     perspective={gameStatus.gameDetails.colour}
                     boardWidth={width}
                 />

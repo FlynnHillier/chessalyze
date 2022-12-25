@@ -30,7 +30,14 @@ export class GameStateManager {
         newGameState.setEventCallback("conclusion",()=>{
             this.gameStates.splice(this.gameStates.indexOf(newGameState),1)
             GameTerimation.terminate(newGameState)
-            io.to(`game:${newGameState.id}`).emit("game:ended",{id:newGameState.id})
+            io.to(`game:${newGameState.id}`)
+            .emit("game:ended",
+                {
+                    id:newGameState.id,
+                    termination:newGameState.getSummary()?.conclusion.termination,
+                    victor:newGameState.getSummary()?.conclusion.victor
+                }
+            )
             socketManagment.leave(p1.uuid,`game:${newGameState.id}`)
             socketManagment.leave(p2.uuid,`game:${newGameState.id}`)
         })

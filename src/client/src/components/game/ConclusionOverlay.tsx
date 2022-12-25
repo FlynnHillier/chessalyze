@@ -1,32 +1,33 @@
 import React from 'react'
 import "./../../styles/gameOverOverlay.css"
 import {GameConclusion} from "../../types/chessboard"
+import FancyButton from '../util/FancyButton'
 
 interface Props {
     conclusionState:GameConclusion | null
     isHidden:boolean
-    hideSelf:Function
+    hideSelf:()=>void
     width:number
 }
 
-const GameOverOverlay = (props:Props) => {  
+const ConclusionOverlay = (props:Props) => {  
     return (
         <div className="chessboard-overlay" style={props.isHidden ? {display:"none"} : {}}
             onClick={(e)=>{
                 if(e.target == e.currentTarget){
-                props.hideSelf()
+                    props.hideSelf()
                 }
             }}
         >
             <div className="chessboard-game-over-popup"
-                style={{
-                    width:props.width,
-                }}
+                // style={{
+                //     width:props.width,
+                // }}
             >
                 {props.conclusionState === null ? 
                     <> This game has not yet <br/> concluded.</> : 
                     <>
-                        <div className=".chessboard-game-over-header"> 
+                        <div className="chessboard-game-over-header"> 
                             <h2>GAME OVER!</h2>
                         </div>
                         <div>
@@ -35,9 +36,11 @@ const GameOverOverlay = (props:Props) => {
                             <text>by {props.conclusionState.reason}</text>
                         </div>
                         <div>
-                            <button onClick={()=>{props.hideSelf()}}>
-                                close
-                            </button>
+                            <FancyButton
+                                isLoading={false}
+                                text={"close"}
+                                onClick={props.hideSelf}
+                            />
                         </div>
                     </>
                 }
@@ -46,6 +49,4 @@ const GameOverOverlay = (props:Props) => {
   )
 }
 
-GameOverOverlay.propTypes = {}
-
-export default GameOverOverlay
+export default ConclusionOverlay
