@@ -2,7 +2,7 @@ import {UUID} from "chessalyze-common"
 import {Chess, Square,Move, Color} from "chess.js"
 import {v1 as uuidv1} from "uuid"
 import {GameSummary,GameConclusion,GameTermination} from "../types/game"
-
+import { io } from "../init/init.socket"
 
 export interface NewGamePlayer {
     uuid:UUID,
@@ -43,6 +43,7 @@ export class GameState {
         if(moveResult === false){
             return false
         }
+        io.to(`game:${this.id}`).emit("game:movement",this.id,{sourceSquare,targetSquare,promotion})
         if(this.game.isGameOver() || this.game.isDraw()){
             this.onGameEnd()
         }
