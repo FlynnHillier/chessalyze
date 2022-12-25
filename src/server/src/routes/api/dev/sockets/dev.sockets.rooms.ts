@@ -1,5 +1,5 @@
 import { NextFunction,Request,Response,Router } from "express";
-import { socketMap } from "../../../../sockets/index.socket";
+import { socketManagment } from "../../../../sockets/index.socket";
 import { validateSchema } from "../../../../controllers/schemaValidation";
 import { Schema } from "express-validator";
 
@@ -10,7 +10,7 @@ const schema : Schema = {
 }
 
 const getRooms = (req:Request,res:Response,next:NextFunction) => {
-    const playerSocket = socketMap.get(req.body.playerID)
+    const playerSocket = socketManagment.socketMap.get(req.body.playerID)
     if(!playerSocket){
         return res.status(204).send()
     }
