@@ -64,11 +64,10 @@ const gameMove = (req:Request,res:Response,next:NextFunction) => {
             return res.send({result:false})
         }
         if(gameState.isValidMove(sourceSquare,targetSquare,promotion)){ //if move is valid
-            console.log(gameState.move(sourceSquare,targetSquare,promotion)) //commit move to game
+            gameState.move(sourceSquare,targetSquare,promotion) //commit move to game
             io.to(`game:${gameState.id}`).emit("game:movement",gameState.id,{sourceSquare,targetSquare,promotion})
             res.send({result:true})
         } else{
-            console.log(sourceSquare,targetSquare,promotion)
             res.send({result:false})
         }
     }
