@@ -24,11 +24,6 @@ const PromotionOverlay = ({isHidden,onPieceSelection,hideSelf,turn,width}:Props)
       return styling
   }
 
-  useEffect(()=>{
-    console.log(isHidden,"")
-  },[isHidden])
-  
-
 
   const displayPieceCodes = ["q","b","r","n"]
 

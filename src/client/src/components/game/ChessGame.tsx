@@ -12,6 +12,7 @@ import "./../../styles/game/chessBoard.css"
 import GameOverOverlay from './GameOverOverlay'
 
 import { GameConclusion } from '../../types/chessboard'
+import { usePrevious } from '../../hooks/util/usePrevious'
 
 
 interface Props {
@@ -49,11 +50,6 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
   useEffect(()=>{
     updateMovementHints()
   },[selectedSquare])  
-
-
-  useEffect(()=>{
-    console.log(boardWidth)
-  },[boardWidth])
 
 
   //### PIECE MOVEMEMENT###
