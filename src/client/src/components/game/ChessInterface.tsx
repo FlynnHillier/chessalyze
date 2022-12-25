@@ -46,6 +46,13 @@ const ChessInterface = () => {
         })
     })
 
+    socket.on("game:ended",()=>{
+        dispatchGameStatus({
+            type:"END",
+            payload:{}
+        })
+    })
+
     async function proposeMoveToServer(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) : Promise<boolean> {
         try {
             const response = await axios.post("/a/game/move",{

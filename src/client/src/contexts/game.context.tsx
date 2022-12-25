@@ -75,7 +75,7 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
                 gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
             }
         case "END":
-            return {...initialGameStatus}
+            return {...game,isInGame:false}
         case "MOVE":
             if(!action.payload.moveDetails){
                 return {...game}

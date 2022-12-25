@@ -28,8 +28,11 @@ export class GameStateManager {
     public newGame(p1:NewGamePlayer,p2:NewGamePlayer,uuid?:string) : GameState {
         const newGameState = new GameState(p1,p2)
         newGameState.setEventCallback("conclusion",()=>{
-            this.gameStates.slice(this.gameStates.indexOf(newGameState),1)
+            this.gameStates.splice(this.gameStates.indexOf(newGameState),1)
             GameTerimation.terminate(newGameState)
+            io.to(`game:${newGameState.id}`).emit("game:ended",{id:newGameState.id})
+            socketManagment.leave(p1.uuid,`game:${newGameState.id}`)
+            socketManagment.leave(p2.uuid,`game:${newGameState.id}`)
         })
         
         socketManagment.join(p1.uuid,`game:${newGameState.id}`)
