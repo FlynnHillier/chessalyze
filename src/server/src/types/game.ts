@@ -5,6 +5,7 @@ export type FEN = String
 export type GameTermination = "checkmate" | "3-fold repition" | "50 move rule" | "insufficient material" | "stalemate" | "resignation" | "timeout"
 
 export interface GameSummary {
+    id:UUID,
     players:{
         w:{
             id:UUID,

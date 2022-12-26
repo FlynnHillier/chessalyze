@@ -3,6 +3,7 @@ import { UUID } from "chessalyze-common"
 import { Chess, Square } from "chess.js"
 import { PromotionSymbol } from "chessalyze-common"
 import { Color } from "chess.js"
+import { GameConclusion } from "../types/chessboard"
 
 const initialGameStatus = {
     hasPersisted:false,
@@ -34,6 +35,7 @@ const initialGameStatus = {
             },
         }
     },
+    conclusion:null as null | GameConclusion,
     instance:new Chess()
 }
 
@@ -50,7 +52,8 @@ export interface GameReducerAction {
             sourceSquare:Square,
             targetSquare:Square,
             promotion?:PromotionSymbol
-        }
+        },
+        conclusion?:GameConclusion,
     }
 }
 
@@ -75,7 +78,11 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
                 gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
             }
         case "END":
-            return {...initialGameStatus}
+            return {
+                ...game,
+                isInGame:false,
+                conclusion:action.payload.conclusion as GameConclusion,
+            }
         case "MOVE":
             if(!action.payload.moveDetails){
                 return {...game}

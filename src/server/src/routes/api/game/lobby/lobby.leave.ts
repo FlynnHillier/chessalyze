@@ -1,9 +1,6 @@
 import  {Router,Request,Response} from "express"
 import {GameManager} from "./../../../../game/game"
-import { validateSchema } from "../../../../controllers/schemaValidation"
 import { notInGame,inLobby } from "../game.middleware"
-import { socketMap } from "../../../../sockets/index.socket"
-import { Socket } from "socket.io"
 
 export const lobby_leave_router = Router()
 

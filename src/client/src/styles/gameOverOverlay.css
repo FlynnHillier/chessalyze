@@ -3,13 +3,18 @@
     height:150px;
     background-color: rgb(241, 241, 241);
     border-radius: 20px;
-    display:grid;
-    grid-template: 20% 100% / 80% 100% ;
-    grid-template-columns: 100% ;
-    grid-template-rows: 35% 40% 25%;
+    display:flex;
+    justify-content: center;
+    flex-direction: column;
     text-align: center;
+    overflow: hidden;
 }
 
-.chessboard-game-over-popup .chessboard-game-over-header {
-    font-size: large;
+.chessboard-game-over-popup .chessboard-game-over-header h2{
+    font-size: 30px;
 }
+
+.chessboard-game-over-popup button{
+    margin-top: 10px;
+}
+

@@ -9,12 +9,13 @@ import { useAuth } from '../../hooks/contexts/useAuth'
 import CreateLobbyButton from './CreateLobbyButton'
 import EndLobbyButton from './EndLobbyButton'
 import EndGameButton from './EndGameButton'
+import { socket } from '../../contexts/socket.context'
 
 
 const ConnectivityStatusInterface = () => {
   const {auth} = useAuth()
   const {gameStatus} = useGame()
-  const {lobbyStatus} = useLobby()
+  const {lobbyStatus,dispatchLobbyStatus} = useLobby()
  
   let [activityStatus,setActivityStatus] = useState<"idle" | "lobby" | "game">("idle")
 
@@ -32,6 +33,12 @@ const ConnectivityStatusInterface = () => {
   },[gameStatus.isInGame,lobbyStatus.isInLobby])
 
 
+  socket.on("lobby:ended",()=>{
+    dispatchLobbyStatus({
+      type:"END",
+      payload:{}
+    })
+  })
 
 
 
@@ -70,11 +77,6 @@ const ConnectivityStatusInterface = () => {
   function onCopyInviteLink() : void {
     navigator.clipboard.writeText(getLobbyInviteURL())
   }
-
-
-
-
-
 
   return (
     <div className="connectivity status-interface-container">

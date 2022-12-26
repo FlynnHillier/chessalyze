@@ -9,7 +9,7 @@ import EmptyTileOverlayHint from "./../../assets/overlays/emptyTileHint.png"
 import OccupiedTileOverlayHint from "../../assets/overlays/occupiedTileHint.png"
 
 import "./../../styles/game/chessBoard.css"
-import GameOverOverlay from './GameOverOverlay'
+import ConclusionOverlay from './ConclusionOverlay'
 
 import { GameConclusion } from '../../types/chessboard'
 
@@ -20,42 +20,29 @@ interface Props {
   generateMovementOverlays:({source} : {source:Square}) => {tile:Square, occupied:boolean}[]
   fen:FEN,
   turn:Color,
-  summary:GameConclusion | null,
   perspective:Color,
   isActive:boolean,
   boardWidth:number,
+  conclusion?:{
+    details:GameConclusion | null,
+    isShowing:boolean,
+    hide:()=>void,
+  }
 }
 
 
-const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive,boardWidth} : Props) => {
+const ChessGame = ({fen,turn,conclusion,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive,boardWidth} : Props) => {
   const [customSquareStyles,setCustomSquareStyles] = useState({})
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
-
   const [pendingMovement,setPendingMovement] = useState<null | {source : Square,target:Square}>(null)
-
   const [isDisplayingPromotionSelect,setIsDisplayingPromotionSelect] = useState<boolean>(false)
-
-  const [isDisplayingGameSummary,setIsDisplayingGameSummary] = useState<boolean>(false)
-
   const [moveIsProposed,setMoveIsProposed] = useState<boolean>(false)
 
   
   useEffect(()=>{
-    if(summary !== null){
-      showGameSummaryOverlay()
-    }
-  },[summary])
-
-  useEffect(()=>{
     updateMovementHints()
-  },[selectedSquare])  
-
-
-  useEffect(()=>{
-    console.log(boardWidth)
-  },[boardWidth])
-
-
+  },[selectedSquare]) 
+  
   //### PIECE MOVEMEMENT###
   async function onMovement(source:Square,target:Square) : Promise<boolean> {
     const movementQuery = queryMove({source,target})
@@ -117,13 +104,6 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
 
 
   //### GAME OVER ###
-  function showGameSummaryOverlay(){
-    setIsDisplayingGameSummary(true)
-  }
-
-  function hideGameSummmaryOverlay(){
-    setIsDisplayingGameSummary(false)
-  }
 
   function getCurrentTurnDisplayName(){
     return turn === "w" ? "white" : "black"
@@ -171,16 +151,16 @@ const ChessGame = ({fen,turn,summary,queryMove,proposeMovement,generateMovementO
             hideSelf={hidePromotionOverlay}
             width={boardWidth}
           />
-          <GameOverOverlay 
+          <ConclusionOverlay 
             width={boardWidth}
-            conclusionState={summary}
-            isHidden={!isDisplayingGameSummary}
-            hideSelf={hideGameSummmaryOverlay}
+            conclusionState={conclusion?.details || null}
+            isHidden={!conclusion?.isShowing || false}
+            hideSelf={conclusion?.hide || function(){}}
           />
           <Chessboard
             boardWidth={boardWidth}
             boardOrientation={perspective === "w" ? "white" : "black"}
-            arePiecesDraggable={isActive &&!summary && !isDisplayingPromotionSelect && !moveIsProposed}
+            arePiecesDraggable={isActive && !conclusion?.isShowing && !isDisplayingPromotionSelect && !moveIsProposed}
             customBoardStyle={{}}
             position={fen} 
             onPieceDrop={onDrop}
