@@ -19,8 +19,6 @@ export const usePersistGame = () => {
         setIsLoading(true)
         try {
             const response = await axios.get("/a/game/getState")            
-            
-            console.log(response)
             dispatchGameStatus({
                 type:"PERSIST",
                 payload:{
