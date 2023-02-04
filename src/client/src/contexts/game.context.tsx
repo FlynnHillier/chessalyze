@@ -39,7 +39,7 @@ const initialGameStatus = {
     instance:new Chess()
 }
 
-type GameStatus = typeof initialGameStatus
+export type GameStatus = typeof initialGameStatus
 
 type GameReducerActionGameStatus = GameStatus["gameDetails"] & {fen:string}
 

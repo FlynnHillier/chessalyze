@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
 import GamePersist from '../../components/game/persistors/Game.Persist'
+import SocketGameEvents from '../../sockets/Socket.GameEvents'
 
 import { useGame } from '../../hooks/contexts/useGame'
 
@@ -9,7 +10,7 @@ const PersistedGameController = () => {
   
   return (
     gameStatus.hasPersisted
-      ? <Outlet/>
+      ? <SocketGameEvents><Outlet/></SocketGameEvents>
       : <GamePersist/>
   )
 }

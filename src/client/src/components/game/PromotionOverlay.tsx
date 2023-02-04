@@ -47,6 +47,7 @@ const PromotionOverlay = ({isHidden,onPieceSelection,hideSelf,turn,width}:Props)
               return (
                 <div className="chessboard-promotion-overlay-icon-frame"
                   onClick={()=>{onPieceSelection(pieceSymbol as PromotionSymbol)}}
+                  key={`promotion_${pieceSymbol}`}
                 >
                   <img
                     className="chessboard-promotion-overlay-icon"

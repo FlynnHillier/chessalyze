@@ -19,7 +19,7 @@ const NavigationBar = () => {
     {
       to:"/game",
       text:"game"
-    }
+    },
   ]
 
   return (
@@ -28,6 +28,7 @@ const NavigationBar = () => {
         {navOptions.map((navOption)=>{
             return (
               <Nav.Link
+                key={`nav_${navOption.to}`}
                 className="link"
                 as={NavLink}
                 to={navOption.to} 

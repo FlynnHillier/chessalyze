@@ -1,20 +1,20 @@
-import React,{useEffect, useState} from 'react'
+import {useEffect, useState} from 'react'
 import ChessGame from './ChessGame'
-import { Chess, Square ,Color,Move} from 'chess.js'
+import { Square ,Color,Move} from 'chess.js'
 import axios from 'axios'
-import { socket } from '../../contexts/socket.context'
-import {UUID,PromotionSymbol,FEN} from "chessalyze-common"
+import {PromotionSymbol} from "chessalyze-common"
 import { useGame } from '../../hooks/contexts/useGame'
 import "../../styles/game/chessInterface.css"
 import PlayerBanner from './PlayerBanner'
 import { useObserveElementWidth } from '../../hooks/util/useObserveElementWidth'
-import { useAuth } from '../../hooks/contexts/useAuth'
+import { useSocket } from '../../hooks/contexts/useSocket'
+
 
 const ChessInterface = () => {
-    const {gameStatus,dispatchGameStatus} = useGame()
+    const {gameStatus} = useGame()
     const {instance} = gameStatus
-    const {auth} = useAuth()
     const { width, ref } = useObserveElementWidth<HTMLDivElement>();
+    const socket = useSocket()
 
     let [colourConfiguration,setColourConfiguration] = useState<{native:Color,opponent:Color}>({
         native:"w",
@@ -26,43 +26,26 @@ const ChessInterface = () => {
         setShowConclusionOverlay(false)
     }
 
+    useEffect(()=>{
+        const handleGameEnded = ()=>{
+            setShowConclusionOverlay(true)
+        }
+        socket.on("game:ended",handleGameEnded)
+
+        return () => {
+            socket.off("gamed:ended",handleGameEnded)
+        }
+    },[socket])
+
+
+
+
     useEffect(()=>{ //when gameDetails are ammended update native / opposition colour configuration state
         setColourConfiguration({
                 native:gameStatus.gameDetails.colour,
                 opponent:gameStatus.gameDetails.colour === "w" ? "b" : "w",
             })
     },[gameStatus.gameDetails])
-
-    socket.on("game:movement",(gameID:UUID,{sourceSquare,targetSquare,promotion} : {sourceSquare:Square,targetSquare:Square,promotion?:PromotionSymbol} )=>{
-        dispatchGameStatus({type:"MOVE",payload:{moveDetails:{sourceSquare,targetSquare,promotion}}})
-    })
-
-    socket.on("game:joined",(gameDetails)=>{
-        dispatchGameStatus({
-            type:"JOIN",
-            payload:{
-                gameDetails:{
-                    players:gameDetails.players,
-                    captured:gameDetails.captured,
-                    colour:gameDetails.colours[auth.userInfo.id],
-                    fen:gameDetails.fen,
-                }
-            }
-        })
-    })
-
-    socket.on("game:ended",({termination,victor})=>{
-        dispatchGameStatus({
-            type:"END",
-            payload:{
-                conclusion:{
-                    type:victor === null ? "draw" : victor,
-                    reason:termination
-                }
-            }
-        })
-        setShowConclusionOverlay(true)
-    })
 
     async function proposeMoveToServer(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) : Promise<boolean> {
         try {
