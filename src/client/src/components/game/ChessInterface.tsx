@@ -81,6 +81,7 @@ const ChessInterface = () => {
             <PlayerBanner
                 colour={colourConfiguration.opponent}
                 playerName={gameStatus.gameDetails.players[colourConfiguration.opponent].displayName || "---"}
+                time={gameStatus.gameDetails.time.isTimed ? (gameStatus.gameDetails.time.durations as {w:number,b:number})[colourConfiguration.opponent] : -1}
             />
             {/* <div className="chess-interface layout-content"> */}
                 <ChessGame
@@ -102,6 +103,7 @@ const ChessInterface = () => {
             <PlayerBanner
                 colour={colourConfiguration.native}
                 playerName={gameStatus.gameDetails.players[colourConfiguration.native].displayName || "---"}
+                time={gameStatus.gameDetails.time.isTimed ? (gameStatus.gameDetails.time.durations as {w:number,b:number})[colourConfiguration.native] : -1}
             />
         </div>
     )

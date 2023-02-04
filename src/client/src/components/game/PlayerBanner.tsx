@@ -6,10 +6,11 @@ import { Color } from 'chess.js'
 interface Props {
     colour:Color,
     playerName:string | null,
+    time?:number
 }
 
 
-const PlayerBanner = ({colour,playerName}:Props) => {
+const PlayerBanner = ({colour,playerName,time}:Props) => {
   
     return (
     <div className="chess-interface layout-player-strip">
@@ -20,6 +21,9 @@ const PlayerBanner = ({colour,playerName}:Props) => {
                 <div className='text-container'>
                     {playerName || "---"} 
                 </div>
+            </div>
+            <div className="timer">
+                {time}
             </div>
         </div>
   )

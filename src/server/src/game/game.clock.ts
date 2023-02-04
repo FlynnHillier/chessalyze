@@ -58,6 +58,10 @@ class Ticker{
     public isActive(){
         return this.active
     }
+
+    public getDuration(){
+        return this.duration
+    }
 }
 
 
@@ -121,5 +125,12 @@ export class ChessClock {
      */
     public hasEnded() : false | Color{
         return this.ended === false ? false : this.timeOutPerspective as Color
+    }
+
+    public getDurations() : {w:number,b:number} {
+        return {
+            w:this.clocks.w.getDuration(),
+            b:this.clocks.b.getDuration()
+        }
     }
 }

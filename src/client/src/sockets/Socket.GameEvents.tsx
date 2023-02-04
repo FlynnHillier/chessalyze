@@ -30,6 +30,10 @@ const SocketGameEvents = ({children} : Props) => {
                         captured:gameDetails.captured,
                         colour:gameDetails.colours[auth.userInfo.id],
                         fen:gameDetails.fen,
+                        time:{
+                            isTimed:gameDetails.time.isTimed,
+                            durations:gameDetails.time.durations
+                        }
                     }
                 }
             })
@@ -51,7 +55,6 @@ const SocketGameEvents = ({children} : Props) => {
         socket.on("game:joined",handleGameJoined)
         socket.on("game:ended",handleGameEnded)
         return () => {
-            console.log("removing listeners!")
             socket.off("game:movement",handleGameMovement)
             socket.off("game:joined",handleGameJoined)
             socket.off("game:ended",handleGameEnded)

@@ -18,9 +18,13 @@ export const getGameState = (req:Request,res:Response,next:NextFunction) => {
             players:gameState.players,
             fen:gameState.getFEN(),
             captured:{
-            w:gameState.getCaptured("w"),
-            b:gameState.getCaptured("b")
-        }
+                w:gameState.getCaptured("w"),
+                b:gameState.getCaptured("b"),
+            },
+            time:{
+                isTimed:gameState.getIsTimed(),
+                durations:gameState.getIsTimed() ? gameState.getTimes() : null
+            }
         }
     })
 

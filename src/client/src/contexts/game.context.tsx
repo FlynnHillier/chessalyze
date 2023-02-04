@@ -33,6 +33,13 @@ const initialGameStatus = {
                 n:0,
                 q:0
             },
+        },
+        time:{
+            isTimed:false,
+            durations:{
+                w:30000,
+                b:30000,
+            } as {w:number,b:number} | null 
         }
     },
     conclusion:null as null | GameConclusion,

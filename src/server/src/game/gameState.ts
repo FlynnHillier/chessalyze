@@ -96,7 +96,16 @@ export class GameState {
         if(moveResult === false){
             return false
         }
-        io.to(`game:${this.id}`).emit("game:movement",this.id,{sourceSquare,targetSquare,promotion})
+        io.to(`game:${this.id}`).emit(
+            "game:movement",
+            this.id,
+            {
+                sourceSquare,
+                targetSquare,
+                promotion,
+                time:this.isTimed ? this.clock.getDurations() : undefined
+            }
+        )
         if(this.game.isGameOver() || this.game.isDraw()){
             this.end(
                 this.getNaturalTermination(),
@@ -107,6 +116,14 @@ export class GameState {
             this.clock.switch()
         }
         return true
+    }
+
+    public getIsTimed() {
+        return this.isTimed
+    }
+
+    public getTimes() {
+        return this.clock.getDurations()
     }
 
     public getFEN() : string {
