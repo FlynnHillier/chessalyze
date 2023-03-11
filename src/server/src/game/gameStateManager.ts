@@ -58,8 +58,11 @@ export class GameStateManager {
                 [newGameState.players.b.id]:"b"
             },
             fen:newGameState.getFEN(),
-        }
-        )
+            time:{
+                isTimed:newGameState.getIsTimed(),
+                durations:newGameState.getIsTimed() ? newGameState.getTimes() : null
+            }
+        })
 
         this.gameStates.push(newGameState)
         return newGameState
@@ -109,7 +112,7 @@ export class GameStateManager {
     }
 
     public playerIsInLobby(playerID:UUID) : boolean {
-
+        
         return this.getPlayerLobby(playerID) === null
     }
 }
