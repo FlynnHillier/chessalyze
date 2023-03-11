@@ -2,6 +2,7 @@ import React from 'react'
 import { Image } from 'react-bootstrap'
 import pieceImages from '../../assets/images/chesspieces'
 import { Color } from 'chess.js'
+import Clock from './Clock'
 
 interface Props {
     colour:Color,
@@ -22,9 +23,7 @@ const PlayerBanner = ({colour,playerName,time}:Props) => {
                     {playerName || "---"} 
                 </div>
             </div>
-            <div className="timer">
-                {time}
-            </div>
+            <Clock time={time || -1}/>
         </div>
   )
 }

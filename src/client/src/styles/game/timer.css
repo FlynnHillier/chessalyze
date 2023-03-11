@@ -1,0 +1,17 @@
+.chess-interface .timer {
+    background-color:rgb(207, 171, 126);
+    border: 1px solid rgb(141, 112, 76);
+    border-radius: 5px;
+    grid-column-start: timer;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.chess-interface .timer span.time {
+    font-size: 20px;
+    font-size:1.6vw;
+}

@@ -10,15 +10,6 @@
     align-items: center;
 }
 
-/* .chess-interface.layout-player-strip {
-    padding: 5px;
-    background-color: burlywood;
-    height: 50px;
-    width: auto;
-    display: flex;
-    justify-content: left;
-} */
-
 .chess-interface.layout-player-strip {
     padding: 5px;
     background-color: burlywood;
@@ -26,18 +17,6 @@
     width: auto;
     display: grid;
     grid-template-columns: [player-icon]5fr  [fill-space]4fr  [timer]3fr ;
-}
-
-
-.chess-interface .timer {
-    background-color:rgb(207, 171, 126);
-    border: 1px solid rgb(141, 112, 76);
-    border-radius: 5px;
-    grid-column-start: timer;
-    display: flex;
-    justify-content: right;
-    height: 100%;
-    width: 100%;
 }
 
 .chess-interface.player-banner {
