@@ -17,8 +17,18 @@ const SocketGameEvents = ({children} : Props) => {
     const socket = useSocket()
 
     useEffect(()=>{
-        const handleGameMovement = (gameID:UUID,{sourceSquare,targetSquare,promotion} : {sourceSquare:Square,targetSquare:Square,promotion?:PromotionSymbol})=>{
-            dispatchGameStatus({type:"MOVE",payload:{moveDetails:{sourceSquare,targetSquare,promotion}}})
+        const handleGameMovement = (gameID:UUID,{sourceSquare,targetSquare,promotion,time} : {sourceSquare:Square,targetSquare:Square,promotion?:PromotionSymbol,time?:{w:number,b:number}})=>{
+            dispatchGameStatus({
+                type:"MOVE",
+                payload:{
+                    moveDetails:{
+                        sourceSquare,
+                        targetSquare,
+                        promotion
+                    },
+                    time:time
+                }
+            })
         }
     
         const handleGameJoined = (gameDetails:any)=>{
@@ -29,12 +39,9 @@ const SocketGameEvents = ({children} : Props) => {
                         players:gameDetails.players,
                         captured:gameDetails.captured,
                         colour:gameDetails.colours[auth.userInfo.id],
-                        fen:gameDetails.fen,
-                        time:{
-                            isTimed:gameDetails.time.isTimed,
-                            durations:gameDetails.time.durations
-                        }
-                    }
+                        fen:gameDetails.fen
+                    },
+                    time:gameDetails.time.isTimed ? gameDetails.time.durations : undefined
                 }
             })
         }
