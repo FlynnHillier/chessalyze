@@ -1,66 +1,104 @@
 import { Color } from "chess.js"
 
 class Ticker{
-    private timer : NodeJS.Timer | null
-    private interval //interval to tick at (the decrements the time will go down in)
     private active //if is active
-    private duration //initial duration of the clock
-    private elapsed //time elapsed on clock
     private ended //if the clock has ran its duration or not
+    private hasStarted = false // if the clock has been started yet (true after first call of start method)
+    private duration //the duration the clock should run for
+
+    private accumulatedElapse : number = 0 //total time elapsed not including current start/pause cycle
+    private lastStartEpoch : number = 0 //time since start method was called; in epoch format
+    private timeout : NodeJS.Timeout | null //timeout to fire on game timeout
 
     /**
      * @param duration - the length of time the ticker will run for before ending (ms)
      * @param onTimeOut - will fire when the ticker times out
      * @param interval - the interval in which the ticker will tick (ms)
      */
-    constructor(duration:number,private onTimeOut:(...args:any[]) => any,interval:number = 100){
-        this.interval = interval
+    constructor(duration:number,private onTimeOut:(...args:any[]) => any){
         this.active = false
-        this.timer = null
-        this.duration = duration
-        this.elapsed = 0
+        this.timeout = null
         this.ended = false
+        this.duration = duration
     }
 
-    private _tick(){
-        this.duration -=  this.interval
-        this.elapsed += this.interval
-        if(this.duration <= 0){ //timer has run out.
-            this.pause()
-            this.ended = true
-            this.onTimeOut()
-        }
-    }
-    
+    /**
+     * @description - start the clock
+     */
     public start(){
         if(!this.active){
-            this.timer = setInterval(this._tick.bind(this),this.interval)
+            this.timeout = setTimeout(this.end.bind(this),this.getRemainingDuration())
             this.active = true
+            this.lastStartEpoch = new Date().getTime()
+            this.hasStarted = true
         }
     }
 
+    /**
+     * @description - pause the clock
+     */
     public pause(){
-        if(this.active && this.timer !== null){
-            clearInterval(this.timer)
-            this.timer = null
+        if(this.active) {
             this.active = false
-        }
+            if(this.timeout !== null){
+                clearTimeout(this.timeout)
+            }
+            this.timeout = null
+            this.accumulatedElapse += this.getTimeSinceLastStart()
+
+            //check if game should have ended (Not entirely necessary but will likely prevent obscure error cases in which perhaps the timeout clears very close to 0)
+            if(this.ended !== true && this.getRemainingDuration() <= 0){
+                this.end()
+            }
+        }   
     }
 
+    /**
+     * @description - calculate the time remaining on the clock.
+     */
+    public getRemainingDuration(){
+        return this.duration - this.getElapsed()
+    }
+
+    /**
+     * @description - query if the clock has ended
+     */
     public isEnded(){
         return this.ended
     }
 
-    public getElapsed(){
-        return this.elapsed
-    }
-
+    /**
+     * @description - query if the clock is currently active
+     */
     public isActive(){
         return this.active
     }
 
-    public getDuration(){
-        return this.duration
+    /**
+     * @description - end the clock
+     */
+    private end(){
+        this.pause()
+        this.ended = true
+        this.onTimeOut()
+    }
+
+     /**
+     * @description - calculate the time that has elapsed
+     */
+    private getElapsed() : number {
+        if(!this.hasStarted){
+            return 0
+        }
+        if(!this.active){
+            return this.accumulatedElapse
+        }
+
+        return this.getTimeSinceLastStart() + this.accumulatedElapse
+    }
+
+    private getTimeSinceLastStart() : number {
+        return new Date().getTime() - this.lastStartEpoch
     }
 }
 
@@ -129,8 +167,8 @@ export class ChessClock {
 
     public getDurations() : {w:number,b:number} {
         return {
-            w:this.clocks.w.getDuration(),
-            b:this.clocks.b.getDuration()
+            w:this.clocks.w.getRemainingDuration(),
+            b:this.clocks.b.getRemainingDuration()
         }
     }
 }
