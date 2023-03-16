@@ -31,6 +31,7 @@ class Ticker{
         this.onDurationChange(this.duration)
         if(this.duration <= 0){ //timer has run out.
             this.pause()
+            this.ammendDuration(0)
             this.ended = true
             this.onTimeOut()
         }

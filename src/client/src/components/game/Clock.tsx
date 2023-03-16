@@ -44,7 +44,11 @@ const Clock = ({time} : Props) => {
     function digitalDisplay(time:number) {
         const {hr,ms,min,sec} = msToAnalagoue(time)
 
-        return `${padDigit(hr,2)}:${padDigit(min,2)}:${padDigit(sec,2)}`
+        if(min === 0 && hr === 0 && sec < 10){
+            return `${padDigit(hr,2)}:${padDigit(min,2)}:${padDigit(sec,2)}:${Math.floor(ms/ 100)}`
+        } else{
+            return `${padDigit(hr,2)}:${padDigit(min,2)}:${padDigit(sec,2)}`
+        }
     }
 
     return (
