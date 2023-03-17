@@ -95,6 +95,7 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
             } 
         case "JOIN":
             if(action.payload.time !== undefined){
+                game.clock.stop()
                 game.clock.editDuration("w",action.payload.time.w)
                 game.clock.editDuration("b",action.payload.time.b)
                 game.clock.switch(false,"w")
