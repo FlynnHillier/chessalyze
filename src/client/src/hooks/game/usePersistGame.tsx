@@ -23,7 +23,8 @@ export const usePersistGame = () => {
                 type:"PERSIST",
                 payload:{
                     onPersistIsInGame:response.data.isInGame,
-                    gameDetails:{...response.data.gameDetails}
+                    gameDetails:{...response.data.gameDetails},
+                    time:response.data.time?.isTimed ? response.data.time.durations : undefined
                 }
             })
         } catch(err){
