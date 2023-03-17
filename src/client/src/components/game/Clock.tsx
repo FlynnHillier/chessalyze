@@ -54,7 +54,7 @@ const Clock = ({time} : Props) => {
     return (
         <div className="timer">
             <ScaleText>
-                {time === -1 ? "00:00:00" : digitalDisplay(time)}
+                {time <= 0 ? "00:00:00" : digitalDisplay(time)}
             </ScaleText>
         </div>
     )

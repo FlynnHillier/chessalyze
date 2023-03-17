@@ -31,7 +31,6 @@ class Ticker{
         this.onDurationChange(this.duration)
         if(this.duration <= 0){ //timer has run out.
             this.pause()
-            this.ammendDuration(0)
             this.ended = true
             this.onTimeOut()
         }
@@ -119,6 +118,7 @@ export class ChessClock {
     public start(){
         if(!this.active){
             this.clocks[this.turn].start()
+            this.active = true
         }
     }
 
@@ -128,6 +128,7 @@ export class ChessClock {
     public stop(){
         if(this.active){
             this.clocks[this.turn].pause()
+            this.active = false
         }
     }
 
