@@ -1,11 +1,10 @@
 import React,{useState,useEffect} from 'react'
 import "./../../styles/gameOverOverlay.css"
-import {GameConclusion} from "../../types/chessboard"
+import { ClientGameConclusion } from 'chessalyze-common'
 import FancyButton from '../util/FancyButton'
-import { Color } from 'chess.js'
 
 interface Props {
-    conclusionState:GameConclusion | null
+    conclusionState:ClientGameConclusion | null
     isHidden:boolean
     hideSelf:()=>void
     width:number
@@ -19,18 +18,18 @@ const ConclusionOverlay = ({conclusionState,isHidden,hideSelf,width}:Props) => {
             return "invalid conclusion."
         }
 
-        let string = ""
-        if(conclusionState.type === "w"){
+        let string = "ERROR_UNKNOWN_VICTOR"
+        if(conclusionState.victor === "w"){
             string = "white wins"
         }
-        if(conclusionState.type === "b"){
+        if(conclusionState.victor === "b"){
             string = "black wins"
         }
-        if(conclusionState.type === "draw"){
+        if(conclusionState.victor === null){
             string = "draw"
         }
 
-        return `${string} by ${conclusionState.reason}`
+        return `${string} by ${conclusionState.termination}`
     }
 
     useEffect(()=>{

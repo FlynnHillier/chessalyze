@@ -3,7 +3,8 @@ import { UUID } from "chessalyze-common"
 import { Chess, Square } from "chess.js"
 import { PromotionSymbol } from "chessalyze-common"
 import { Color } from "chess.js"
-import { GameConclusion } from "../types/chessboard"
+import { ClientGameConclusion } from "chessalyze-common"
+import { ChessClock } from "../util/clientClock"
 
 const initialGameStatus = {
     hasPersisted:false,
@@ -35,7 +36,8 @@ const initialGameStatus = {
             },
         }
     },
-    conclusion:null as null | GameConclusion,
+    clock:new ChessClock(30000,()=>{}),
+    conclusion:null as null | ClientGameConclusion,
     instance:new Chess()
 }
 
@@ -53,7 +55,11 @@ export interface GameReducerAction {
             targetSquare:Square,
             promotion?:PromotionSymbol
         },
-        conclusion?:GameConclusion,
+        conclusion?:ClientGameConclusion,
+        time?:{
+            w:number,
+            b:number
+        }
     }
 }
 
@@ -63,14 +69,43 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
             if(!action.payload.onPersistIsInGame){
                 return {...game,hasPersisted:true}
             }
+
+            const instance = new Chess((action.payload.gameDetails as GameReducerActionGameStatus).fen)
+
+            //set time
+            if(action.payload.time !== undefined){
+                game.clock.stop()
+                game.clock.editDuration("w",action.payload.time.w)
+                game.clock.editDuration("b",action.payload.time.b)
+                game.clock.switch(true,instance.turn())
+                game.clock.start()
+            } else {
+                game.clock.stop()
+                game.clock.editDuration("w",0)
+                game.clock.editDuration("b",0)
+            }
+
+
             return {
                 ...game,
                 isInGame:true,
-                instance:new Chess((action.payload.gameDetails as GameReducerActionGameStatus).fen),
+                instance:instance,
                 gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
                 hasPersisted:true,
             } 
         case "JOIN":
+            if(action.payload.time !== undefined){
+                game.clock.stop()
+                game.clock.editDuration("w",action.payload.time.w)
+                game.clock.editDuration("b",action.payload.time.b)
+                game.clock.switch(false,"w")
+                game.clock.start()
+            } else {
+                game.clock.stop()
+                game.clock.editDuration("w",0)
+                game.clock.editDuration("b",0)
+            }
+
             return {
                 ...game,
                 isInGame:true,
@@ -78,20 +113,40 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
                 gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
             }
         case "END":
+            if(!action.payload.conclusion){
+                throw new Error("game end reducer action was called without providing conclusion.")
+            }
+
+            game.clock.stop()
+            if(action.payload?.conclusion.timeSnapshot){
+                const {timeSnapshot} = action.payload?.conclusion
+                game.clock.editDuration("w",timeSnapshot.w)
+                game.clock.editDuration("b",timeSnapshot.b)
+            }
+
             return {
                 ...game,
                 isInGame:false,
-                conclusion:action.payload.conclusion as GameConclusion,
+                conclusion:action.payload.conclusion,
             }
         case "MOVE":
             if(!action.payload.moveDetails){
                 return {...game}
             }
+
             const initiatingColour = game.instance.turn()
             const movement = game.instance.move({from:action.payload.moveDetails.sourceSquare,to:action.payload.moveDetails.targetSquare,promotion:action.payload.moveDetails.promotion})
             if(movement?.captured){
                 game.gameDetails.captured[initiatingColour][movement.captured as PromotionSymbol] ++
             }
+
+            //sync times to server (actual) times; switch client side clock to begin ticking.
+            if(action.payload.time !== undefined){
+                game.clock.editDuration("w",action.payload.time.w)
+                game.clock.editDuration("b",action.payload.time.b)
+                game.clock.switch(true,game.instance.turn())
+            }
+
             return {...game}
         default:
             return {...game}

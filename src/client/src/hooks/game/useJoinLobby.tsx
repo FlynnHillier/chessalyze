@@ -25,12 +25,14 @@ export const useJoinLobby = () => {
                 return false
             }
             
-            dispatchGameStatus({
-                type:"JOIN",
-                payload:{
-                    gameDetails:{...response.data.gameDetails}
-                }
-            })
+            // // ###should occur via socket event anyways, hence commented out.
+            // dispatchGameStatus({
+            //     type:"JOIN",
+            //     payload:{
+            //         gameDetails:{...response.data.gameDetails}
+            //     }
+            // })
+
             return true
         } catch(err){
             setError(err)

@@ -16,6 +16,7 @@ const ChessInterface = () => {
     const { width, ref } = useObserveElementWidth<HTMLDivElement>();
     const socket = useSocket()
 
+    const [times,setTime] = useState<{w:number,b:number}>({w:gameStatus.clock.getDurations().w,b:gameStatus.clock.getDurations().b})
     let [colourConfiguration,setColourConfiguration] = useState<{native:Color,opponent:Color}>({
         native:"w",
         opponent:"b"
@@ -30,14 +31,19 @@ const ChessInterface = () => {
         const handleGameEnded = ()=>{
             setShowConclusionOverlay(true)
         }
+        const handleGameStarted = ()=>{
+            setShowConclusionOverlay(false)
+        }
+
         socket.on("game:ended",handleGameEnded)
+        socket.on("game:joined",handleGameStarted)
+
 
         return () => {
             socket.off("gamed:ended",handleGameEnded)
+            socket.off("game:joined",handleGameStarted)
         }
     },[socket])
-
-
 
 
     useEffect(()=>{ //when gameDetails are ammended update native / opposition colour configuration state
@@ -46,6 +52,27 @@ const ChessInterface = () => {
                 opponent:gameStatus.gameDetails.colour === "w" ? "b" : "w",
             })
     },[gameStatus.gameDetails])
+
+    //on component mount bind context clocks to update state.
+    useEffect(()=>{
+        //update white clock
+        gameStatus.clock.clocks.w.setOnDurationChange((t) => {
+            setTime((previousState) => {
+                return {...previousState,w:t}
+            })})
+        
+        //update black clock
+        gameStatus.clock.clocks.b.setOnDurationChange((t) => {
+            setTime((previousState) => {
+                return {...previousState,b:t}
+            })})
+        
+        //on component demount remove references to unloaded state (CHANGE HERE IF IMPLEMENT MULTIPLE CLOCKS, will override any post-loaded clocks)
+        return () => {
+            gameStatus.clock.clocks.w.setOnDurationChange(() => {})
+            gameStatus.clock.clocks.b.setOnDurationChange(() => {})
+        }
+    },[])
 
     async function proposeMoveToServer(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) : Promise<boolean> {
         try {
@@ -81,6 +108,7 @@ const ChessInterface = () => {
             <PlayerBanner
                 colour={colourConfiguration.opponent}
                 playerName={gameStatus.gameDetails.players[colourConfiguration.opponent].displayName || "---"}
+                time={times[colourConfiguration.opponent]}
             />
             {/* <div className="chess-interface layout-content"> */}
                 <ChessGame
@@ -102,6 +130,7 @@ const ChessInterface = () => {
             <PlayerBanner
                 colour={colourConfiguration.native}
                 playerName={gameStatus.gameDetails.players[colourConfiguration.native].displayName || "---"}
+                time={times[colourConfiguration.native]}
             />
         </div>
     )

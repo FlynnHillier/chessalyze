@@ -28,7 +28,11 @@ const joinLobby = (req:Request,res:Response) => {
                 w:gameJoinResult.getCaptured("w"),
                 b:gameJoinResult.getCaptured("b"),
             },
-            colour:gameJoinResult.getPlayerColor(req.user!.uuid)
+            colour:gameJoinResult.getPlayerColor(req.user!.uuid),
+            time:{
+                isTimed:gameJoinResult.getIsTimed(),
+                durations:gameJoinResult.getIsTimed() ? gameJoinResult.getTimes() : null
+            }
         }
     })
 }

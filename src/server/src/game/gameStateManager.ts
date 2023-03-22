@@ -9,6 +9,8 @@ import { NewGamePlayer } from "./gameState"
 
 import { GameTerimation } from "./game.end"
 
+import { ClientGameConclusion } from "chessalyze-common"
+
 export class GameStateManager {
     public gameStates:GameState[]  = []
     public gameLobbys : GameLobby[] = []
@@ -30,13 +32,15 @@ export class GameStateManager {
         newGameState.setEventCallback("conclusion",()=>{
             this.gameStates.splice(this.gameStates.indexOf(newGameState),1)
             GameTerimation.terminate(newGameState)
+
             io.to(`game:${newGameState.id}`)
             .emit("game:ended",
                 {
                     id:newGameState.id,
                     termination:newGameState.getSummary()?.conclusion.termination,
-                    victor:newGameState.getSummary()?.conclusion.victor
-                }
+                    victor:newGameState.getSummary()?.conclusion.victor,
+                    timeSnapshot:newGameState.getIsTimed() ? newGameState.getTimes() : undefined
+                } as ClientGameConclusion
             )
             socketManagment.leave(p1.uuid,`game:${newGameState.id}`)
             socketManagment.leave(p2.uuid,`game:${newGameState.id}`)
@@ -58,8 +62,11 @@ export class GameStateManager {
                 [newGameState.players.b.id]:"b"
             },
             fen:newGameState.getFEN(),
-        }
-        )
+            time:{
+                isTimed:newGameState.getIsTimed(),
+                durations:newGameState.getIsTimed() ? newGameState.getTimes() : null
+            }
+        })
 
         this.gameStates.push(newGameState)
         return newGameState
@@ -109,7 +116,7 @@ export class GameStateManager {
     }
 
     public playerIsInLobby(playerID:UUID) : boolean {
-
+        
         return this.getPlayerLobby(playerID) === null
     }
 }
