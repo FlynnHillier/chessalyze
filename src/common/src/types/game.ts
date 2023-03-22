@@ -11,19 +11,6 @@ interface Player {
     id:UUID
 }
 
-// export interface GameSummary {
-//     players:{
-//         w:UUID,
-//         b:UUID
-//     }
-//     conclusion: GameConclusion,
-//     moves:string[]
-//     time:{
-//         start:number,
-//         end:number,
-//         duration:number,
-//     }
-// }
 export interface GameSummary {
     id:UUID,
     players:{
@@ -42,26 +29,17 @@ export interface GameSummary {
 export interface ClientGameConclusion {
     victor:null | "w" | "b",
     termination: GameTermination,
+    timeSnapshot?:{
+        w:number,
+        b:number
+    }
 }
 
-
-
-// export interface GameConclusion {
-//     termination:GameTermination,
-//     victor:null | "w" | "b",
-//     boardState:FEN
-// } 
 export interface GameConclusion {
     termination:GameTermination,
     victor:null | "w" | "b",
     boardState:FEN
 } 
-
-
-// export interface GameLobby {
-//     playerID:UUID
-//     id:UUID
-// }
 
 export interface GameLobby {
     player:Player

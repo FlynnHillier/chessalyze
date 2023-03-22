@@ -1,5 +1,5 @@
 import { UUID } from "chessalyze-common"
-import { GameSummary } from "../types/game"
+import { GameSummary } from "chessalyze-common"
 import mongoose,{Schema} from "mongoose"
 
 

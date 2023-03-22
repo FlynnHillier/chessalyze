@@ -1,6 +1,5 @@
-import React,{useEffect,useCallback} from 'react'
-import { UUID,PromotionSymbol} from 'chessalyze-common'
-import { GameTermination } from 'chessalyze-common'
+import React,{useEffect} from 'react'
+import { UUID,PromotionSymbol, ClientGameConclusion} from 'chessalyze-common'
 import { Square } from 'react-chessboard'
 import { useSocket } from '../hooks/contexts/useSocket'
 import { useGame } from '../hooks/contexts/useGame'
@@ -46,13 +45,14 @@ const SocketGameEvents = ({children} : Props) => {
             })
         }
     
-        const handleGameEnded = ({termination,victor} : {termination:GameTermination,victor:null | "w" | "b"})=>{
+        const handleGameEnded = ({termination,victor,timeSnapshot} : ClientGameConclusion)=>{
             dispatchGameStatus({
                 type:"END",
                 payload:{
                     conclusion:{
                         victor,
-                        termination
+                        termination,
+                        timeSnapshot
                     }
                 }
             })

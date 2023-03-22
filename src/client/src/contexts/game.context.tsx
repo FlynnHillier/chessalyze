@@ -113,10 +113,15 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
                 gameDetails:{...action.payload.gameDetails} as GameStatus["gameDetails"],
             }
         case "END":
-            game.clock.stop()
-
             if(!action.payload.conclusion){
                 throw new Error("game end reducer action was called without providing conclusion.")
+            }
+
+            game.clock.stop()
+            if(action.payload?.conclusion.timeSnapshot){
+                const {timeSnapshot} = action.payload?.conclusion
+                game.clock.editDuration("w",timeSnapshot.w)
+                game.clock.editDuration("b",timeSnapshot.b)
             }
 
             return {

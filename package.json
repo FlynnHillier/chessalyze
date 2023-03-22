@@ -19,6 +19,6 @@
     "ts-node-dev": "^2.0.0"
   },
   "dependencies": {
-    "chessalyze-common": "1.0.4"
+    "chessalyze-common": "1.0.6"
   }
 }
