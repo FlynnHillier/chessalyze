@@ -11,7 +11,7 @@ import OccupiedTileOverlayHint from "../../assets/overlays/occupiedTileHint.png"
 import "./../../styles/game/chessBoard.css"
 import ConclusionOverlay from './ConclusionOverlay'
 
-import { GameConclusion } from '../../types/chessboard'
+import { ClientGameConclusion } from 'chessalyze-common'
 
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
   isActive:boolean,
   boardWidth:number,
   conclusion?:{
-    details:GameConclusion | null,
+    details:ClientGameConclusion | null,
     isShowing:boolean,
     hide:()=>void,
   }

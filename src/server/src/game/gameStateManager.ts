@@ -9,6 +9,8 @@ import { NewGamePlayer } from "./gameState"
 
 import { GameTerimation } from "./game.end"
 
+import { ClientGameConclusion } from "chessalyze-common"
+
 export class GameStateManager {
     public gameStates:GameState[]  = []
     public gameLobbys : GameLobby[] = []
@@ -36,7 +38,7 @@ export class GameStateManager {
                     id:newGameState.id,
                     termination:newGameState.getSummary()?.conclusion.termination,
                     victor:newGameState.getSummary()?.conclusion.victor
-                }
+                } as ClientGameConclusion
             )
             socketManagment.leave(p1.uuid,`game:${newGameState.id}`)
             socketManagment.leave(p2.uuid,`game:${newGameState.id}`)

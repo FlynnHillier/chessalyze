@@ -5,14 +5,20 @@
   "repository": "https://github.com/FlynnHillier/chessalyze.git",
   "author": "FlynnHillier <flynnhillier@gmail.com>",
   "license": "MIT",
-  "workspaces":["src/client/","src/common/"],
-  "private":true,
+  "workspaces": [
+    "src/client/",
+    "src/common/"
+  ],
+  "private": true,
   "scripts": {
     "preinstall": "cd ./src/common/ && yarn build",
-    "build":"cd src/client/ && yarn build && cd ../server/ && yarn build"
+    "build": "cd src/client/ && yarn build && cd ../server/ && yarn build"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0"
+  },
+  "dependencies": {
+    "chessalyze-common": "1.0.4"
   }
 }

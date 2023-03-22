@@ -3,7 +3,7 @@ import { UUID } from "chessalyze-common"
 import { Chess, Square } from "chess.js"
 import { PromotionSymbol } from "chessalyze-common"
 import { Color } from "chess.js"
-import { GameConclusion } from "../types/chessboard"
+import { ClientGameConclusion } from "chessalyze-common"
 import { ChessClock } from "../util/clientClock"
 
 const initialGameStatus = {
@@ -37,7 +37,7 @@ const initialGameStatus = {
         }
     },
     clock:new ChessClock(30000,()=>{}),
-    conclusion:null as null | GameConclusion,
+    conclusion:null as null | ClientGameConclusion,
     instance:new Chess()
 }
 
@@ -55,7 +55,7 @@ export interface GameReducerAction {
             targetSquare:Square,
             promotion?:PromotionSymbol
         },
-        conclusion?:GameConclusion,
+        conclusion?:ClientGameConclusion,
         time?:{
             w:number,
             b:number
@@ -114,10 +114,15 @@ function gameReducer(game:GameStatus,action:GameReducerAction) : GameStatus{
             }
         case "END":
             game.clock.stop()
+
+            if(!action.payload.conclusion){
+                throw new Error("game end reducer action was called without providing conclusion.")
+            }
+
             return {
                 ...game,
                 isInGame:false,
-                conclusion:action.payload.conclusion as GameConclusion,
+                conclusion:action.payload.conclusion,
             }
         case "MOVE":
             if(!action.payload.moveDetails){
