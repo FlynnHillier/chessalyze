@@ -11,6 +11,8 @@
   ],
   "private": true,
   "scripts": {
+    "run:client":"cd ./src/client && yarn start",
+    "run:server":"cd ./src/server && yarn start",
     "preinstall": "cd ./src/common/ && yarn build",
     "build": "cd src/client/ && yarn build && cd ../server/ && yarn build"
   },

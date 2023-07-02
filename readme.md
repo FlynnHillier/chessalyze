@@ -3,6 +3,11 @@
 ## about
 A mutliplayer capable browser-based chess application written utilising a *MERN* stack structure.
 
+## boot
+To begin the application, run the following commands in the top-most directory:
+- for server: *yarn run:server*
+- for client: *yarn run:client*
+
 ## env-setup
 Ensure .env files exist in the location's specified, including the listed data within.
 
