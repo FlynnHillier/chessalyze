@@ -1,7 +1,8 @@
-import {UUID} from "chessalyze-common"
 import {Chess, Square,Move, Color} from "chess.js"
 import {v1 as uuidv1} from "uuid"
-import { GameConclusion,GameSummary,GameTermination } from "chessalyze-common"
+import { GameConclusion,GameSummary,GameTermination } from "@common/src/types/game"
+import { UUID } from "@common/src/types/misc"
+
 import { io } from "../init/init.socket"
 import { ChessClock } from "./game.clock"
 import { check } from "express-validator"

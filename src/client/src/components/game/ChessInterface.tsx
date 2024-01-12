@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react'
 import ChessGame from './ChessGame'
 import { Square ,Color,Move} from 'chess.js'
 import axios from 'axios'
-import {PromotionSymbol} from "chessalyze-common"
+import {PromotionSymbol} from "@common/src/types/game"
 import { useGame } from '../../hooks/contexts/useGame'
 import "../../styles/game/chessInterface.css"
 import PlayerBanner from './PlayerBanner'

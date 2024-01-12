@@ -1,4 +1,4 @@
-import { UUID } from "./../../../common/dist/index";
+import { UUID } from "@common/src/types/misc"
 
 export type FEN = String
 

@@ -5,7 +5,7 @@ import { Color, PieceSymbol } from 'chess.js'
 import "./../../styles/promotionOverlay.css"
 
 import {pieceImages,PieceImages} from "../../assets/images/chesspieces/index"
-import { PromotionSymbol } from 'chessalyze-common'
+import { PromotionSymbol } from '@common/src/types/game'
 
 interface Props {
     isHidden:boolean,

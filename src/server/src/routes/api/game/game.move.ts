@@ -5,7 +5,7 @@ import { validateSchema } from "../../../controllers/schemaValidation"
 import { Schema,CustomValidator } from "express-validator"
 import { Square } from "chess.js"
 import {io} from "./../../../init/init.socket"
-import { PromotionSymbol } from "chessalyze-common"
+import { PromotionSymbol } from "@common/src/types/game"
 
 
 const isValidPromotion : CustomValidator = (v:any) => {

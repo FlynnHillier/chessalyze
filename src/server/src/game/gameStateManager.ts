@@ -1,4 +1,3 @@
-import {UUID} from "chessalyze-common"
 import {v1 as uuidv1} from "uuid"
 
 import {GameState} from "./gameState"
@@ -9,7 +8,8 @@ import { NewGamePlayer } from "./gameState"
 
 import { GameTerimation } from "./game.end"
 
-import { ClientGameConclusion } from "chessalyze-common"
+import { ClientGameConclusion } from "@common/src/types/game"
+import { UUID } from "@common/src/types/misc"
 
 export class GameStateManager {
     public gameStates:GameState[]  = []

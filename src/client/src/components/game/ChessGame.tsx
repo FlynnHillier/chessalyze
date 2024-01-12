@@ -3,15 +3,13 @@ import {Chessboard} from "react-chessboard"
 import PromotionOverlay from './PromotionOverlay'
 
 import {Square, Color} from "chess.js"
-import { FEN, PromotionSymbol } from 'chessalyze-common'
+import { FEN, PromotionSymbol,ClientGameConclusion } from '@common/src/types/game'
 
 import EmptyTileOverlayHint from "./../../assets/overlays/emptyTileHint.png"
 import OccupiedTileOverlayHint from "../../assets/overlays/occupiedTileHint.png"
 
 import "./../../styles/game/chessBoard.css"
 import ConclusionOverlay from './ConclusionOverlay'
-
-import { ClientGameConclusion } from 'chessalyze-common'
 
 
 interface Props {

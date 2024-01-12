@@ -1,5 +1,6 @@
 import React,{useEffect} from 'react'
-import { UUID,PromotionSymbol, ClientGameConclusion} from 'chessalyze-common'
+import { PromotionSymbol, ClientGameConclusion} from '@common/src/types/game'
+import { UUID} from '@common/src/types/misc'
 import { Square } from 'react-chessboard'
 import { useSocket } from '../hooks/contexts/useSocket'
 import { useGame } from '../hooks/contexts/useGame'

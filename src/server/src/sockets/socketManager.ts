@@ -1,4 +1,4 @@
-import { UUID } from "chessalyze-common";
+import { UUID } from "@common/src/types/misc";
 import { Socket } from "socket.io";
 
 export class SocketManager {

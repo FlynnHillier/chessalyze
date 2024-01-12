@@ -1,5 +1,5 @@
 import axios from "axios"
-import { UUID } from "chessalyze-common"
+import { UUID } from "@common/src/types/misc"
 import {useState} from "react"
 import { retrieveAxiosErrorMessage } from "../../util/util.axios"
 import { useGame } from "../contexts/useGame"

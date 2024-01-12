@@ -1,4 +1,4 @@
-import { UUID } from "chessalyze-common"
+import { UUID } from "@common/src/types/misc"
 import { Server,Socket } from "socket.io"
 import { socketWrapper,sessionMiddleware } from "../controllers/sessions"
 import passport from "passport"

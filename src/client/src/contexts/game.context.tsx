@@ -1,9 +1,8 @@
 import {createContext,ReactNode,useReducer} from "react"
-import { UUID } from "chessalyze-common"
 import { Chess, Square } from "chess.js"
-import { PromotionSymbol } from "chessalyze-common"
 import { Color } from "chess.js"
-import { ClientGameConclusion } from "chessalyze-common"
+import { ClientGameConclusion, PromotionSymbol } from "@common/src/types/game"
+import { UUID } from "@common/src/types/misc"
 import { ChessClock } from "../util/clientClock"
 
 const initialGameStatus = {

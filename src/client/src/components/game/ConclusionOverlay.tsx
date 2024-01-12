@@ -1,6 +1,6 @@
 import React,{useState,useEffect} from 'react'
 import "./../../styles/gameOverOverlay.css"
-import { ClientGameConclusion } from 'chessalyze-common'
+import { ClientGameConclusion } from '@common/src/types/game'
 import FancyButton from '../util/FancyButton'
 
 interface Props {

@@ -1,9 +1,8 @@
 import { GameState } from "./gameState"
 import { GameModel } from "../models/games"
 import mongoose from "mongoose"
-
 import { getMongoConnectionStatus } from "../init/init.mongoose"
-import { GameSummary } from "chessalyze-common"
+import { GameSummary } from "@common/src/types/game"
 
 class GameTerminator {
     private backlog : GameState[] = []
