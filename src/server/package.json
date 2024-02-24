@@ -9,6 +9,7 @@
     "dev:start": "ts-node-dev --files src/index.ts"
   },
   "dependencies": {
+    "@trpc/server": "^10.45.1",
     "@types/express-validator": "^3.0.0",
     "@types/passport-local": "^1.0.34",
     "bcrypt": "^5.1.0",
@@ -25,7 +26,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "socket.io": "^4.5.3",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",

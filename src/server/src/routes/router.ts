@@ -8,6 +8,7 @@ import {auth_router} from "./auth/auth.router"
 import { HttpException } from "../types/errors"
 import { corsConfig } from "../init/init.config"
 import cors from "cors"
+import { trpcExpressMiddleware } from "./trpc/app.trpc"
 
 export const router = Router()
 
@@ -20,6 +21,7 @@ router.use(urlencoded({extended:true}))
 
 router.use("/a",api_router)
 router.use("/auth",auth_router)
+router.use("/t",trpcExpressMiddleware)
 
 router.use("*",(req,res)=>{
     res.status(404).send("404 - this resource was not found.")

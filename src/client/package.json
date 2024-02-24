@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@tanstack/react-query": "4",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@trpc/client": "^10.45.1",
+    "@trpc/react-query": "^10.45.1",
+    "@trpc/server": "^10.45.1",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.11.66",
     "@types/react": "^18.0.21",
