@@ -5,11 +5,9 @@ import { UUID } from "@common/src/types/misc"
 
 import { io } from "../init/init.socket"
 import { ChessClock } from "./game.clock"
-import { check } from "express-validator"
+import { Player } from "@common/src/types/game"
 
-export interface NewGamePlayer {
-    uuid:UUID,
-    displayName:string,
+export interface NewGamePlayer extends Player {
     preference: null | "w" | "b"
 }
 
@@ -17,17 +15,10 @@ interface EventCallBacks {
     conclusion:(...args:any[])=>void
 }
 
-
-export class GameState {
+export class GameInstance {
     public players : {
-        w:{
-            id:UUID,
-            displayName:string,
-        },
-        b:{
-            id:UUID,
-            displayName:string,
-        }
+        w:Player,
+        b:Player
     }
     public id : UUID
     private startTime : number
@@ -185,22 +176,23 @@ export class GameState {
     }
 
     private _generateColorConfiguration(p1:NewGamePlayer,p2:NewGamePlayer) : {w:{id:UUID,displayName:string},b:{id:UUID,displayName:string}} {
-        if(p1.preference === null && p2.preference === null || p2.preference === p1.preference){ //generate random configuration
+        if(p1.preference === null && p2.preference === null || p2.preference === p1.preference){ 
+            //generate random configuration
             return Math.random() < 0.5 ? 
             {
-                b:{id:p1.uuid,displayName:p1.displayName},
-                w:{id:p2.uuid,displayName:p2.displayName}
+                b:{id:p1.id,displayName:p1.displayName},
+                w:{id:p2.id,displayName:p2.displayName}
             }
             : 
             {
-                w:{id:p1.uuid,displayName:p1.displayName},
-                b:{id:p2.uuid,displayName:p2.displayName}
+                w:{id:p1.id,displayName:p1.displayName},
+                b:{id:p2.id,displayName:p2.displayName}
             }
         }
 
         return { //configuration that honours preferences
-            w:p1.preference === "w" ? {id:p1.uuid,displayName:p1.displayName} : p2.preference === null ? {id:p2.uuid,displayName:p2.displayName} : {id:p1.uuid,displayName:p1.displayName},
-            b:p1.preference === "b" ? {id:p1.uuid,displayName:p1.displayName} : p2.preference === null ? {id:p2.uuid,displayName:p2.displayName} : {id:p1.uuid,displayName:p1.displayName}
+            w:p1.preference === "w" ? {id:p1.id,displayName:p1.displayName} : p2.preference === null ? {id:p2.id,displayName:p2.displayName} : {id:p1.id,displayName:p1.displayName},
+            b:p1.preference === "b" ? {id:p1.id,displayName:p1.displayName} : p2.preference === null ? {id:p2.id,displayName:p2.displayName} : {id:p1.id,displayName:p1.displayName}
         }
     }
 
