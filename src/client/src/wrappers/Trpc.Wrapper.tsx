@@ -9,7 +9,13 @@ export function TRPCwrapper({children} : {children:React.ReactNode}) {
     trpc.createClient({
         links: [
             httpBatchLink({
-                url:`${process.env.REACT_APP_BASE_URL}t`
+                url:`${process.env.REACT_APP_BASE_URL}t`,
+                fetch(url, options) {
+                  return fetch(url, {
+                    ...options,
+                    credentials: 'include',
+                  })
+                }
             })
         ]
     }),
