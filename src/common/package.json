@@ -6,5 +6,8 @@
   "scripts": {
     "build": "tsc"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/chess.js": "^0.13.7",
+    "chess.js": "^1.0.0-beta.8"
+  }
 }

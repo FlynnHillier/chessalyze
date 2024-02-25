@@ -1,11 +1,12 @@
-import {Chess, Square,Move, Color} from "chess.js"
+import {Chess, Square,Move, Color, PieceSymbol} from "chess.js"
 import {v1 as uuidv1} from "uuid"
-import { GameConclusion,GameSummary,GameTermination } from "@common/src/types/game"
+import { GameConclusion,GameSnapshot,GameSummary,GameTermination } from "@common/src/types/game"
 import { UUID } from "@common/src/types/misc"
 
 import { io } from "../init/init.socket"
 import { ChessClock } from "./game.clock"
 import { Player } from "@common/src/types/game"
+import { BW } from "@common/src/types/game"
 
 export interface NewGamePlayer extends Player {
     preference: null | "w" | "b"
@@ -21,34 +22,62 @@ export class GameInstance {
         b:Player
     }
     public id : UUID
-    private startTime : number
     private summary : GameSummary | null = null
     private game : Chess = new Chess()
     private events:EventCallBacks = {conclusion:()=>{}}
-    private clock:ChessClock
     private terminated: boolean = false
-    private isTimed : boolean
+    private time : {
+        isTimed:boolean
+        start:number
+        clock:ChessClock
+    }
 
     constructor(p1:NewGamePlayer,p2:NewGamePlayer,time: null | number = 30000){
         this.players = this._generateColorConfiguration(p1,p2)
         this.id = uuidv1()
-        this.startTime = Date.now()
-        
-        this.clock = new ChessClock(time || 1,(timedOutPerspective)=>{
-            this.end("timeout",this.getOppositePerspective(timedOutPerspective))
-        })
-        if(time !== null){ //start the clock timed
-            this.isTimed = true
-            this.clock.start()
-        } else{
-            this.isTimed = false
+
+
+        const clock = new ChessClock(
+            time ?? 1,
+            (timedOutPerspective)=>{
+                this.end("timeout",this.getOppositePerspective(timedOutPerspective))
+            }
+        )
+
+
+        this.time = {
+            clock:clock,
+            isTimed:time == null,
+            start:Date.now(),
+        }
+
+        if (this.time.isTimed)
+        {
+            //TODO: change this so that clock only starts after player has moved or ~10 seconds has elapsed without a move
+            this.time.clock.start()
         }
     }
+
+
+    public snapshot() : GameSnapshot
+    {
+        return {
+            id:this.id,
+            FEN:this.game.fen(),
+            players:this.players,
+            captured:this.getCaptured(),
+            time:{
+                isTimed:this.time.isTimed,
+                remaining:this.time.clock.getDurations(),
+            }
+        }
+    }
+
 
     // ###GAME END
 
     private end(termination:GameTermination,victor : Color) {
-        const dateMS = Date.now()
+        const now = Date.now()
         this.summary = {
             id:this.id,
             players:this.players,
@@ -59,12 +88,12 @@ export class GameInstance {
             },
             moves:this.game.history() as string[],
             time:{
-                start:this.startTime,
-                end:dateMS,
-                duration:dateMS-this.startTime,
+                start:this.time.start,
+                end:now,
+                duration:now - this.time.start,
             }
         }
-        this.clock.stop()
+        this.time.clock.stop()
         this.events.conclusion()
         this.terminated = true
     }
@@ -95,7 +124,7 @@ export class GameInstance {
                 sourceSquare,
                 targetSquare,
                 promotion,
-                time:this.isTimed ? this.clock.getDurations() : undefined
+                time:this.time.isTimed ? this.time.clock.getDurations() : undefined
             }
         )
         if(this.game.isGameOver() || this.game.isDraw()){
@@ -104,18 +133,18 @@ export class GameInstance {
                 this.getOppositePerspective(this.game.turn())
             )
         }
-        if(this.isTimed && !this.terminated){
-            this.clock.switch()
+        if(this.time.isTimed && !this.terminated){
+            this.time.clock.switch()
         }
         return true
     }
 
     public getIsTimed() {
-        return this.isTimed
+        return this.time.isTimed
     }
 
     public getTimes() {
-        return this.clock.getDurations()
+        return this.time.clock.getDurations()
     }
 
     public getFEN() : string {
@@ -134,19 +163,29 @@ export class GameInstance {
         return this.summary
     }
 
-    public getCaptured(color: "w" | "b") {
-        let captures = {
-            "n":0,
-            "b":0,
-            "q":0,
-            "r":0,
-            "p":0,
-            "k":0,
+    public getCaptured() : BW<{[key in PieceSymbol]: number}> {
+        const captures : BW<{[key in PieceSymbol]: number}> = {
+            w:{
+                "n":0,
+                "b":0,
+                "q":0,
+                "r":0,
+                "p":0,
+                "k":0,
+            },
+            b:{
+                "n":0,
+                "b":0,
+                "q":0,
+                "r":0,
+                "p":0,
+                "k":0,
+            }    
         }
 
         for(let move of this.game.history({verbose:true}) as Move[]){
-            if(move.captured && move.color === color){
-                captures[move.captured] ++
+            if(move.captured){
+                captures[move.color][move.captured] ++
             }
         }
         

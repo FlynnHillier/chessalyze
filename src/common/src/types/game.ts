@@ -1,4 +1,5 @@
 import { UUID } from "./misc";
+import { PieceSymbol } from "chess.js"
 
 export type FEN = string
 
@@ -6,9 +7,26 @@ export type GameTermination = "checkmate" | "3-fold repition" | "50 move rule" |
 
 export type PromotionSymbol = "r" | "b" | "n" | "q"
 
-interface Player {
+export type BW<T> = {
+    w:T,
+    b:T
+}
+
+export interface Player {
     displayName:string,
     id:UUID
+}
+
+
+export interface GameSnapshot {
+    id:UUID,
+    players:BW<Player>,
+    FEN:FEN,
+    time:{
+        isTimed:boolean,
+        remaining:BW<number>
+    },
+    captured:BW<{[key in PieceSymbol]: number}>
 }
 
 export interface GameSummary {

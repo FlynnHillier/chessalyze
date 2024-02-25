@@ -1,11 +1,11 @@
-import { GameState } from "./gameState"
+import { GameInstance } from "./GameInstance"
 import { GameModel } from "../models/games"
 import mongoose from "mongoose"
 import { getMongoConnectionStatus } from "../init/init.mongoose"
 import { GameSummary } from "@common/src/types/game"
 
 class GameTerminator {
-    private backlog : GameState[] = []
+    private backlog : GameInstance[] = []
     private paused: boolean
 
     constructor(){
@@ -19,11 +19,11 @@ class GameTerminator {
         })
     }
 
-    public async terminate(game:GameState){
+    public async terminate(game:GameInstance){
         this.storeResult(game)
     }
 
-    private async storeResult(game:GameState,isRestoration=false) : Promise<boolean>{
+    private async storeResult(game:GameInstance,isRestoration=false) : Promise<boolean>{
         while(!this.paused){
             try {
                 const result = await GameModel.create({
@@ -40,8 +40,8 @@ class GameTerminator {
         return false
     }
 
-    private async restoreBacklog({attempts = 3} : {attempts?:number} = {}) : Promise<GameState[]>{
-        const failedRestorations : GameState[] = []
+    private async restoreBacklog({attempts = 3} : {attempts?:number} = {}) : Promise<GameInstance[]>{
+        const failedRestorations : GameInstance[] = []
         
         for(const backloggedGame of this.backlog){
             let attempt = 0

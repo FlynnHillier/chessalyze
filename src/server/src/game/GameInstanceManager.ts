@@ -53,10 +53,7 @@ class GameInstanceManagerClass {
         {
             id:newGameInstance.id,
             players:newGameInstance.players,
-            captured:{
-                w:newGameInstance.getCaptured("w"),
-                b:newGameInstance.getCaptured("b")
-            },
+            captured:newGameInstance.getCaptured(),
             colours:{
                 [newGameInstance.players.w.id]:"w",
                 [newGameInstance.players.b.id]:"b"
