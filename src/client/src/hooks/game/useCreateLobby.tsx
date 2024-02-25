@@ -1,7 +1,6 @@
-import axios from "axios"
 import {useState} from "react"
-import { retrieveAxiosErrorMessage } from "../../util/util.axios"
 import { useLobby } from "../contexts/useLobby"
+import { trpc } from "../../util/trpc"
 
 
 export const useCreateLobby = () => {
@@ -10,6 +9,8 @@ export const useCreateLobby = () => {
     const [errorMessage,setErrorMessage] = useState<string>("")
     const {dispatchLobbyStatus} = useLobby()
 
+    const mutation = trpc.a.lobby.create.useMutation()
+
     const clearErrorMessage = () => {
         setErrorMessage("")
     }
@@ -17,20 +18,21 @@ export const useCreateLobby = () => {
     const createLobby = async () => {
         setIsLoading(true)
         try {
-            const response = await axios.get("/a/game/lobby/create") 
+            const r = await mutation.mutateAsync()
+
             dispatchLobbyStatus({
                 type:"START",
                 payload:{
-                    lobbyDetails:{id:response.data.lobbyID}
+                    lobbyDetails:{
+                        id:r.lobby.id
+                    }
                 }
             })
+
+            return true
         } catch(err){
             setError(err)
-            if(axios.isAxiosError(err)){
-                setErrorMessage(retrieveAxiosErrorMessage(err))
-            } else{
-                setErrorMessage("something went wrong.")
-            }
+            return false
         } finally{
             setIsLoading(false)
         }

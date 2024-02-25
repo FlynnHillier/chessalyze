@@ -8,7 +8,7 @@ import {auth_router} from "./auth/auth.router"
 import { HttpException } from "../types/errors"
 import { corsConfig } from "../init/init.config"
 import cors from "cors"
-import { trpcExpressMiddleware } from "./trpc/app.trpc"
+import { trpcExpressMiddleware } from "../routes/trpc/app.trpc"
 
 export const router = Router()
 
