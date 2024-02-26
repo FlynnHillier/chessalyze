@@ -1,11 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { GameInstanceManager } from "../../../../../game/GameInstanceManager";
-import { lobbyProcedure } from "../lobby.proc";
+import { LOBBYPROCEDURE } from "../lobby.proc";
 import { z } from "zod"
+import { trpcGameIsNotPresentMiddleware } from "../../game/middleware/game.isNotPresent.mw";
 
 
-//add middleware which checks for empty game and empty lobby
-export const trpcJoinLobbyProcedure =  lobbyProcedure
+export const trpcLobbyJoinProcedure =  LOBBYPROCEDURE
+    .use(trpcGameIsNotPresentMiddleware)
     .input(z.object({
         lobby:z.object({
             id:z.string(),
