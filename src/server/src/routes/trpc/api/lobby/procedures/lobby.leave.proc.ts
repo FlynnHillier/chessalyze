@@ -3,7 +3,7 @@ import { LOBBYPROCEDURE } from "../lobby.proc";
 
 
 export const trpcLobbyLeaveProcedure =  LOBBYPROCEDURE
-    .query(({ctx}) => {
+    .mutation(({ctx}) => {
         const existingUserLobby = GameInstanceManager.getPlayerLobby(ctx.user!.uuid)
 
         if (existingUserLobby === null)
