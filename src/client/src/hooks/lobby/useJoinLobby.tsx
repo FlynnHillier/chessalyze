@@ -3,11 +3,7 @@ import { UUID } from "@common/src/types/misc"
 import { useGame } from "../../contexts/game.ctx"
 import { trpc } from "../../util/trpc"
 
-export const useJoinLobby = ({lobby} : {
-    lobby:{
-        id:UUID
-    }
-}) => {
+export const useJoinLobby = () => {
     const mutation = trpc.a.lobby.join.useMutation()
     const {dispatchGame} = useGame()
 
@@ -24,7 +20,11 @@ export const useJoinLobby = ({lobby} : {
         }
     },[mutation.isLoading])
 
-    const joinLobby = () => {
+    const joinLobby = ({lobby} : {
+        lobby:{
+            id:UUID
+        }
+    }) => {
         if (mutation.isIdle)
             mutation.mutate({
                 lobby:{
