@@ -1,102 +1,135 @@
-import {useState,CSSProperties, useEffect} from 'react'
+import {useState,CSSProperties, useEffect, useCallback} from 'react'
 import {Chessboard} from "react-chessboard"
 import PromotionOverlay from './PromotionOverlay'
 
 import {Square, Color} from "chess.js"
-import { FEN, PromotionSymbol,ClientGameConclusion } from '@common/src/types/game'
+import { FEN, PromotionSymbol } from '@common/src/types/game'
 
 import EmptyTileOverlayHint from "./../../assets/overlays/emptyTileHint.png"
 import OccupiedTileOverlayHint from "../../assets/overlays/occupiedTileHint.png"
 
 import "./../../styles/game/chessBoard.css"
 import ConclusionOverlay from './ConclusionOverlay'
+import {Chess, Move} from "chess.js"
+import { trpc } from '../../util/trpc'
+
+
+type Movement = {
+  source:Square,
+  target:Square,
+  promotion?:PromotionSymbol,
+}
+
 
 
 interface Props {
-  proposeMovement:(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol})=>boolean | Promise<boolean>,
-  queryMove:({source,target} : {source:Square,target:Square}) => {valid:boolean,promotion:boolean}
-  generateMovementOverlays:({source} : {source:Square}) => {tile:Square, occupied:boolean}[]
-  fen:FEN,
-  turn:Color,
+  instance:Chess,
   perspective:Color,
-  isActive:boolean,
-  boardWidth:number,
-  conclusion?:{
-    details:ClientGameConclusion | null,
-    isShowing:boolean,
-    hide:()=>void,
+  allowMovement:boolean,
+  style:{
+    width:number,
   }
 }
 
 
-const ChessGame = ({fen,turn,conclusion,queryMove,proposeMovement,generateMovementOverlays,perspective,isActive,boardWidth} : Props) => {
+const ChessGame = ({instance, perspective, allowMovement, style} : Props) => {
   const [customSquareStyles,setCustomSquareStyles] = useState({})
   const [selectedSquare,setSelectedSquare] = useState<null | Square>(null)
-  const [pendingMovement,setPendingMovement] = useState<null | {source : Square,target:Square}>(null)
+  const [pendingMovement,setPendingMovement] = useState<null | Movement>(null)
   const [isDisplayingPromotionSelect,setIsDisplayingPromotionSelect] = useState<boolean>(false)
-  const [moveIsProposed,setMoveIsProposed] = useState<boolean>(false)
 
-  
-  useEffect(()=>{
-    updateMovementHints()
-  },[selectedSquare]) 
-  
-  //### PIECE MOVEMEMENT###
-  async function onMovement(source:Square,target:Square) : Promise<boolean> {
-    const movementQuery = queryMove({source,target})
-    if(!movementQuery.valid){
-      return false
+  const movementMutation = trpc.a.game.move.useMutation()
+
+  const getMovementHints = useCallback(()=>{
+    if(!selectedSquare)
+      return {};
+    
+    const getCSS = (occupied:boolean) => {
+      return {
+        "backgroundPosition":"center",
+        "backgroundSize":"cover",
+        "cursor":"pointer",
+        "backgroundImage": occupied ? `url('${OccupiedTileOverlayHint}')` : `url('${EmptyTileOverlayHint}')`
+      }
     }
-    if(!movementQuery.promotion){  
-      return await initiateMovement(source,target)
-    }
-    if(movementQuery.promotion){
-      showPromotionOverlay(source,target)
-    }
+
+    (instance.moves({verbose:true, square:selectedSquare}) as Move[]).reduce((acc,{to, captured}) => {
+      return {...acc, [to]:getCSS(captured != null)}
+    },{} as {[key in Square] : CSSProperties})
+  },[selectedSquare])
+
+  //## Movement
+  function onDrop(sourceSquare:Square,targetSquare:Square,piece:string) : false {
+    attemptMovement({
+      source:sourceSquare,
+      target:targetSquare,
+    })
     return false
   }
 
-  function onPromotionSelection(promoteTo:PromotionSymbol){
-    if(!pendingMovement){
+  function onDragBegin(_:any,square:Square)
+  {
+    setSelectedSquare(square)
+  }
+
+  function onSquareClick(square:Square){
+    if(selectedSquare){
+      attemptMovement({
+        source:selectedSquare,
+        target:square
+      })
+    }
+    setSelectedSquare(square)
+  }
+
+  function attemptMovement({source,target,promotion} : Movement) : void
+  {
+    if(!allowMovement)
       return
-    }
-    initiateMovement(pendingMovement.source,pendingMovement.target,{promotion:promoteTo})
-    hidePromotionOverlay()
-  }
+    
+    const moves = (instance.moves({verbose:true})) as Move[]
+    const move = moves.find(m => m.from == source && m.to == target)
 
-  async function initiateMovement(sourceSquare:Square,targetSquare:Square,{promotion} : {promotion?:PromotionSymbol} = {}) {
-    setMoveIsProposed(true)
-    const movementResult = await proposeMovement(sourceSquare,targetSquare,{promotion})
-    if(movementResult){
-      onSuccessfulMove()
-    }
-    setMoveIsProposed(false)
-    return movementResult
-  }
+    if (!move)
+      return
 
-  function onSuccessfulMove(){
-    setSelectedSquare(null)
-  }
+    if(move.promotion && !promotion)
+      return awaitPromotionSelection({source,target})
 
-  function updateMovementHints(){
-    if(!isActive || selectedSquare === null || perspective !== turn){
-      return setCustomSquareStyles({})
-    }
-
-    const defaultOverlayCSS : CSSProperties = {
-      "backgroundPosition":"center",
-      "backgroundSize":"cover",
-      "cursor":"pointer"
-    }
-
-    setCustomSquareStyles(()=>{
-      const movementOverlayMap = generateMovementOverlays({source:selectedSquare})
-      let customSquareStyles : {[key:string]:CSSProperties} = {}
-      for(let overlay of movementOverlayMap){
-        customSquareStyles[overlay.tile] = {...defaultOverlayCSS,backgroundImage: overlay.occupied ? `url('${OccupiedTileOverlayHint}')` : `url('${EmptyTileOverlayHint}')`}
-      }
-      return customSquareStyles
+    movementMutation.mutate({
+      move:{
+        source:source,
+        target:target,
+      },
+      promotion:promotion
     })
+  }
+
+
+  //## Promotion
+  function onPromotionSelection(promotion:PromotionSymbol) : void
+  {
+      if(pendingMovement)
+      {
+        attemptMovement({...pendingMovement, promotion})
+      }
+  }
+
+  function awaitPromotionSelection(pendingMovement: Movement)
+  {
+    setPendingMovement(pendingMovement)
+    setIsDisplayingPromotionSelect(true)
+  }
+
+  function showPromotionSelection()
+  {
+    setIsDisplayingPromotionSelect(true)
+  }
+
+  function hidePromotionSelection()
+  {
+    setIsDisplayingPromotionSelect(false)
+    setPendingMovement(null)
   }
 
 
@@ -104,7 +137,7 @@ const ChessGame = ({fen,turn,conclusion,queryMove,proposeMovement,generateMoveme
   //### GAME OVER ###
 
   function getCurrentTurnDisplayName(){
-    return turn === "w" ? "white" : "black"
+    return instance.turn() === "w" ? "white" : "black"
   }
   
   //### PROMOTION ###
@@ -123,48 +156,33 @@ const ChessGame = ({fen,turn,conclusion,queryMove,proposeMovement,generateMoveme
     setCustomSquareStyles({})
   }
 
-  function onDrop(sourceSquare:Square,targetSquare:Square,piece:string) : false {
-    onMovement(sourceSquare,targetSquare)
-    return false
-  }
-
-  function onSquareClick(square:Square){
-    if(selectedSquare !== null){
-      onMovement(selectedSquare,square)
-    }
-    setSelectedSquare(square)
-  }
-
-  function onPieceDragBegin(piece:string,square:Square){
-    setSelectedSquare(square)
-  }
 
   return (
       <>
         <div className="chessboard-container">
           <PromotionOverlay 
-            turn={turn}
+            turn={instance.turn()}
             isHidden={!isDisplayingPromotionSelect}
             onPieceSelection={onPromotionSelection}
             hideSelf={hidePromotionOverlay}
-            width={boardWidth}
+            width={style.width}
           />
           <ConclusionOverlay 
-            width={boardWidth}
-            conclusionState={conclusion?.details || null}
-            isHidden={!conclusion?.isShowing || false}
-            hideSelf={conclusion?.hide || function(){}}
+            width={style.width}
+            conclusionState={null}
+            isHidden={true}
+            hideSelf={()=>{}}
           />
           <Chessboard
-            boardWidth={boardWidth}
+            boardWidth={style.width}
             boardOrientation={perspective === "w" ? "white" : "black"}
-            arePiecesDraggable={isActive && !conclusion?.isShowing && !isDisplayingPromotionSelect && !moveIsProposed}
+            arePiecesDraggable={!movementMutation.isLoading && allowMovement}
             customBoardStyle={{}}
-            position={fen} 
+            position={instance.fen()} 
             onPieceDrop={onDrop}
             onSquareClick={onSquareClick}
-            onPieceDragBegin={onPieceDragBegin}
-            customSquareStyles={customSquareStyles}
+            onPieceDragBegin={onDragBegin}
+            customSquareStyles={getMovementHints()}
           />
         </div>
       </>

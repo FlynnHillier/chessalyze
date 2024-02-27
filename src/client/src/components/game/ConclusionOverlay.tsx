@@ -1,10 +1,9 @@
 import React,{useState,useEffect} from 'react'
 import "./../../styles/gameOverOverlay.css"
-import { ClientGameConclusion } from '@common/src/types/game'
 import FancyButton from '../util/FancyButton'
 
 interface Props {
-    conclusionState:ClientGameConclusion | null
+    conclusionState: null
     isHidden:boolean
     hideSelf:()=>void
     width:number
@@ -18,18 +17,20 @@ const ConclusionOverlay = ({conclusionState,isHidden,hideSelf,width}:Props) => {
             return "invalid conclusion."
         }
 
-        let string = "ERROR_UNKNOWN_VICTOR"
-        if(conclusionState.victor === "w"){
-            string = "white wins"
-        }
-        if(conclusionState.victor === "b"){
-            string = "black wins"
-        }
-        if(conclusionState.victor === null){
-            string = "draw"
-        }
+        // let string = "ERROR_UNKNOWN_VICTOR"
+        // if(conclusionState.victor === "w"){
+        //     string = "white wins"
+        // }
+        // if(conclusionState.victor === "b"){
+        //     string = "black wins"
+        // }
+        // if(conclusionState.victor === null){
+        //     string = "draw"
+        // }
 
-        return `${string} by ${conclusionState.termination}`
+        // return `${string} by ${conclusionState.termination}`
+
+        return ""
     }
 
     useEffect(()=>{
@@ -37,34 +38,36 @@ const ConclusionOverlay = ({conclusionState,isHidden,hideSelf,width}:Props) => {
     },[conclusionState])
 
     return (
-        <div className="chessboard-overlay" style={isHidden ? {display:"none"} : {}}
-            onClick={(e)=>{
-                if(e.target == e.currentTarget){
-                    hideSelf()
-                }
-            }}
-        >
-            <div className="chessboard-game-over-popup">
-                {conclusionState === null ? 
-                    <> This game has not yet <br/> concluded.</> : 
-                    <>
-                        <div className="chessboard-game-over-header"> 
-                            <h2>GAME OVER!</h2>
-                        </div>
-                        <div>
-                            {messageText}
-                        </div>
-                        <div>
-                            <FancyButton
-                                isLoading={false}
-                                text={"close"}
-                                onClick={hideSelf}
-                            />
-                        </div>
-                    </>
-                }
-            </div>    
-        </div>
+        <>
+        </>
+        // <div className="chessboard-overlay" style={isHidden ? {display:"none"} : {}}
+        //     onClick={(e)=>{
+        //         if(e.target == e.currentTarget){
+        //             hideSelf()
+        //         }
+        //     }}
+        // >
+        //     <div className="chessboard-game-over-popup">
+        //         {conclusionState === null ? 
+        //             <> This game has not yet <br/> concluded.</> : 
+        //             <>
+        //                 <div className="chessboard-game-over-header"> 
+        //                     <h2>GAME OVER!</h2>
+        //                 </div>
+        //                 <div>
+        //                     {messageText}
+        //                 </div>
+        //                 <div>
+        //                     <FancyButton
+        //                         isLoading={false}
+        //                         text={"close"}
+        //                         onClick={hideSelf}
+        //                     />
+        //                 </div>
+        //             </>
+        //         }
+        //     </div>    
+        // </div>
   )
 }
 
