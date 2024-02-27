@@ -8,8 +8,8 @@ export const trpcGameStatusProcedure = GAMEPROCEDURE
         if (existingGame === null)
         {
             return {
-                present:false
-            }
+                present:false,
+            } as const
         }
 
         return {
