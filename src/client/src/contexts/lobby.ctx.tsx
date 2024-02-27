@@ -1,6 +1,6 @@
 import { UUID } from "@common/src/types/misc"
 import { ReducerAction } from "../types/context.types"
-import { createContext, useEffect, useReducer } from "react"
+import { Dispatch, createContext, useContext, useEffect, useReducer } from "react"
 import { ReactNode } from "react"
 import { trpc } from "../util/trpc"
 
@@ -55,26 +55,25 @@ function reducer<A extends LobbyRdcrActn>(state:LOBBYCONTEXT,action:A) : LOBBYCO
     }
 }
 
-export const useProvideLobby = () => {
-    const [lobby,dispatchLobby] = useReducer(reducer,defaultContext)
 
-    return {
-        lobby,
-        dispatchLobby
-    }
+const LobbyContext = createContext({} as {
+    lobby:LOBBYCONTEXT,
+    dispatchLobby:Dispatch<LobbyRdcrActn>
+})
+
+export function useLobby()
+{
+    return useContext(LobbyContext)
 }
 
-export const LobbyContext = createContext<ReturnType<typeof useProvideLobby>>({} as ReturnType<typeof useProvideLobby>)
-
 export const LobbyProvider = ({children} : {children : ReactNode}) => {
-    const context = useProvideLobby()
+    const [lobby,dispatchLobby] = useReducer(reducer,defaultContext)
     const query = trpc.a.lobby.status.useQuery()
 
     useEffect(()=>{
-        console.log(query.isLoading)
         if (query.isFetched && query.data)
         {
-            context.dispatchLobby({
+            dispatchLobby({
                 type:"LOAD",
                 payload:query.data,
             })
@@ -82,7 +81,7 @@ export const LobbyProvider = ({children} : {children : ReactNode}) => {
     }, [query.isLoading])
 
     return (
-        <LobbyContext.Provider value={context}>
+        <LobbyContext.Provider value={{lobby, dispatchLobby}}>
             {children}
         </LobbyContext.Provider>
     )
