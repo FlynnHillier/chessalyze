@@ -3,7 +3,6 @@ import bodyParser from "body-parser"
 import { sessionMiddleware } from "../controllers/sessions"
 import passport from "passport"
 
-import {api_router} from "./api/api.router"
 import {auth_router} from "./auth/auth.router"
 import { HttpException } from "../types/errors"
 import { corsConfig } from "../init/init.config"
@@ -19,7 +18,6 @@ router.use(passport.session())
 router.use(bodyParser.json())
 router.use(urlencoded({extended:true}))
 
-router.use("/a",api_router)
 router.use("/auth",auth_router)
 router.use("/t",trpcExpressMiddleware)
 
