@@ -8,7 +8,6 @@ import { NewGamePlayer } from "./GameInstance"
 
 import { GameTerimation } from "./game.end"
 
-import { ClientGameConclusion } from "@common/src/types/game"
 import { UUID } from "@common/src/types/misc"
 
 class GameInstanceManagerClass {
@@ -40,7 +39,7 @@ class GameInstanceManagerClass {
                     termination:newGameInstance.getSummary()?.conclusion.termination,
                     victor:newGameInstance.getSummary()?.conclusion.victor,
                     timeSnapshot:newGameInstance.getIsTimed() ? newGameInstance.getTimes() : undefined
-                } as ClientGameConclusion
+                } //as ClientGameConclusion
             )
             socketManagment.leave(p1.id,`game:${newGameInstance.id}`)
             socketManagment.leave(p2.id,`game:${newGameInstance.id}`)

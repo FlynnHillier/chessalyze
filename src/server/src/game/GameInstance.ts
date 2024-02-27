@@ -47,7 +47,7 @@ export class GameInstance {
 
         this.time = {
             clock:clock,
-            isTimed:time == null,
+            isTimed:time != null,
             start:Date.now(),
         }
 
