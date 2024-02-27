@@ -2,13 +2,13 @@ import React from 'react';
 
 import AuthProvider from './contexts/auth.context';
 import SocketProvider from './contexts/socket.context';
-import GameProvider from './contexts/game.context';
-import LobbyProvider from './contexts/lobby.context';
+import { GameProvider } from './contexts/game.ctx';
 
 import IndexRoute from './Routes/Index.Router';
 import NavigationBar from './layout/NavigationBar';
 
 import { TRPCwrapper } from './wrappers/Trpc.Wrapper';
+import { LobbyProvider } from './contexts/lobby.ctx';
 
 function App() {
   return (

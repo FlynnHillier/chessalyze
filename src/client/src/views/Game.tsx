@@ -1,14 +1,16 @@
 import React from 'react'
 import "./../styles/layout/game.css"
 import ChessInterface from '../components/game/ChessInterface'
-import ConnectivityStatusInterface from '../components/connectivity/ConnectivityStatusInterface'
+// import ConnectivityStatusInterface from '../components/activity/ConnectivityStatusInterface'
+import { ActivityManager } from '../components/activity/ActivityManager'
 
 const Game = () => {
   return (
     <>
     <div className="game layout-container">
       <div className="game layout-left-sidebar-container">
-        <ConnectivityStatusInterface/>
+        {/* <ConnectivityStatusInterface/> */}
+        <ActivityManager/>
       </div>
       <div className="game layout-content">
         <ChessInterface/>

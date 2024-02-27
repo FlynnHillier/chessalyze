@@ -5,8 +5,6 @@ import Home from '../views/Home'
 import { Login } from '../views/Login'
 import RequireAuthController from './controllers/RequireAuth.Controller'
 import PersistedAuthController from './controllers/PersistAuth.Controller'
-import PersistedGameController from './controllers/PersistGame.controller'
-import PersistedLobbyController from './controllers/PersistLobby.controller'
 import Game from '../views/Game'
 import JoinLobby from '../views/JoinLobby'
 
@@ -15,8 +13,8 @@ const IndexRoute = () => {
     <Routes>
         <Route element={<PersistedAuthController/>}>
           <Route element={<RequireAuthController/>}>
-            <Route path="/game" element={<PersistedGameController/>}>
-              <Route element={<PersistedLobbyController/>}>
+            <Route path="/game">
+              <Route>
                 <Route path="/game/join/:lobbyID" element={<JoinLobby/>}/>
                 <Route path="/game/" element={<Game/>}/>
               </Route>
