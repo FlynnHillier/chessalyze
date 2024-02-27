@@ -7,6 +7,8 @@ export type GameTermination = "checkmate" | "3-fold repition" | "50 move rule" |
 
 export type PromotionSymbol = "r" | "b" | "n" | "q"
 
+export type CapturableSymbol = "r" | "b" | "n" | "q" | "p"
+
 export type BW<T> = {
     w:T,
     b:T
@@ -22,12 +24,19 @@ export interface GameSnapshot {
     id:UUID,
     players:BW<Player>,
     FEN:FEN,
+    captured:BW<{[key in CapturableSymbol]: number}>
     time:{
         isTimed:boolean,
         remaining:BW<number>
     },
-    captured:BW<{[key in PieceSymbol]: number}>
 }
+
+export interface GameTerminationEvent {
+    termination:GameTermination,
+    victor:null | "w" | "b",
+}
+
+
 
 export interface GameSummary {
     id:UUID,
@@ -41,15 +50,6 @@ export interface GameSummary {
         start:number,
         end:number,
         duration:number,
-    }
-}
-
-export interface ClientGameConclusion {
-    victor:null | "w" | "b",
-    termination: GameTermination,
-    timeSnapshot?:{
-        w:number,
-        b:number
     }
 }
 

@@ -162,6 +162,17 @@ export class ChessClock {
         return this.ended === false ? false : this.timeOutPerspective as Color
     }
 
+    /**
+     * 
+     * @returns 
+     */
+    public isActive() : boolean
+    {
+        return this.active
+    }
+
+
+
     public getDurations() : {w:number,b:number} {
         return {
             w:this.clocks.w.getDuration(),
