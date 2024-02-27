@@ -1,7 +1,5 @@
-import axios from "axios"
 import {useEffect, useState} from "react"
-import { retrieveAxiosErrorMessage } from "../../util/util.axios"
-import { useLobby } from "../contexts/useLobby"
+import { useLobby } from "../../contexts/lobby.ctx"
 import { trpc } from "../../util/trpc"
 
 
