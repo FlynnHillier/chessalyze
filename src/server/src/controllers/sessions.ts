@@ -3,6 +3,7 @@ import MongoStore from "connect-mongo"
 import { NextFunction,Request,Response } from "express"
 import { Socket } from "socket.io"
 import { ExtendedError } from "socket.io/dist/namespace"
+import e from "express"
 
 export const sessionMiddleware = session({
     secret:"secret!",
@@ -22,6 +23,6 @@ export const sessionMiddleware = session({
     }),
 })
 
-export const socketWrapper = (expressMiddleware:any) => (socket:Socket,next:(err? : ExtendedError | undefined)=>void) => {
+export const socketWrapper = (expressMiddleware:e.RequestHandler) => (socket:Socket,next:(err? : ExtendedError | undefined)=>void) => {
     expressMiddleware(socket.request as Request,{} as Response,next as NextFunction)
 }

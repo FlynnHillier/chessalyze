@@ -1,22 +1,36 @@
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from '../util/trpc';
-import { httpBatchLink } from '@trpc/client';
+import { createWSClient, httpBatchLink, splitLink, wsLink } from '@trpc/client';
 
 export function TRPCwrapper({children} : {children:React.ReactNode}) {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
         links: [
-            httpBatchLink({
-                url:`${process.env.REACT_APP_BASE_URL}t`,
-                fetch(url, options) {
-                  return fetch(url, {
-                    ...options,
-                    credentials: 'include',
-                  })
+          splitLink({
+            condition: op => {
+              return op.type === "subscription"
+            },
+            true:wsLink({
+              client:createWSClient({
+                url:`ws://${process.env.REACT_APP_DOMAIN}/t`,
+                onOpen: () => {
+
                 }
+              })
+            }),
+            false:httpBatchLink({
+              url:`http://${process.env.REACT_APP_DOMAIN}/t`,
+              fetch(url, options) {
+                return fetch(url, {
+                  ...options,
+                  credentials: 'include',
+                })
+              }
             })
+          }
+          )
         ]
     }),
   );

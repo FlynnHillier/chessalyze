@@ -10,6 +10,11 @@ import { GameTerimation } from "./game.end"
 
 import { UUID } from "@common/src/types/misc"
 
+import { createGameRoom, destroyGameRoom } from "../ws/rooms/game.room.ws"
+import { emitGameEndEvent } from "../ws/events/game/game.end.event.ws"
+import { emitGameJoinEvent } from "../ws/events/game/game.join.event.ws"
+
+
 class GameInstanceManagerClass {
     public gameInstances:GameInstance[]  = []
     public gameLobbys : GameLobby[] = []
@@ -32,37 +37,16 @@ class GameInstanceManagerClass {
             this.gameInstances.splice(this.gameInstances.indexOf(newGameInstance),1)
             GameTerimation.terminate(newGameInstance)
 
-            io.to(`game:${newGameInstance.id}`)
-            .emit("game:ended",
-                {
-                    id:newGameInstance.id,
-                    termination:newGameInstance.getSummary()?.conclusion.termination,
-                    victor:newGameInstance.getSummary()?.conclusion.victor,
-                    timeSnapshot:newGameInstance.getIsTimed() ? newGameInstance.getTimes() : undefined
-                } //as ClientGameConclusion
-            )
-            socketManagment.leave(p1.id,`game:${newGameInstance.id}`)
-            socketManagment.leave(p2.id,`game:${newGameInstance.id}`)
+            emitGameEndEvent(newGameInstance.id,{})
+            destroyGameRoom(newGameInstance.id)
         })
         
-        socketManagment.join(p1.id,`game:${newGameInstance.id}`)
-        socketManagment.join(p2.id,`game:${newGameInstance.id}`)
-
-        io.to(`game:${newGameInstance.id}`).emit("game:joined",
-        {
-            id:newGameInstance.id,
-            players:newGameInstance.players,
-            captured:newGameInstance.getCaptured(),
-            colours:{
-                [newGameInstance.players.w.id]:"w",
-                [newGameInstance.players.b.id]:"b"
-            },
-            fen:newGameInstance.getFEN(),
-            time:{
-                isTimed:newGameInstance.getIsTimed(),
-                durations:newGameInstance.getIsTimed() ? newGameInstance.getTimes() : null
-            }
+        createGameRoom({
+            room:newGameInstance.id,
+            pids:[p1.id, p2.id]
         })
+
+        emitGameJoinEvent(newGameInstance.id, newGameInstance.snapshot())
 
         this.gameInstances.push(newGameInstance)
         return newGameInstance

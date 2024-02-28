@@ -2,6 +2,7 @@ import {Chess, Square,Move, Color, PieceSymbol} from "chess.js"
 import {v1 as uuidv1} from "uuid"
 import { GameConclusion,GameSnapshot,GameSummary,GameTermination } from "@common/src/types/game"
 import { UUID } from "@common/src/types/misc"
+import { emitGameMoveEvent } from "../ws/events/game/game.move.event.ws"
 
 import { io } from "../init/init.socket"
 import { ChessClock } from "./game.clock"
@@ -117,16 +118,19 @@ export class GameInstance {
         if(moveResult === false){
             return false
         }
-        io.to(`game:${this.id}`).emit(
-            "game:movement",
-            this.id,
-            {
-                sourceSquare,
-                targetSquare,
-                promotion,
-                time:this.time.isTimed ? this.time.clock.getDurations() : undefined
+
+        emitGameMoveEvent(this.id, {
+            move:{
+                source:sourceSquare,
+                target:targetSquare,
+                promotion:promotion,
+            },
+            time:{
+                isTimed:this.time.isTimed,
+                remaining:this.time.clock.getDurations()
             }
-        )
+        })
+
         if(this.game.isGameOver() || this.game.isDraw()){
             this.end(
                 this.getNaturalTermination(),

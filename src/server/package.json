@@ -12,6 +12,7 @@
     "@trpc/server": "^10.45.1",
     "@types/express-validator": "^3.0.0",
     "@types/passport-local": "^1.0.34",
+    "@types/ws": "^8.5.10",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.1",
     "chess.js": "^1.0.0-alpha.0",
@@ -27,6 +28,7 @@
     "passport-local": "^1.0.0",
     "socket.io": "^4.5.3",
     "uuid": "^9.0.0",
+    "ws": "^8.16.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

@@ -139,6 +139,58 @@ export function useGame()
 export const GameProvider = ({children} : {children : ReactNode}) => {
     const [game,dispatchGame] = useReducer(reducer,defaultContext)
     const query = trpc.a.game.status.useQuery()
+    
+    trpc.a.game.onMove.useSubscription(undefined,{
+        onData:({move,time}) => {
+            dispatchGame({
+                type:"MOVE",
+                payload:{
+                    move:{
+                        target:move.target,
+                        source:move.source,
+                        promotion:move.promotion,
+                    },
+                    time:{
+                        isTimed:time.isTimed,
+                        remaining:time.remaining,
+                    }
+                }
+            })
+        }
+    })
+
+    trpc.a.game.onEnd.useSubscription(undefined, {
+        onData:({}) => {
+
+        }
+    })
+
+    trpc.a.game.onJoin.useSubscription(undefined, {
+        onData:({id, FEN, players, captured, time})=> {
+            dispatchGame({
+                type:"LOAD",
+                payload:{
+                    present:true,
+                    game:{
+                        id:id,
+                        FEN:FEN,
+                        players:{
+                            w:players.w,
+                            b:players.b,
+                        },
+                        captured:captured,
+                        time:{
+                            isTimed:time.isTimed,
+                            remaining:{
+                                w:time.remaining.w,
+                                b:time.remaining.b,
+                            }
+                        }
+                    }
+                }
+            })
+        }
+    })
 
     useEffect(()=>{
         if (query.isFetched && query.data)

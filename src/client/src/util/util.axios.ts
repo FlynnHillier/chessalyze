@@ -2,7 +2,7 @@ import { ResponseError } from "../types/response"
 import axios,{AxiosError} from "axios"
 
 export const applyAxiosDefaultHeaders = () => {
-    axios.defaults.baseURL = process.env.NODE_ENV === "development" ? `${process.env.REACT_APP_BASE_URL}` : ""
+    axios.defaults.baseURL = process.env.NODE_ENV === "development" ? `http://${process.env.REACT_APP_DOMAIN}/` : ""
     axios.defaults.withCredentials = true
 }
 
