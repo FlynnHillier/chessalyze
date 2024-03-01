@@ -6,7 +6,8 @@
   "author": "FlynnHillier <flynnhillier@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "ndev": "next dev"
+    "ndev": "next dev",
+    "drizzle": "drizzle-kit push:pg --config=./drizzle.config.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
