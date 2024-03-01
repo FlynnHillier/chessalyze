@@ -29,8 +29,8 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    POSTGRES_URL: process.env.POSTGRES_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     OAUTH_GOOGLE_CLIENTID: process.env.OAUTH_GOOGLE_CLIENTID,
     OAUTH_GOOGLE_CLIENTSECRET: process.env.OAUTH_GOOGLE_CLIENTSECRET,
