@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    DATABASE_URL: z
+    POSTGRES_URL: z
       .string()
       .refine(
         (str) => !str.includes("YOUR_POSTGRES_URL_HERE"),
