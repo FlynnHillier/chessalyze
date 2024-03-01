@@ -11,12 +11,23 @@
   ],
   "private": true,
   "scripts": {
-    "run:client":"cd ./src/client && yarn start",
-    "run:server":"cd ./src/server && yarn start",
-    "build": "cd src/client/ && yarn build && cd ../server/ && yarn build"
+    "run:client": "cd ./src/client && yarn start",
+    "run:server": "cd ./src/server && yarn start",
+    "build": "cd src/client/ && yarn build && cd ../server/ && yarn build",
+    "ndev":"next dev"
   },
   "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19",
+    "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.1",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "next": "^14.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
