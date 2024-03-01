@@ -15,7 +15,9 @@ export const env = createEnv({
     NEXTAUTH_SECRET:
       process.env.NODE_ENV === "production"
         ? z.string()
-        : z.string().optional(),
+        : z.string().optional(),  
+    OAUTH_GOOGLE_CLIENTID:z.string(),
+    OAUTH_GOOGLE_CLIENTSECRET:z.string(),
   },
 
   client: {
@@ -30,6 +32,8 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    OAUTH_GOOGLE_CLIENTID: process.env.OAUTH_GOOGLE_CLIENTID,
+    OAUTH_GOOGLE_CLIENTSECRET: process.env.OAUTH_GOOGLE_CLIENTSECRET,
   },
   /**
    * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
