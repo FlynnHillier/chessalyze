@@ -1,5 +1,4 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { GetServerSidePropsContext } from "next";
 import { getServerSession, DefaultSession, NextAuthOptions } from "next-auth";
 import { Adapter } from "next-auth/adapters";
 import GoogleProvider from "next-auth/providers/google"
@@ -17,6 +16,7 @@ declare module "next-auth" {
 
 export const authOptions: NextAuthOptions = {
   adapter: DrizzleAdapter(db) as Adapter,
+  secret: env.NEXTAUTH_SECRET,
   callbacks: {
     session: ({ session, user }) => ({
       ...session,
@@ -37,9 +37,6 @@ export const authOptions: NextAuthOptions = {
 /**
  * Wrapper for `getServerSession` so that you don't need to import the `authOptions` in every file.
  */
-export const getServerAuthSession = (ctx: {
-  req: GetServerSidePropsContext["req"],
-  res: GetServerSidePropsContext["res"],
-}) => {
-  return getServerSession(ctx.req, ctx.res, authOptions)
+export const getServerAuthSession = () => {
+  return getServerSession(authOptions)
 }
