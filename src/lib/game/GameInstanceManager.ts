@@ -26,7 +26,10 @@ class GameInstanceManagerClass {
   }
 
   public newGame(p1: Player, p2: Player, uuid?: string): GameInstance {
-    const newGameInstance = new GameInstance(p1, p2)
+    const newGameInstance = new GameInstance(p1, p2, {
+      w: 30000,
+      b: 30000,
+    })
     newGameInstance.setEventCallback("conclusion", () => {
       this.gameInstances.splice(this.gameInstances.indexOf(newGameInstance), 1)
 

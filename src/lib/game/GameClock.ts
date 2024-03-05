@@ -1,14 +1,15 @@
 import { Color } from "chess.js"
+import { BW } from "~/types/game.types"
 
 class Ticker {
   private active //if is active
   private ended //if the clock has ran its duration or not
   private hasStarted = false // if the clock has been started yet (true after first call of start method)
-  private duration //the duration the clock should run for
+  private duration: number = 0 //the duration the clock should run for
 
   private accumulatedElapse: number = 0 //total time elapsed not including current start/pause cycle
   private lastStartEpoch: number = 0 //time since start method was called; in epoch format
-  private timeout: NodeJS.Timeout | null //timeout to fire on game timeout
+  private timeout: NodeJS.Timeout | null = null //timeout to fire on game timeout
 
   /**
    * @param duration - the length of time the ticker will run for before ending (ms)
@@ -17,9 +18,9 @@ class Ticker {
    */
   constructor(duration: number, private onTimeOut: (...args: any[]) => any) {
     this.active = false
-    this.timeout = null
     this.ended = false
-    this.duration = duration
+
+    this.setRemainingDuration(duration)
   }
 
   /**
@@ -54,10 +55,32 @@ class Ticker {
   }
 
   /**
+   * ensures timeout is synced to duration
+   */
+  private updateTimeout() {
+    if (!this.isActive() && this.timeout) {
+      clearTimeout(this.timeout)
+    }
+    else if (this.isActive()) {
+      if (this.timeout)
+        clearTimeout(this.timeout)
+      this.timeout = setTimeout(this.end.bind(this), this.getRemainingDuration())
+    }
+  }
+
+  /**
    * @description - calculate the time remaining on the clock.
    */
   public getRemainingDuration() {
     return this.duration - this.getElapsed()
+  }
+
+  /**
+   * set remaining duration
+   */
+  public setRemainingDuration(duration: number) {
+    this.duration = duration
+    this.updateTimeout()
   }
 
   /**
@@ -116,10 +139,10 @@ export class ChessClock {
    * @param time - the initial time each clock will have
    * @param onTimeOutCallBack - will fire when either clock runs out
    */
-  constructor(time: number, private onTimeOutCallBack: (perspective: Color) => any) {
+  constructor(times: BW<number>, private onTimeOutCallBack: (perspective: Color) => any) {
     this.clocks = {
-      w: new Ticker(time, () => { this.onTickerEnd("w") }),
-      b: new Ticker(time, () => { this.onTickerEnd("b") }),
+      w: new Ticker(times.w, () => { this.onTickerEnd("w") }),
+      b: new Ticker(times.b, () => { this.onTickerEnd("b") }),
     }
   }
 
@@ -152,11 +175,21 @@ export class ChessClock {
    * @description - switches the clock to begin timing out the other perspective's clock.
    */
 
-  public switch() {
+  public switch(turn?: Color) {
     this.clocks[this.turn].pause()
-    this.turn = this.turn == "w" ? "b" : "w"
+
+    this.turn = turn ?? this.turn == "w" ? "b" : "w"
+
     this.clocks[this.turn].start()
   }
+
+  /**
+   * @returns - {boolean} if clock is active
+   */
+  public isActive(): boolean {
+    return this.active
+  }
+
 
   /**
    * @returns - {false} | {Color} , false if the clock has not yet timed-out; if the clock has timed-out: the colour of who's individual ticker timed out.  
@@ -165,10 +198,22 @@ export class ChessClock {
     return this.ended === false ? false : this.timeOutPerspective as Color
   }
 
+  /**
+   * @returns 
+   */
   public getDurations(): { w: number, b: number } {
     return {
       w: this.clocks.w.getRemainingDuration(),
       b: this.clocks.b.getRemainingDuration()
     }
   }
+
+
+  public editDuration(edit: BW<number>): BW<number> {
+    if (edit.w) this.clocks.w.setRemainingDuration(edit.w)
+    if (edit.b) this.clocks.w.setRemainingDuration(edit.b)
+
+    return this.getDurations()
+  }
+
 }

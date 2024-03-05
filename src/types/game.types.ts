@@ -1,5 +1,5 @@
 import { UUID } from "~/types/common.types";
-import { Square as chessJSSquare } from "chess.js"
+import { Square as chessJSSquare, Color as chessJSColor } from "chess.js"
 
 export type FEN = string
 
@@ -15,6 +15,8 @@ export type BW<T> = {
   w: T,
   b: T,
 }
+
+export type Color = chessJSColor
 
 /**
  * refers to a user while handling game management

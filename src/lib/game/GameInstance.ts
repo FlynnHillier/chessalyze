@@ -26,13 +26,13 @@ export class GameInstance {
     clock: ChessClock
   }
 
-  constructor(p1: Player, p2: Player, time: null | number = 30000) {
+  constructor(p1: Player, p2: Player, times: null | BW<number>) {
     this.players = this._generateColorConfiguration(p1, p2)
     this.id = uuidv1()
 
 
     const clock = new ChessClock(
-      time ?? 1,
+      times ?? { w: 1, b: 1 },
       (timedOutPerspective) => {
         this.end("timeout", this.getOppositePerspective(timedOutPerspective))
       }
@@ -41,7 +41,7 @@ export class GameInstance {
 
     this.time = {
       clock: clock,
-      isTimed: time != null,
+      isTimed: times != null,
       start: Date.now(),
     }
 
