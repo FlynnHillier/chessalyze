@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { ReactNode } from "react";
 import { authOptions } from "~/server/auth";
 import { redirect } from "next/navigation";
+import { GameProvider } from "~/app/_components/providers/game.provider";
 
 export default async function RestrictedLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions)
@@ -12,7 +13,9 @@ export default async function RestrictedLayout({ children }: { children: ReactNo
 
   return (
     <>
-      {children}
+      <GameProvider>
+        {children}
+      </GameProvider>
     </>
   )
 }
