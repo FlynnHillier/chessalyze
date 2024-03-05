@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { ReactNode } from "react";
 import { authOptions } from "~/server/auth";
-import SessionProvider from "~/components/providers/session.provider"
-import { TRPCProvider } from "~/components/providers/trpc.provider";
+import SessionProvider from "~/app/_components/providers/session.provider"
+import { TRPCProvider } from "~/app/_components/providers/trpc.provider";
 
 /**
  * This layout should encapsulate any dynamic (non-static) pages.
