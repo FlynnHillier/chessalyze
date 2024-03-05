@@ -25,7 +25,7 @@ export function TRPCProvider({ children }: ProviderProps) {
       links: [
         httpBatchLink({
           // import 'url' from a server file.
-          url: `${getBaseUrl()}/a/t`,
+          url: `${getBaseUrl()}/api/trpc`,
         }),
       ],
     })
