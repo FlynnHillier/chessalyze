@@ -18,6 +18,8 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 
 export const createTRPCRouter = t.router
 
+export const createTRPCMiddleware = t.middleware
+
 export const createCallerFactory = t.createCallerFactory
 
 export const publicProcedure = t.procedure

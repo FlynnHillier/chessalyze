@@ -1,8 +1,10 @@
 import { createTRPCRouter, publicProcedure } from "./trpc";
-import { z } from "zod"
+import { trpcGameRouter } from "~/server/api/routers/game/game.trpc";
+import { trpcLobbyRouter } from "~/server/api/routers/lobby/lobby.trpc";
 
 export const appRouter = createTRPCRouter({
-  firstproc: publicProcedure.query(() => "test response")
+  game: trpcGameRouter,
+  lobby: trpcLobbyRouter,
 });
 
 // export type definition of API
