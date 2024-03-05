@@ -1,5 +1,5 @@
 import { getProviders } from "next-auth/react";
-import SignInBtn from "~/components/auth/signin.btn";
+import SignInBtn from "~/app/_components/auth/signin.btn";
 
 export default async function SignIn() {
   const providers = await getProviders()

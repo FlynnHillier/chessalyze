@@ -25,10 +25,9 @@ export default function SignInBtn({ provider }: { provider: ClientSafeProvider }
   }
 
 
-
   return (
     <button
-      className="border-solid border-1 border-black"
+      className="p-2 bg-zinc-500 border-t-amber-100 border-4"
       onClick={login}
     >
       {`Sign in with ${provider.name}`}
