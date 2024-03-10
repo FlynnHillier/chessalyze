@@ -6,7 +6,5 @@ export default function GamePage() {
   const { game } = useGame();
   const { lobby } = useLobby();
 
-  return (
-    <>
-  );
+  return <></>;
 }
