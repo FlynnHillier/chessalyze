@@ -18,6 +18,8 @@
     "drizzle-kit": "^0.20.14",
     "postcss": "^8.4.35",
     "postcss-import": "^16.0.1",
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.5.12",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
