@@ -25,6 +25,7 @@ export default function MultiButton<O extends string>({
 
         return (
           <button
+            key={option}
             className={`w-full hover:cursor-pointer ${customTailwind?.all} ${isSelected ? customTailwind?.selected : customTailwind?.nonSelected}`}
             onClick={() => {
               if (selected !== option) onSelection(option as O);
