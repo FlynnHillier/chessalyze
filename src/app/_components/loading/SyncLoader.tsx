@@ -13,7 +13,7 @@ type SyncLoaderProps = {
 function Dot({ animationDelay, customTailwind }: DotProps): JSX.Element {
   return (
     <span
-      className={`animate-vertical-wobble inline-block aspect-square h-1/3 rounded-full bg-black ${customTailwind}`}
+      className={`inline-block aspect-square h-1/3 animate-vertical-wobble rounded-full bg-black ${customTailwind}`}
       style={{
         animationDelay: animationDelay,
       }}
@@ -25,7 +25,7 @@ export default function SyncLoader({ customTailwind, dotCount = 3 }: SyncLoaderP
   const dots: JSX.Element[] = useMemo(() => {
     const o: JSX.Element[] = [];
     for (let i = 0; i < dotCount; i++)
-      o.push(<Dot customTailwind={customTailwind} animationDelay={`-${0.2 * i}s`} />);
+      o.push(<Dot key={i} customTailwind={customTailwind} animationDelay={`-${0.2 * i}s`} />);
     return o;
   }, [dotCount]);
 
