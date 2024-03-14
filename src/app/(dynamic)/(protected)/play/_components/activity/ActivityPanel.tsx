@@ -4,11 +4,11 @@ import { useState } from "react";
 import { FaRegCopy } from "react-icons/fa";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
-import SyncLoader from "~/app/_components/loading/SyncLoader";
-import MultiButton from "~/app/_components/common/MultiButton";
 import { useLobby } from "~/app/_components/providers/lobby.provider";
 import { trpc } from "~/app/_trpc/client";
 import { TRPCError } from "@trpc/server";
+import SyncLoader from "~/app/_components/loading/SyncLoader";
+import MultiButton from "~/app/_components/common/MultiButton";
 import AsyncButton from "~/app/_components/common/AsyncButton";
 
 type Opponent = "online" | "friend";
@@ -53,7 +53,9 @@ function FriendPanel() {
 
   function copyChallengeLink() {
     if (lobby.lobby?.id)
-      navigator.clipboard.writeText(`${window.location.origin}/play/join/${lobby.lobby.id}`);
+      navigator.clipboard.writeText(
+        `${window.location.origin}/play/join?challenge=${lobby.lobby.id}`,
+      );
   }
 
   return (
