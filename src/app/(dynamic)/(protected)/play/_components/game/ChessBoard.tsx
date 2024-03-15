@@ -28,7 +28,13 @@ type Props = {
 // - Once pull request to react-chessboard is accepted, implement support using onPieceSelect event prop
 // - Respect the boolean values returned from react chessboard events, implement async support if possible.
 
-export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
+export function ChessBoard({
+  chess,
+  orientation,
+  onMovement,
+  FEN,
+  disabled,
+}: Props) {
   const [selectedTile, setSelectedTile] = useState<null | Square>(null);
   const [pendingMovement, setPendingMovement] = useState<null | Movement>(null);
   const [promotionToSquare, setPromotionToSquare] = useState<
@@ -137,6 +143,12 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
     setSelectedTile(square);
   }
 
+  function isDraggablePiece({ piece }: { piece: Piece }): boolean {
+    if (disabled) return false;
+
+    return piece.length > 0 && piece[0] == orientation;
+  }
+
   return (
     <div className="w-full min-w-28">
       <Chessboard
@@ -153,6 +165,7 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
         showPromotionDialog={!!promotionToSquare}
         onSquareClick={onSquareClick}
         onPromotionCheck={onPromotionCheck}
+        isDraggablePiece={isDraggablePiece}
       />
     </div>
   );
