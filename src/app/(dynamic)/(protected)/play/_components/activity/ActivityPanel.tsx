@@ -63,7 +63,7 @@ function FriendPanel() {
       {lobby.present ? (
         <div className="flex flex-col gap-2">
           <div className="flex flex-row items-center overflow-hidden rounded bg-stone-600">
-            <div className="flex flex-row">
+            <div className="flex w-full flex-row">
               <AsyncButton
                 isLoading={leaveLobbyMutation.isLoading}
                 onLoading={<SyncLoader customTailwind="bg-stone-800" />}
@@ -75,7 +75,7 @@ function FriendPanel() {
               >
                 <MdCancel />
               </AsyncButton>
-              <div className="flex items-center text-wrap py-2 pl-2 pr-2 text-lg font-semibold">
+              <div className="w-full px-2 py-2 text-center text-lg font-semibold">
                 awaiting opponent
               </div>
             </div>

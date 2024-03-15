@@ -1,10 +1,19 @@
 "use client";
-import { useGame } from "~/app/_components/providers/game.provider";
-import { useLobby } from "~/app/_components/providers/lobby.provider";
+
+import ActivityPanel from "./_components/activity/ActivityPanel";
+import ChessInterface from "./_components/game/ChessInterface";
 
 export default function GamePage() {
-  const { game } = useGame();
-  const { lobby } = useLobby();
-
-  return <></>;
+  return (
+    <>
+      <div className="flex h-full w-full flex-row gap-6">
+        <div className="flex w-full justify-center">
+          <ChessInterface />
+        </div>
+        <div className="flex w-1/3 justify-start">
+          <ActivityPanel />
+        </div>
+      </div>
+    </>
+  );
 }
