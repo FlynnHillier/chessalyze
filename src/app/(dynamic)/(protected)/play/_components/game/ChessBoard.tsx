@@ -5,7 +5,10 @@ import { Chessboard } from "react-chessboard";
 import { CSSProperties, useEffect, useMemo, useState } from "react";
 import { PromotionSymbol, Color, Square } from "~/types/game.types";
 import { Move } from "chess.js";
-import { PromotionPieceOption, Piece } from "react-chessboard/dist/chessboard/types";
+import {
+  PromotionPieceOption,
+  Piece,
+} from "react-chessboard/dist/chessboard/types";
 
 type Movement = {
   source: Square;
@@ -14,10 +17,11 @@ type Movement = {
 };
 
 type Props = {
-  chess: Chess;
+  chess?: Chess;
   orientation: Color;
   FEN: string;
-  onMovement: (move: Movement) => boolean;
+  disabled: boolean;
+  onMovement: (move: Movement) => Promise<boolean> | boolean;
 };
 
 //TODO
@@ -27,13 +31,15 @@ type Props = {
 export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
   const [selectedTile, setSelectedTile] = useState<null | Square>(null);
   const [pendingMovement, setPendingMovement] = useState<null | Movement>(null);
-  const [promotionToSquare, setPromotionToSquare] = useState<undefined | Square>();
+  const [promotionToSquare, setPromotionToSquare] = useState<
+    undefined | Square
+  >();
 
   /**
    * generated styles for chess board tiles based on selected tile
    */
   const customSquareStyles = useMemo(() => {
-    if (!selectedTile) return {};
+    if (!selectedTile || !chess) return {};
 
     const getTileCSS = (occupied: boolean) => {
       const css: CSSProperties = {
@@ -48,7 +54,9 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
       return css;
     };
 
-    return (chess.moves({ verbose: true, square: selectedTile }) as Move[]).reduce(
+    return (
+      chess.moves({ verbose: true, square: selectedTile }) as Move[]
+    ).reduce(
       (acc, { to, captured }) => {
         return { ...acc, [to]: getTileCSS(captured != null) };
       },
@@ -56,7 +64,13 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
     );
   }, [selectedTile]);
 
-  function onMovementAttempt({ source, target, promotion }: Movement): boolean {
+  async function onMovementAttempt({
+    source,
+    target,
+    promotion,
+  }: Movement): Promise<boolean> {
+    if (!chess) return true;
+
     const moves = chess.moves({ verbose: true }) as Move[];
     const move = moves.find((m) => m.from == source && m.to == target);
 
@@ -67,7 +81,7 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
       return false;
     }
 
-    return onMovement({ source, target, promotion });
+    return await onMovement({ source, target, promotion });
   }
 
   function awaitPromotion(move: Movement) {
@@ -83,7 +97,10 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
     //This is a sort of hacky fix because PromotionPieceOption returns <colour><promotion> e.g 'wB' instead of PromotionSymbol <promotion>
     const promotionOption = piece[1].toLowerCase() as PromotionSymbol;
 
-    onMovementAttempt({ ...pendingMovement, promotion: promotionOption });
+    onMovementAttempt({
+      ...pendingMovement,
+      promotion: promotionOption,
+    });
 
     return false;
   }
@@ -99,7 +116,11 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
     return isPromotionMove;
   }
 
-  function onPieceDrop(sourceTile: Square, targetTile: Square, piece: string): false {
+  function onPieceDrop(
+    sourceTile: Square,
+    targetTile: Square,
+    piece: string,
+  ): false {
     onMovementAttempt({
       source: sourceTile,
       target: targetTile,
@@ -107,9 +128,10 @@ export function ChessBoard({ chess, orientation, onMovement, FEN }: Props) {
     return false;
   }
 
-  function onSquareClick(square: Square) {
+  async function onSquareClick(square: Square) {
     if (selectedTile) {
-      if (onMovementAttempt({ source: selectedTile, target: square })) return setSelectedTile(null);
+      if (await onMovementAttempt({ source: selectedTile, target: square }))
+        return setSelectedTile(null);
     }
 
     setSelectedTile(square);
