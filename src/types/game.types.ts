@@ -1,64 +1,77 @@
 import { UUID } from "~/types/common.types";
-import { Square as chessJSSquare, Color as chessJSColor } from "chess.js"
+import { Square as chessJSSquare, Color as chessJSColor } from "chess.js";
 
-export type FEN = string
+export type FEN = string;
 
-export type GameTermination = "checkmate" | "3-fold repition" | "50 move rule" | "insufficient material" | "stalemate" | "resignation" | "timeout" | "timeout vs insufficient material"
+export type GameTermination =
+  | "checkmate"
+  | "3-fold repition"
+  | "50 move rule"
+  | "insufficient material"
+  | "stalemate"
+  | "resignation"
+  | "timeout"
+  | "timeout vs insufficient material";
 
-export type PromotionSymbol = "r" | "b" | "n" | "q"
+export type PromotionSymbol = "r" | "b" | "n" | "q";
 
-export type CapturableSymbol = "r" | "b" | "n" | "q" | "p"
+export type CapturableSymbol = "r" | "b" | "n" | "q" | "p";
 
-export type Square = chessJSSquare
+export type Square = chessJSSquare;
 
 export type BW<T> = {
-  w: T,
-  b: T,
-}
+  w: T;
+  b: T;
+};
 
-export type Color = chessJSColor
+export type Color = chessJSColor;
+
+export type Movement = {
+  source: Square;
+  target: Square;
+  promotion?: PromotionSymbol;
+};
 
 /**
  * refers to a user while handling game management
  */
 export type Player = {
-  pid: UUID,
-}
+  pid: UUID;
+};
 
 export type Lobby = {
-  player: Player,
-  id: UUID,
-}
+  player: Player;
+  id: UUID;
+};
 
 export interface GameSnapshot {
-  id: UUID,
-  players: BW<Player>,
-  FEN: FEN,
-  captured: BW<{ [key in CapturableSymbol]: number }>
+  id: UUID;
+  players: BW<Player>;
+  FEN: FEN;
+  captured: BW<{ [key in CapturableSymbol]: number }>;
   time: {
-    isTimed: boolean,
-    remaining: BW<number>
-  },
+    isTimed: boolean;
+    remaining: BW<number>;
+  };
 }
 
 export type GameSummary = {
-  id: UUID,
+  id: UUID;
   players: {
-    w: Player,
-    b: Player
-  }
-  conclusion: GameConclusion,
-  moves: string[]
+    w: Player;
+    b: Player;
+  };
+  conclusion: GameConclusion;
+  moves: string[];
   time: {
-    start: number,
-    end: number,
-    duration: number,
-  }
-}
+    start: number;
+    end: number;
+    duration: number;
+  };
+};
 
 export type GameConclusion = {
-  termination: GameTermination,
-  victor: null | "w" | "b",
-  boardState: FEN
-}
-
+  termination: GameTermination;
+  victor: null | "w" | "b";
+  boardState: FEN;
+};
