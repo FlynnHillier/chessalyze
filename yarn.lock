@@ -826,6 +826,13 @@ anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
+arctic@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/arctic/-/arctic-1.2.1.tgz#e21d51a0b551469d084379a6a4d71fe486c67615"
+  integrity sha512-Pahp2ZhXH7fqrsQKRkvcsVBTFXkpUzfxSuJcyHR5Zz83a2S8yNX3w3w5rbozezO3i0w5q1zgR27VMoiuR/hB/Q==
+  dependencies:
+    oslo "1.0.1"
+
 arg@^5.0.2:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/arg/-/arg-5.0.2.tgz#c81433cc427c92c4dcf4865142dbca6f15acd59c"
