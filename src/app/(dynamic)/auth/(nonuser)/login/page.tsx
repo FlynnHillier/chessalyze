@@ -1,5 +1,9 @@
-import SignInBtn from "~/app/_components/auth/signin.btn";
+import Link from "next/link";
 
 export default async function SignIn() {
-  return <></>;
+  return (
+    <>
+      <Link href={"/api/auth/login/google"}> login in with google </Link>
+    </>
+  );
 }
