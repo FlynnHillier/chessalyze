@@ -1,4 +1,4 @@
-import { Lucia } from "lucia";
+import { Lucia, User } from "lucia";
 import { adapter } from "~/lib/lucia/adapter";
 import { env } from "~/env";
 
@@ -9,9 +9,12 @@ export const lucia = new Lucia(adapter, {
     },
   },
   getSessionAttributes: (attributes) => {
-    //map out custom session attributes
+    // Map colums from session table to session object
+    return {};
+  },
+  getUserAttributes: (attributes) => {
     return {
-      id: attributes.id,
+      // Map colums from user table to user object
       email: attributes.email,
     };
   },
@@ -21,9 +24,10 @@ declare module "lucia" {
   interface Register {
     Lucia: typeof lucia;
     DatabaseSessionAttributes: DatabaseSessionAttributes;
+    DatabaseUserAttributes: DatabaseUserAttributes;
   }
-  interface DatabaseSessionAttributes {
-    id: string;
+  interface DatabaseSessionAttributes {}
+  interface DatabaseUserAttributes {
     email: string;
-  } //Custom session attributes here (all columns are not automatically exposed)
+  }
 }

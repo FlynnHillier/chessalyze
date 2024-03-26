@@ -67,10 +67,7 @@ export async function GET(request: Request): Promise<Response> {
 
     if (existingUser) {
       // Log in existing user
-      const session = await lucia.createSession(existingUser.id, {
-        email: existingUser.email,
-        id: existingUser.id,
-      });
+      const session = await lucia.createSession(existingUser.id, {});
       const sessionCookie = await lucia.createSessionCookie(session.id);
       cookies().set(
         sessionCookie.name,
@@ -105,7 +102,6 @@ export async function GET(request: Request): Promise<Response> {
 
     const session = await lucia.createSession(newUserID, {
       email: googleUser.email,
-      id: newUserID,
     });
     const sessionCookie = await lucia.createSessionCookie(session.id);
     cookies().set(
