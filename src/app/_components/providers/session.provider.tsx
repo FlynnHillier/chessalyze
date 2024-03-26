@@ -1,3 +1,4 @@
-"use client"
-import { SessionProvider } from "next-auth/react"
-export default SessionProvider
+"use client";
+export default function SessionProvider() {
+  return <></>;
+}
