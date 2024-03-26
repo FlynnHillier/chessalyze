@@ -7,7 +7,7 @@ import { lucia } from "~/lib/lucia/lucia";
 /**
  * Custom function to handle reading lucia session data
  */
-export async function getLuciaSession(): Promise<
+export async function getServerSession(): Promise<
   | {
       user: null;
       session: null;

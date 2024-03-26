@@ -1,4 +1,4 @@
-import { createTRPCRouter, publicProcedure } from "./trpc";
+import { createTRPCRouter } from "./trpc";
 import { trpcGameRouter } from "~/server/api/routers/game/game.trpc";
 import { trpcLobbyRouter } from "~/server/api/routers/lobby/lobby.trpc";
 
