@@ -10,7 +10,10 @@ export const lucia = new Lucia(adapter, {
   },
   getSessionAttributes: (attributes) => {
     //map out custom session attributes
-    return {};
+    return {
+      id: attributes.id,
+      email: attributes.email,
+    };
   },
 });
 
@@ -19,5 +22,8 @@ declare module "lucia" {
     Lucia: typeof lucia;
     DatabaseSessionAttributes: DatabaseSessionAttributes;
   }
-  interface DatabaseSessionAttributes {} //Custom session attributes here (all columns are not automatically exposed)
+  interface DatabaseSessionAttributes {
+    id: string;
+    email: string;
+  } //Custom session attributes here (all columns are not automatically exposed)
 }
