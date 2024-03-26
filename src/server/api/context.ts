@@ -1,30 +1,17 @@
-import { getServerAuthSession } from "~/server/auth"
-import { Session } from "next-auth"
-import { db } from "~/lib/drizzle/db"
+import { Session, User } from "lucia";
+import { db } from "~/lib/drizzle/db";
+import { getServerSession } from "~/lib/lucia/util.lucia";
 
-
-
-interface CreateContextOptions {
-  session: Session | null
-}
-
-const createInnerTRPCContext = (opts: CreateContextOptions) => {
+const createInnerTRPCContext = (session: Session | null, user: User | null) => {
   return {
-    session: opts.session,
+    user: user,
+    session: session,
     db,
   };
 };
 
 export const createTRPCContext = async () => {
-  // const session = await getServerAuthSession({ req, res })
+  const { session, user } = await getServerSession();
 
-  return createInnerTRPCContext({
-    // session,
-    session: {
-      user: {
-        id: "testid"
-      },
-      expires: "test expires"
-    }
-  })
-}
+  return createInnerTRPCContext(session, user);
+};
