@@ -1,41 +1,99 @@
-import { UUID } from "~/types/common.types"
-import { wsEmitterRegistry } from "~/lib/ws/emitters.ws"
-import { EmitEvent } from "~/lib/ws/events.ws"
-import { EventEmitter } from "stream"
+import { EmitEvent } from "~/lib/ws/events.ws";
+import { wsSocketRegistry } from "~/lib/ws/registry.ws";
+import { WebSocket } from "ws";
 
-class WSRoomRegistry {
-    private rooms: Map<string, Set<EventEmitter>> = new Map()
+/**
+ * Create and manage a privatised collection of users to receive socket events
+ */
+export class Room {
+  private participants: Set<string> = new Set();
 
-    public get(room: string): EventEmitter[] {
-        return Array.from(this.rooms.get(room) ?? [])
-    }
+  constructor(uids?: string[]) {
+    if (uids) this.join(...uids);
+  }
 
-    public join(emitterID: UUID, room: string): void {
-        if (!this.rooms.has(room))
-            this.rooms.set(room, new Set())
+  /**
+   * Join a user(s) to room
+   */
+  public join(...uids: string[]) {
+    uids.forEach((uid) => this.participants.add(uid));
+  }
 
-        const emitter = wsEmitterRegistry.get(emitterID)
-        this.rooms.get(room)!.add(emitter)
-    }
+  /**
+   * Disconnect user(s) from room
+   */
+  public leave(...uids: string[]) {
+    uids.forEach((uid) => this.participants.delete(uid));
+  }
 
-    public leave(emitterID: UUID, room: string): void {
-        this.rooms.get(room)?.delete(wsEmitterRegistry.get(emitterID))
-    }
+  /**
+   * get all relevant socket instances joined to room
+   *
+   * @returns WebSocket[]
+   */
+  public sockets(): WebSocket[] {
+    const socketInstances: WebSocket[] = Array.from(this.participants).reduce(
+      (sockets, uid) => {
+        const socket = wsSocketRegistry.get(uid);
+        if (!socket) return sockets;
+        return [socket, ...sockets];
+      },
+      [] as WebSocket[],
+    );
 
-    public emit<T extends EmitEvent>(room: string, { event, data }: T): number {
-        const emitters = Array.from(this.rooms.get(room) ?? [])
+    return socketInstances;
+  }
 
-        emitters.forEach((emitter) => {
-            emitter.emit(event, data)
-        })
+  /**
+   * Emit an event to all socket instances within room
+   */
+  public emit<T extends EmitEvent>({ event, data }: T): number {
+    const sockets = this.sockets();
 
-        return emitters.length
-    }
+    sockets.forEach((socket) => {
+      socket.emit(event, data);
+    });
 
-    public destroy(room: string): void {
-        this.rooms.delete(room)
-    }
-
+    return sockets.length;
+  }
 }
 
-export const wsRoomRegistry = new WSRoomRegistry()
+class WSRoomRegistry {
+  /**
+   * Maintains references to created rooms
+   * (Rooms should only be instantiated from this method)
+   */
+  protected rooms: Map<string, Room> = new Map();
+
+  /**
+   * get room instance
+   */
+  public get(room: string): Room | null {
+    return this.rooms.get(room) ?? null;
+  }
+
+  /**
+   * Get room instance, create and return new room if did not exist
+   */
+  public getOrCreate(room: string): Room {
+    const existing = this.rooms.get(room) ?? null;
+    if (existing) return existing;
+
+    const created = new Room();
+    this.rooms.set(room, created);
+
+    return created;
+  }
+
+  /**
+   * Destroy specified room if it exists
+   * @returns true if room existed
+   */
+  public destroy(room: string): boolean {
+    // If any references still exist to specified room elsewhere in project, it will not truly be 'destroyed'
+
+    return this.rooms.delete(room);
+  }
+}
+
+export const wsRoomRegistry = new WSRoomRegistry();

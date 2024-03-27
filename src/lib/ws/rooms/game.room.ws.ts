@@ -1,17 +1,19 @@
-import { UUID } from "~/types/common.types"
-import { wsRoomRegistry } from "~/lib/ws/rooms.ws"
+import { UUID } from "~/types/common.types";
+import { Room, wsRoomRegistry } from "~/lib/ws/rooms.ws";
 
-export const createGameRoom = ({ room, pids }: {
-    room: string,
-    pids: [UUID, UUID, ...UUID[]]
-}): string => {
-    pids.forEach((pid) => {
-        wsRoomRegistry.join(pid, room)
-    })
+/**
+ * Create new game room populated with specified users
+ */
+export const createGameRoom = ({
+  room,
+  uids,
+}: {
+  room: string;
+  uids: [UUID, UUID, ...UUID[]];
+}): Room => {
+  const r = wsRoomRegistry.getOrCreate(room);
 
-    return room
-}
+  r.join(...uids);
 
-export const destroyGameRoom = (room: string) => {
-    wsRoomRegistry.destroy(room)
-}
+  return r;
+};

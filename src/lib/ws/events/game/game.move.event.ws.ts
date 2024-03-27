@@ -1,23 +1,29 @@
 import { BW, PromotionSymbol, Square } from "~/types/game.types";
 import { EmitEventType, ExtractEmitData } from "~/lib/ws/events.ws.types";
-import { wsRoomRegistry } from "../../rooms.ws";
 import { GameEvent } from "../game.event.ws";
+import { Room } from "~/lib/ws/rooms.ws";
 
-export type GameMoveEvent = EmitEventType<`${GameEvent.GAME_MOVE}`, {
+export type GameMoveEvent = EmitEventType<
+  `${GameEvent.GAME_MOVE}`,
+  {
     move: {
-        source: Square,
-        target: Square,
-        promotion?: PromotionSymbol
-    },
+      source: Square;
+      target: Square;
+      promotion?: PromotionSymbol;
+    };
     time: {
-        isTimed: boolean,
-        remaining: BW<number>
-    }
-}>
+      isTimed: boolean;
+      remaining: BW<number>;
+    };
+  }
+>;
 
-export const emitGameMoveEvent = (room: string, move: ExtractEmitData<GameMoveEvent>) => {
-    wsRoomRegistry.emit<GameMoveEvent>(room, {
-        event: GameEvent.GAME_MOVE,
-        data: move
-    })
-}
+export const emitGameMoveEvent = (
+  room: Room,
+  move: ExtractEmitData<GameMoveEvent>,
+) => {
+  room.emit<GameMoveEvent>({
+    event: GameEvent.GAME_MOVE,
+    data: move,
+  });
+};
