@@ -9,7 +9,8 @@
     "dev:wss": "tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
-    "drizzle": "drizzle-kit push:pg --config=./drizzle.config.ts"
+    "drizzle": "drizzle-kit push:pg --config=./drizzle.config.ts",
+    "dev2": "tsx watch src/server/server.ts --tsconfig tsconfig.server.json"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",

@@ -6,7 +6,6 @@
 import next from "next";
 import { createServer } from "node:http";
 import { parse } from "node:url";
-import type { Socket } from "net";
 
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
@@ -26,7 +25,7 @@ void APP.prepare().then(() => {
     const parsedUrl = parse(req.url, true);
     await handle(req, res, parsedUrl);
   });
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({ noServer: true });
   const handler = applyWSSHandler({
     wss,
     router: appRouter,
@@ -39,17 +38,25 @@ void APP.prepare().then(() => {
   });
 
   server.on("upgrade", (req, socket, head) => {
-    wss.handleUpgrade(req, socket as Socket, head, (ws) => {
-      wss.emit("connection", ws, req);
+    if (!req.url) return;
+
+    const { pathname } = parse(req.url, true);
+    if (pathname !== "/_next/webpack-hmr") {
+      // Only handle non next-js upgrade requests
+      wss.handleUpgrade(req, socket, head, function done(ws) {
+        wss.emit("connection", ws, req);
+      });
+    }
+  });
+
+  wss.on("connection", (socket) => {
+    console.log(`++ socket connection (${+wss.clients.size})`);
+
+    socket.on("close", () => {
+      console.log(`-- socket closed (${+wss.clients.size})`);
     });
   });
 
-  // Keep the next.js upgrade handler from being added to our custom server
-  // so sockets stay open even when not HMR.
-  const originalOn = server.on.bind(server);
-  server.on = function (event, listener) {
-    return event !== "upgrade" ? originalOn(event, listener) : server;
-  };
   server.listen(PORT);
 
   console.log(
