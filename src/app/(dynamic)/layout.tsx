@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import SessionProvider from "~/app/_components/providers/session.provider";
 import { TRPCProvider } from "~/app/_components/providers/trpc.provider";
 import { getServerSession } from "~/lib/lucia/util.lucia";
-import { WSProvider } from "~/app/_components/providers/ws.provider";
 
 /**
  * This layout should encapsulate any dynamic (non-static) pages.
@@ -14,9 +13,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
   return (
     <SessionProvider session={session} user={user}>
       <TRPCProvider>
-        <WSProvider>
-          <div>{children}</div>
-        </WSProvider>
+        <div>{children}</div>
       </TRPCProvider>
     </SessionProvider>
   );
