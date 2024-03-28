@@ -17,7 +17,7 @@ export enum loggingColourCode {
 }
 
 /**
- * Instantiate a new 'category' to be used to identify related logged message
+ * Instantiate a new 'category' to be used to identify related logged messages
  */
 class LoggingCategory {
   name: string;
