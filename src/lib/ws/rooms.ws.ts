@@ -35,27 +35,13 @@ export class Room {
   public sockets(): WebSocket[] {
     const socketInstances: WebSocket[] = Array.from(this.participants).reduce(
       (sockets, uid) => {
-        const socket = wsSocketRegistry.get(uid);
-        if (!socket) return sockets;
-        return [socket, ...sockets];
+        const userSockets = wsSocketRegistry.get(uid);
+        return [...userSockets, ...sockets];
       },
       [] as WebSocket[],
     );
 
     return socketInstances;
-  }
-
-  /**
-   * Emit an event to all socket instances within room
-   */
-  public emit<T extends EmitEvent>(ee: T): number {
-    const sockets = this.sockets();
-
-    sockets.forEach((socket) => {
-      emit(socket, ee);
-    });
-
-    return sockets.length;
   }
 }
 

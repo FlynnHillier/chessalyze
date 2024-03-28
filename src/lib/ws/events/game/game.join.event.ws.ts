@@ -1,7 +1,7 @@
 import { EmitEventType, ExtractEmitData } from "~/lib/ws/events.ws.types";
 import { GameSnapshot } from "~/types/game.types";
-import { GameEvent } from "../game.event.ws";
-import { Room } from "~/lib/ws/rooms.ws";
+import { GameEvent } from "~/lib/ws/events/game/game.events.ws";
+import { EmitSocketOptions, emit } from "~/lib/ws/emit.ws";
 
 export type GameJoinEvent = EmitEventType<
   `${GameEvent.GAME_JOIN}`,
@@ -9,10 +9,10 @@ export type GameJoinEvent = EmitEventType<
 >;
 
 export const emitGameJoinEvent = (
-  room: Room,
+  sockets: EmitSocketOptions,
   game: ExtractEmitData<GameJoinEvent>,
 ) => {
-  room.emit<GameJoinEvent>({
+  emit<GameJoinEvent>(sockets, {
     event: GameEvent.GAME_JOIN,
     data: game,
   });

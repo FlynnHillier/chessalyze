@@ -1,7 +1,7 @@
 import { BW, PromotionSymbol, Square } from "~/types/game.types";
 import { EmitEventType, ExtractEmitData } from "~/lib/ws/events.ws.types";
-import { GameEvent } from "../game.event.ws";
-import { Room } from "~/lib/ws/rooms.ws";
+import { GameEvent } from "~/lib/ws/events/game/game.events.ws";
+import { EmitSocketOptions, emit } from "~/lib/ws/emit.ws";
 
 export type GameMoveEvent = EmitEventType<
   `${GameEvent.GAME_MOVE}`,
@@ -19,10 +19,10 @@ export type GameMoveEvent = EmitEventType<
 >;
 
 export const emitGameMoveEvent = (
-  room: Room,
+  sockets: EmitSocketOptions,
   move: ExtractEmitData<GameMoveEvent>,
 ) => {
-  room.emit<GameMoveEvent>({
+  emit<GameMoveEvent>(sockets, {
     event: GameEvent.GAME_MOVE,
     data: move,
   });
