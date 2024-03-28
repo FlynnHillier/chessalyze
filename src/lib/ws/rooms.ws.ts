@@ -1,6 +1,7 @@
 import { EmitEvent } from "~/lib/ws/events.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { WebSocket } from "ws";
+import { emit } from "~/lib/ws/emit.ws";
 
 /**
  * Create and manage a privatised collection of users to receive socket events
@@ -47,11 +48,11 @@ export class Room {
   /**
    * Emit an event to all socket instances within room
    */
-  public emit<T extends EmitEvent>({ event, data }: T): number {
+  public emit<T extends EmitEvent>(ee: T): number {
     const sockets = this.sockets();
 
     sockets.forEach((socket) => {
-      socket.emit(event, data);
+      emit(socket, ee);
     });
 
     return sockets.length;
