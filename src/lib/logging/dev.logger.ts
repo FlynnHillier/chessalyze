@@ -1,5 +1,9 @@
 import { env } from "~/env";
 
+/**
+ * Apply colour to logged messages
+ */
+type ColourCode = `${loggingColourCode}`;
 export enum loggingColourCode {
   FgBlack = "\x1b[30m",
   FgRed = "\x1b[31m",
@@ -13,21 +17,49 @@ export enum loggingColourCode {
 }
 
 /**
+ * Instantiate a new 'category' to be used to identify related logged message
+ */
+class LoggingCategory {
+  name: string;
+  color: string;
+
+  constructor(name: string, color: ColourCode = loggingColourCode.FgWhite) {
+    this.name = name;
+    this.color = color;
+  }
+}
+
+/**
+ * export instantiated categories for use
+ */
+export const loggingCategories = {
+  misc: new LoggingCategory("misc", loggingColourCode.FgBlack),
+  socket: new LoggingCategory("socket", loggingColourCode.FgMagenta),
+} as const;
+
+/**
  * Logs specified message only if NODE_ENV enviroment variable is set to 'development'
  * @param message message to log
  */
 export function logDev({
   message,
   color,
+  category,
 }: {
   message: any | any[];
   color?: `${loggingColourCode}`;
+  category?: LoggingCategory;
 }) {
   if (!color) {
     color = loggingColourCode.FgWhite;
   }
 
+  if (!category) {
+    category = loggingCategories.misc;
+  }
+
   if (!Array.isArray(message)) message = [message];
 
-  if (env.NODE_ENV === "development") console.log(color, ...message);
+  if (env.NODE_ENV === "development")
+    console.log(category.color, `[${category.name}]`, color, ...message);
 }
