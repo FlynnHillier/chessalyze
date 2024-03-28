@@ -1,20 +1,19 @@
 import { GAMEPROCEDURE } from "~/server/api/routers/game/game.proc";
 import { GameInstanceManager } from "~/lib/game/GameInstanceManager";
 
-export const trpcGameStatusProcedure = GAMEPROCEDURE
-    .query(({ ctx }) => {
-        const { id: pid } = ctx.session.user
+export const trpcGameStatusProcedure = GAMEPROCEDURE.query(({ ctx }) => {
+  const { id: pid } = ctx.user;
 
-        const existingGame = GameInstanceManager.getPlayerGame(pid)
+  const existingGame = GameInstanceManager.getPlayerGame(pid);
 
-        if (existingGame === null) {
-            return {
-                present: false,
-            } as const
-        }
+  if (existingGame === null) {
+    return {
+      present: false,
+    } as const;
+  }
 
-        return {
-            present: true,
-            game: existingGame.snapshot()
-        }
-    })
+  return {
+    present: true,
+    game: existingGame.snapshot(),
+  };
+});

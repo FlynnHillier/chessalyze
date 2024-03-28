@@ -1,23 +1,21 @@
 import { LOBBYPROCEDURE } from "~/server/api/routers/lobby/lobby.proc";
 import { GameInstanceManager } from "~/lib/game/GameInstanceManager";
 
+export const trpcLobbyStatusProcedure = LOBBYPROCEDURE.query(({ ctx }) => {
+  const { id: pid } = ctx.user;
 
-export const trpcLobbyStatusProcedure = LOBBYPROCEDURE
-    .query(({ ctx }) => {
-        const { id: pid } = ctx.session.user
+  const existingUserLobby = GameInstanceManager.getPlayerLobby(pid);
 
-        const existingUserLobby = GameInstanceManager.getPlayerLobby(pid)
+  if (existingUserLobby === null) {
+    return {
+      present: false,
+    };
+  }
 
-        if (existingUserLobby === null) {
-            return {
-                present: false,
-            }
-        }
-
-        return {
-            present: true,
-            lobby: {
-                id: existingUserLobby.id
-            }
-        }
-    })
+  return {
+    present: true,
+    lobby: {
+      id: existingUserLobby.id,
+    },
+  };
+});
