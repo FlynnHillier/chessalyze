@@ -11,6 +11,7 @@ export default function GamePage() {
           <ChessInterface />
         </div>
         <div className="flex w-1/3 justify-start">
+          {/* If this component is present, socket may fail */}
           <ActivityPanel />
         </div>
       </div>
