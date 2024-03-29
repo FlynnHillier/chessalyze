@@ -32,13 +32,40 @@ class WSSocketRegistry {
       category: loggingCategories.socket,
     });
 
+    socket.on("error", (err) => {
+      logDev({
+        message: ["error!", err],
+        color: loggingColourCode.FgRed,
+        category: loggingCategories.socket,
+      });
+    });
+
     //De-register socket from user on socket close
-    socket.on(
-      "close",
-      (() => {
-        this.deregister(uid, socket);
-      }).bind(this),
-    );
+
+    socket.onclose = (event) => {
+      this.deregister(uid, socket);
+      logDev({
+        message: [
+          "close event:",
+          {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+            type: event.type,
+          },
+        ],
+        color: loggingColourCode.FgRed,
+        category: loggingCategories.socket,
+      });
+    };
+
+    socket.onerror = (event) => {
+      logDev({
+        message: ["error:", event],
+        color: loggingColourCode.FgRed,
+        category: loggingCategories.socket,
+      });
+    };
 
     emitDevIDEvent(
       { socket },

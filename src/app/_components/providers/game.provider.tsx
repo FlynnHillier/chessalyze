@@ -24,9 +24,7 @@ import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
 import { ChessClock } from "~/lib/game/GameClock";
 import { useWebSocket } from "next-ws/client";
-import { GameEvent } from "~/lib/ws/events/game.event.ws";
 import { GameMoveEvent } from "~/lib/ws/events/game/game.move.event.ws";
-import { ExtractEmitData } from "~/lib/ws/events.ws.types";
 import { validateWSMessage } from "~/app/_components/providers/ws.provider";
 
 export interface GAMECONTEXT {
@@ -163,63 +161,47 @@ export function useGame() {
 }
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
-  const ws = useWebSocket();
-
   const [game, dispatchGame] = useReducer(reducer, defaultContext);
   const query = trpc.game.status.useQuery();
+
+  const ws = useWebSocket();
 
   /**
    * Handle incoming ws movement event
    */
-  const onWSMovementEvent = useCallback(
-    (data: GameMoveEvent["data"]) => {
-      console.log("ws movement event", data);
-
-      //TODO: zod validation
-      dispatchGame({
-        type: "MOVE",
-        payload: {
-          move: {
-            source: data.move.source,
-            target: data.move.target,
-            promotion: data.move.promotion,
-          },
-          time: {
-            isTimed: data.time.isTimed,
-            remaining: data.time.remaining,
-          },
-        },
-      });
-    },
-    [dispatchGame],
-  );
+  const onWSMovementEvent = useCallback((data: GameMoveEvent["data"]) => {
+    console.log("Inside ws movement event", data);
+  }, []);
 
   /**
    * Handle different incoming ws message events
    */
   const onWSMessageEvent = useCallback(
     (e: MessageEvent<string>) => {
+      console.log("Received ws message event");
       const valid = validateWSMessage(e);
-      if (!valid) return;
+      if (!valid) return console.error("invalid");
       const { event, data } = valid;
+
+      console.log(event, data);
 
       switch (event) {
         case "GAME_MOVE":
+          console.log("ws message event is game movement event");
           onWSMovementEvent(data);
           return;
       }
-
-      console.error("unexpected WS message event type: ", event);
     },
-    [dispatchGame],
+    [dispatchGame, onWSMovementEvent],
   );
 
   useEffect(() => {
-    console.log("registering listeners", ws);
+    console.log("Game provider: registering ws message listener");
 
     ws?.addEventListener("message", onWSMessageEvent);
 
     return () => {
+      console.log("Game provider: deregistering ws message listeners");
       ws?.removeEventListener("message", onWSMessageEvent);
     };
   }, [ws, onWSMessageEvent]);
