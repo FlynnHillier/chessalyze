@@ -35,6 +35,8 @@ class LoggingCategory {
 export const loggingCategories = {
   misc: new LoggingCategory("misc", loggingColourCode.FgBlack),
   socket: new LoggingCategory("socket", loggingColourCode.FgMagenta),
+  lobby: new LoggingCategory("lobby", loggingColourCode.FgBlue),
+  game: new LoggingCategory("game", loggingColourCode.FgCyan),
 } as const;
 
 /**

@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { LOBBYPROCEDURE } from "~/server/api/routers/lobby/lobby.proc";
 import { trpcGameIsNotPresentMiddleware } from "~/server/api/routers/game/middleware/game.isNotPresent.mw";
-import { GameInstanceManager } from "~/lib/game/GameInstanceManager";
+import { LobbyMaster } from "~/lib/game/LobbyMaster";
 
 export const trpcLobbyJoinProcedure = LOBBYPROCEDURE.use(
   trpcGameIsNotPresentMiddleware,
@@ -15,32 +15,19 @@ export const trpcLobbyJoinProcedure = LOBBYPROCEDURE.use(
     }),
   )
   .mutation(({ ctx, input }) => {
-    const { id: lobbyID } = input.lobby;
-    const { id: pid } = ctx.user;
+    const { id: targetID } = input.lobby;
 
-    const existingUserLobby = GameInstanceManager.getPlayerLobby(pid);
+    const lobby = LobbyMaster.instance().get(targetID);
 
-    const joinedGame = GameInstanceManager.joinLobby({
-      targetLobbyID: lobbyID,
-      player: {
-        pid: pid,
-      },
-    });
-
-    if (joinedGame === null) {
-      //Game join was unsuccessful
+    if (!lobby)
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Target lobby was not found or is no longer available.",
       });
-    }
 
-    if (existingUserLobby && joinedGame !== null) {
-      //if player was already in a lobby, and game join was successful - end previous lobby.
-      GameInstanceManager.endLobby(existingUserLobby.id);
-    }
+    const game = lobby.join({ pid: ctx.user.id });
 
     return {
-      game: joinedGame.snapshot(),
+      game: game.snapshot(),
     };
   });

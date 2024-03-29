@@ -1,16 +1,16 @@
 import { LOBBYPROCEDURE } from "~/server/api/routers/lobby/lobby.proc";
-import { GameInstanceManager } from "~/lib/game/GameInstanceManager";
+import { LobbyMaster } from "~/lib/game/LobbyMaster";
 
 export const trpcLobbyLeaveProcedure = LOBBYPROCEDURE.mutation(({ ctx }) => {
   const { id: pid } = ctx.user;
 
-  const existingUserLobby = GameInstanceManager.getPlayerLobby(pid);
+  const lobby = LobbyMaster.instance().getByPlayer(pid);
 
-  if (existingUserLobby === null) {
+  if (lobby === null) {
     return;
   }
 
-  GameInstanceManager.endLobby(existingUserLobby.id);
+  lobby.end();
 
   return;
 });

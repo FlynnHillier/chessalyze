@@ -1,16 +1,16 @@
 import { WebSocket } from "ws";
 import { env } from "~/env";
 import { EmitEvent } from "~/lib/ws/events.ws";
-import { Room } from "~/lib/ws/rooms.ws";
 import { OneOf } from "~/types/util/util.types";
 import {
   logDev,
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
+import { SocketRoom } from "~/lib/ws/rooms.ws";
 
 export type EmitSocketOptions = OneOf<{
-  room: Room;
+  room: SocketRoom;
   socket: WebSocket;
 }>;
 

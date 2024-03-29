@@ -39,11 +39,6 @@ export type Player = {
   pid: UUID;
 };
 
-export type Lobby = {
-  player: Player;
-  id: UUID;
-};
-
 export interface GameSnapshot {
   id: UUID;
   players: BW<Player>;

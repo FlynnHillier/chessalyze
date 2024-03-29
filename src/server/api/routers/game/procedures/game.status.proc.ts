@@ -1,10 +1,8 @@
 import { GAMEPROCEDURE } from "~/server/api/routers/game/game.proc";
-import { GameInstanceManager } from "~/lib/game/GameInstanceManager";
+import { GameMaster } from "~/lib/game/GameMaster";
 
 export const trpcGameStatusProcedure = GAMEPROCEDURE.query(({ ctx }) => {
-  const { id: pid } = ctx.user;
-
-  const existingGame = GameInstanceManager.getPlayerGame(pid);
+  const existingGame = GameMaster.instance().getByPlayer(ctx.user.id);
 
   if (existingGame === null) {
     return {

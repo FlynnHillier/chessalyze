@@ -1,10 +1,10 @@
 import { emitDevTestEvent } from "~/lib/ws/events/dev/dev.test.ws";
-import { wsRoomRegistry } from "~/lib/ws/rooms.ws";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { WSRoomRegistry } from "~/lib/ws/rooms.ws";
 
 export const trpcDevRouter = createTRPCRouter({
   testUserSockets: protectedProcedure.mutation(({ ctx }) => {
-    const testRoom = wsRoomRegistry.getOrCreate("testRoom");
+    const testRoom = WSRoomRegistry.instance().getOrCreate("testRoom");
     testRoom.join(ctx.user.id);
     emitDevTestEvent(
       { room: testRoom },
