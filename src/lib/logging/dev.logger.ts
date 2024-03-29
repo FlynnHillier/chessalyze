@@ -61,5 +61,12 @@ export function logDev({
   if (!Array.isArray(message)) message = [message];
 
   if (env.NODE_ENV === "development")
-    console.log(category.color, `[${category.name}]`, color, ...message);
+    console.log(
+      loggingColourCode.FgBlack,
+      `[${new Date(Date.now()).toISOString().split("T")[1].substring(0, 12)}]`,
+      category.color,
+      `[${category.name}]`,
+      color,
+      ...message,
+    );
 }
