@@ -2,6 +2,7 @@
 
 import { TRPCError } from "@trpc/server";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useGame } from "~/app/_components/providers/game.provider";
 import { useLobby } from "~/app/_components/providers/lobby.provider";
@@ -9,6 +10,8 @@ import { trpc } from "~/app/_trpc/client";
 
 export default function JoinPage() {
   const { lobby, dispatchLobby } = useLobby();
+  const { game } = useGame();
+  const router = useRouter();
   const { dispatchGame } = useGame();
   const searchParams = useSearchParams();
   const JoinLobbyMutation = trpc.lobby.join.useMutation();
@@ -43,10 +46,14 @@ export default function JoinPage() {
 
   useEffect(() => {
     const target = searchParams.get("challenge");
-    if (!target) return;
+    if (!target || game.present) return;
 
     attemptJoinLobby(target);
   }, []);
+
+  useEffect(() => {
+    if (game.present) router.push("/play");
+  }, [game.present]);
 
   //TODO: add actual UI here
   // - once friends are added, option to invite friends appears here.

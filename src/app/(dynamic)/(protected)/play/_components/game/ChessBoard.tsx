@@ -2,7 +2,7 @@
 
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { CSSProperties, useEffect, useMemo, useState } from "react";
+import { CSSProperties, useMemo, useState } from "react";
 import { PromotionSymbol, Color, Square } from "~/types/game.types";
 import { Move } from "chess.js";
 import {
@@ -22,6 +22,7 @@ type Props = {
   FEN: string;
   disabled: boolean;
   onMovement: (move: Movement) => Promise<boolean> | boolean;
+  turn?: Color;
 };
 
 //TODO
@@ -34,6 +35,7 @@ export function ChessBoard({
   onMovement,
   FEN,
   disabled,
+  turn,
 }: Props) {
   const [selectedTile, setSelectedTile] = useState<null | Square>(null);
   const [pendingMovement, setPendingMovement] = useState<null | Movement>(null);
@@ -45,7 +47,7 @@ export function ChessBoard({
    * generated styles for chess board tiles based on selected tile
    */
   const customSquareStyles = useMemo(() => {
-    if (!selectedTile || !chess) return {};
+    if (!selectedTile || !chess || (turn && turn !== orientation)) return {};
 
     const getTileCSS = (occupied: boolean) => {
       const css: CSSProperties = {
@@ -76,6 +78,7 @@ export function ChessBoard({
     promotion,
   }: Movement): Promise<boolean> {
     if (!chess) return true;
+    if (disabled) return false;
 
     const moves = chess.moves({ verbose: true }) as Move[];
     const move = moves.find((m) => m.from == source && m.to == target);

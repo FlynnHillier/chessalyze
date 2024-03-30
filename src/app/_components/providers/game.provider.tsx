@@ -19,28 +19,38 @@ import {
   GameSnapshot,
   Color,
   Square,
+  Movement,
 } from "~/types/game.types";
 import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
 import { ChessClock } from "~/lib/game/GameClock";
 import { useWebSocket } from "next-ws/client";
-import { GameEvent } from "~/lib/ws/events/game.event.ws";
 import { GameMoveEvent } from "~/lib/ws/events/game/game.move.event.ws";
-import { ExtractEmitData } from "~/lib/ws/events.ws.types";
 import { validateWSMessage } from "~/app/_components/providers/ws.provider";
+import { GameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
+import { GameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
 
-export interface GAMECONTEXT {
-  present: boolean;
-  game?: {
-    id: UUID;
-    players: BW<Player>;
-    captured: BW<{ [key in CapturableSymbol]: number }>;
-    engine: {
-      clock?: ChessClock;
-      instance: Chess;
+export type GAMECONTEXT =
+  | {
+      present: false;
+      game: undefined;
+    }
+  | {
+      present: true;
+      game: {
+        id: UUID;
+        players: BW<Player>;
+        captured: BW<{ [key in CapturableSymbol]: number }>;
+        state: {
+          fen: string;
+          turn: Color;
+        };
+        engine: {
+          clock?: ChessClock;
+          instance: Chess;
+        };
+      };
     };
-  };
-}
 
 const defaultContext: GAMECONTEXT = {
   present: false,
@@ -76,6 +86,39 @@ type RdcrActnMove = ReducerAction<
   }
 >;
 
+/**
+ * Convert instance method exposed state into static object suitable for context.
+ *
+ * @param instance instance to extract state from
+ * @returns an object containing game state fetched from instance methods
+ */
+function extractInstanceState(
+  instance: Chess,
+): NonNullable<GAMECONTEXT["game"]>["state"] {
+  return {
+    fen: instance.fen(),
+    turn: instance.turn(),
+  };
+}
+
+/**
+ * Check if move is currently valid for a given Chess instance
+ *
+ * @param instance Chess instance
+ * @param move move to query for
+ * @returns true if specified move is valid move within specified Chess instance
+ */
+function moveIsValid(instance: Chess, move: Movement): boolean {
+  return !!instance
+    .moves({ verbose: true })
+    .find(
+      (m) =>
+        m.from === move.source &&
+        m.to === move.target &&
+        m.promotion === move.promotion,
+    );
+}
+
 type GameRdcrActn = RdcrActnLoad | RdcrActnEnd | RdcrActnMove;
 
 function reducer<A extends GameRdcrActn>(
@@ -85,7 +128,7 @@ function reducer<A extends GameRdcrActn>(
   const { type, payload } = action;
 
   switch (type) {
-    case "LOAD":
+    case "LOAD": {
       const { game, present } = payload;
 
       if (state.game?.engine.clock?.isActive()) {
@@ -96,26 +139,41 @@ function reducer<A extends GameRdcrActn>(
       const instance = game ? new Chess(game.FEN) : new Chess();
       const clockTimeOutCallback = (color: Color) => {};
 
+      if (!present || !game) {
+        return {
+          present: false,
+          game: undefined,
+        };
+      }
+
       return {
         present: present,
         game: game && {
           id: game.id,
           players: game.players,
           captured: game.captured,
+          state: extractInstanceState(instance),
           engine: {
+            instance: instance,
             clock: game.time.isTimed
               ? new ChessClock(game.time.remaining, clockTimeOutCallback)
               : undefined,
-            instance: instance,
           },
         },
       };
-    case "MOVE":
-      if (!state.game) {
+    }
+    case "MOVE": {
+      if (!state.game) return { ...state };
+
+      const { move, time } = payload;
+      const { instance, clock } = state.game.engine;
+      const turn = instance.turn();
+
+      if (!moveIsValid(instance, move)) {
+        console.error(`Invalid movement event!`, payload.move);
+        console.log("setting state", { ...state });
         return { ...state };
       }
-
-      const initiator = state.game.engine.instance.turn();
 
       const movement = state.game.engine.instance.move({
         from: payload.move.source,
@@ -124,19 +182,28 @@ function reducer<A extends GameRdcrActn>(
       });
 
       if (movement?.captured) {
-        state.game.captured[initiator][movement.captured as PromotionSymbol]++;
+        // Update captured pieces
+        state.game.captured[turn][movement.captured as PromotionSymbol]++;
       }
 
-      if (state.game.engine.clock && payload.time.isTimed) {
-        state.game.engine.clock.editDuration({
-          w: payload.time.remaining.w,
-          b: payload.time.remaining.b,
+      if (clock && time.isTimed) {
+        // Switch & sync client clock if game is timed.
+        clock.editDuration({
+          w: time.remaining.w,
+          b: time.remaining.b,
         });
-        state.game.engine.clock.switch();
+        clock.switch();
       }
 
-      return { ...state };
-    case "END":
+      return {
+        ...state,
+        game: {
+          ...state.game,
+          state: extractInstanceState(instance),
+        },
+      };
+    }
+    case "END": {
       if (state.game?.engine.clock?.isActive()) {
         //stop any previous active clocks
         state.game.engine.clock.stop();
@@ -146,6 +213,7 @@ function reducer<A extends GameRdcrActn>(
         present: false,
         game: undefined,
       };
+    }
     default:
       return { ...state };
   }
@@ -169,7 +237,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const query = trpc.game.status.useQuery();
 
   /**
-   * Handle incoming ws movement event
+   * Handle incoming ws game movement event
    */
   const onWSMovementEvent = useCallback(
     (data: GameMoveEvent["data"]) => {
@@ -195,6 +263,46 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   );
 
   /**
+   * Handle incoming ws game join event
+   */
+  const onWSGameJoinEvent = useCallback(
+    (data: GameJoinEvent["data"]) => {
+      //TODO: zod validation
+      dispatchGame({
+        type: "LOAD",
+        payload: {
+          present: true,
+          game: {
+            id: data.id,
+            players: data.players,
+            FEN: data.FEN,
+            time: {
+              isTimed: data.time.isTimed,
+              remaining: data.time.remaining,
+            },
+            captured: data.captured,
+          },
+        },
+      });
+    },
+    [dispatchGame],
+  );
+
+  /**
+   * Handle incoming ws game end event
+   */
+  const onWSGameEndEvent = useCallback(
+    (data: GameEndEvent["data"]) => {
+      //TODO: zod validation
+      dispatchGame({
+        type: "END",
+        payload: {},
+      });
+    },
+    [dispatchGame],
+  );
+
+  /**
    * Handle different incoming ws message events
    */
   const onWSMessageEvent = useCallback(
@@ -207,9 +315,13 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         case "GAME_MOVE":
           onWSMovementEvent(data);
           return;
+        case "GAME_JOIN":
+          onWSGameJoinEvent(data);
+          return;
+        case "GAME_END":
+          onWSGameEndEvent(data);
+          return;
       }
-
-      console.error("unexpected WS message event type: ", event);
     },
     [dispatchGame],
   );

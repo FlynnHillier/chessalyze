@@ -1,5 +1,3 @@
-"use client";
-
 import ActivityPanel from "./_components/activity/ActivityPanel";
 import ChessInterface from "./_components/game/ChessInterface";
 
