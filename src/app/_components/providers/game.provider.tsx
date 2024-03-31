@@ -47,7 +47,7 @@ export type GAMECONTEXT =
         };
         engine: {
           clock?: ChessClock;
-          instance: Chess;
+          getValidMoves: Chess["moves"];
         };
       };
     };
@@ -121,6 +121,8 @@ function moveIsValid(instance: Chess, move: Movement): boolean {
 
 type GameRdcrActn = RdcrActnLoad | RdcrActnEnd | RdcrActnMove;
 
+//TODO: just re-instantiate Chess instance with new fen when we move.
+
 function reducer<A extends GameRdcrActn>(
   state: GAMECONTEXT,
   action: A,
@@ -154,7 +156,7 @@ function reducer<A extends GameRdcrActn>(
           captured: game.captured,
           state: extractInstanceState(instance),
           engine: {
-            instance: instance,
+            getValidMoves: instance.moves.bind(instance),
             clock: game.time.isTimed
               ? new ChessClock(game.time.remaining, clockTimeOutCallback)
               : undefined,
@@ -166,7 +168,8 @@ function reducer<A extends GameRdcrActn>(
       if (!state.game) return { ...state };
 
       const { move, time } = payload;
-      const { instance, clock } = state.game.engine;
+      const { clock } = state.game.engine;
+      const instance = new Chess(state.game.state.fen);
       const turn = instance.turn();
 
       if (!moveIsValid(instance, move)) {
@@ -175,7 +178,7 @@ function reducer<A extends GameRdcrActn>(
         return { ...state };
       }
 
-      const movement = state.game.engine.instance.move({
+      const movement = instance.move({
         from: payload.move.source,
         to: payload.move.target,
         promotion: payload.move.promotion,
@@ -200,6 +203,10 @@ function reducer<A extends GameRdcrActn>(
         game: {
           ...state.game,
           state: extractInstanceState(instance),
+          engine: {
+            clock: clock,
+            getValidMoves: instance.moves.bind(instance),
+          },
         },
       };
     }

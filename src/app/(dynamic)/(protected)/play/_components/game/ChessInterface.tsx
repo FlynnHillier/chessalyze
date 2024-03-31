@@ -49,7 +49,7 @@ export default function ChessInterface() {
             game?.state.fen ??
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           }
-          chess={game?.engine.instance}
+          getValidMoves={game?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
           disabled={!game || game.state.turn !== orientation}
