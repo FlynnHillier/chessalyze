@@ -39,7 +39,7 @@ export default function ChessInterface() {
     <div className="flex h-full w-full max-w-xl flex-col">
       <div className="h-1/6 w-full">
         <GameBanner
-          player={orientation === "w" ? game?.players.w : game?.players.b}
+          player={orientation === "b" ? game?.players.w : game?.players.b}
         />
       </div>
       <div className="w-full">
