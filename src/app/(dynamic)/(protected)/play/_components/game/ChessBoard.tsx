@@ -108,7 +108,8 @@ export function ChessBoard({
     const promotionOption = piece[1].toLowerCase() as PromotionSymbol;
 
     onMovementAttempt({
-      ...pendingMovement,
+      source: pendingMovement.source,
+      target: pendingMovement.target,
       promotion: promotionOption,
     });
 

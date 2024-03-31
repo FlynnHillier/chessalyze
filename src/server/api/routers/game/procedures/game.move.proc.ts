@@ -13,12 +13,12 @@ export const trpcGameMoveProcedure = GAMEPROCEDURE.use(
       move: z.object({
         source: zodIsTileValidator,
         target: zodIsTileValidator,
+        promotion: z.optional(zodIsPromotionPieceValidator),
       }),
-      promotion: z.optional(zodIsPromotionPieceValidator),
     }),
   )
   .mutation(({ ctx, input }) => {
-    const { move, promotion } = input;
+    const { move } = input;
     const { game, user } = ctx;
 
     if (!game.isPlayerTurn(user!.id)) {
@@ -28,14 +28,14 @@ export const trpcGameMoveProcedure = GAMEPROCEDURE.use(
       });
     }
 
-    if (!game.isValidMove(move.source, move.target, promotion)) {
+    if (!game.isValidMove(move.source, move.target, move.promotion)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "invalid move",
       });
     }
 
-    game.move(move.source, move.target, promotion);
+    game.move(move.source, move.target, move.promotion);
 
     return {
       success: true,
