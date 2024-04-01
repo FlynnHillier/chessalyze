@@ -1,10 +1,12 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 
 import { ChessBoard } from "./ChessBoard";
 import { useGame } from "~/app/_components/providers/game.provider";
 import { Movement, Player, BW, Color } from "~/types/game.types";
-import { Chess } from "chess.js";
 import { trpc } from "~/app/_trpc/client";
+import { useSession } from "~/app/_components/providers/session.provider";
 
 function GameBanner({ player }: { player?: Player }) {
   return (
@@ -12,60 +14,51 @@ function GameBanner({ player }: { player?: Player }) {
       <div className="text- rounded-lg bg-stone-900 px-2 py-1.5">
         {player?.pid ?? "player"}
       </div>
-      <div className="flex w-full justify-end">
-        <div className="rounded-lg bg-stone-900 px-2 py-1.5">
-          {player?.pid ?? "player"}
-        </div>
-      </div>
     </div>
   );
 }
 
-export default function ChessInterface({
-  players = {},
-  orientation = "w",
-}: {
-  players?: Partial<BW<Player>>;
-  orientation?: Color;
-}) {
-  const { game } = useGame();
-  const [FEN, setFEN] = useState<string>(new Chess().fen());
+export default function ChessInterface() {
+  const game = useGame().game.game;
+  const { user } = useSession();
   const trpcMoveMutation = trpc.game.move.useMutation();
+  const [orientation, setOrientation] = useState<Color>("w");
+
+  useEffect(() => {
+    setOrientation(user?.id === game?.players.b.pid ? "b" : "w");
+  }, [user, game?.players.b.pid, game?.players.w.pid]);
 
   async function onMovement(move: Movement) {
     const { success } = await trpcMoveMutation.mutateAsync({
       move: move,
     });
-
-    if (success && game.game) {
-      game.game.engine.instance.move({
-        from: move.source,
-        to: move.target,
-        promotion: move.promotion,
-      });
-
-      setFEN(game.game.engine.instance.fen());
-    }
-
     return success;
   }
 
   return (
     <div className="flex h-full w-full max-w-xl flex-col">
       <div className="h-1/6 w-full">
-        <GameBanner player={orientation === "w" ? players.b : players.w} />
+        <GameBanner
+          player={orientation === "b" ? game?.players.w : game?.players.b}
+        />
       </div>
       <div className="w-full">
         <ChessBoard
-          FEN={FEN}
-          chess={game.game?.engine.instance}
+          turn={game?.state.turn}
+          FEN={
+            game?.state.fen ??
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+          }
+          getValidMoves={game?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
-          disabled={!game.present}
+          disabled={!game || game.state.turn !== orientation}
         />
       </div>
       <div className="w-ful h-1/6">
-        <GameBanner player={orientation === "w" ? players.w : players.b} />
+        <GameBanner
+          player={orientation === "b" ? game?.players.b : game?.players.w}
+        />
       </div>
     </div>
   );

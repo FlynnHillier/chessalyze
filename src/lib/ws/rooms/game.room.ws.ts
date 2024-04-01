@@ -1,17 +1,21 @@
-import { UUID } from "~/types/common.types"
-import { wsRoomRegistry } from "~/lib/ws/rooms.ws"
+import { SocketRoomCategory } from "~/lib/ws/rooms.ws";
 
-export const createGameRoom = ({ room, pids }: {
-    room: string,
-    pids: [UUID, UUID, ...UUID[]]
-}): string => {
-    pids.forEach((pid) => {
-        wsRoomRegistry.join(pid, room)
-    })
+const gameSocketRoomCategory = new SocketRoomCategory(
+  "game",
+  ({ id }: { id: string }) => {
+    return id;
+  },
+);
 
-    return room
-}
+/**
+ * @param id game id
+ */
+export const getGameSocketRoom = gameSocketRoomCategory.get.bind(
+  gameSocketRoomCategory,
+);
 
-export const destroyGameRoom = (room: string) => {
-    wsRoomRegistry.destroy(room)
-}
+/**
+ * @param id game id
+ */
+export const getOrCreateGameSocketRoom =
+  gameSocketRoomCategory.getOrCreate.bind(gameSocketRoomCategory);
