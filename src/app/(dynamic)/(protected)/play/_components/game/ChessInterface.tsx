@@ -130,6 +130,7 @@ export default function ChessInterface() {
           turn={game?.state.turn}
           FEN={
             game?.state.fen ??
+            conclusion?.conclusion.boardState ??
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           }
           getValidMoves={game?.engine.getValidMoves}
