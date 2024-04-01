@@ -23,12 +23,33 @@ export default function ChessInterface() {
   const { user } = useSession();
   const trpcMoveMutation = trpc.game.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
+  const [FEN, setFen] = useState<string>(
+    game?.state.fen ??
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  );
 
+  /**
+   * Sync FEN to context FEN, only if game is present.
+   *
+   * This causes board state to be 'remembered' after game ends so board doesnt immediately reset.
+   */
+  useEffect(() => {
+    if (game) setFen(game.state.fen);
+  }, [game?.state.fen]);
+
+  /**
+   *  Decide and set board orientation based on the current match's players.
+   */
   useEffect(() => {
     setOrientation(user?.id === game?.players.b.pid ? "b" : "w");
   }, [user, game?.players.b.pid, game?.players.w.pid]);
 
-  async function onMovement(move: Movement) {
+  /**
+   *
+   * @param move movement that has occured
+   * @returns Promise<boolean> true if move was a success
+   */
+  async function onMovement(move: Movement): Promise<boolean> {
     const { success } = await trpcMoveMutation.mutateAsync({
       move: move,
     });
@@ -45,10 +66,7 @@ export default function ChessInterface() {
       <div className="w-full">
         <ChessBoard
           turn={game?.state.turn}
-          FEN={
-            game?.state.fen ??
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-          }
+          FEN={FEN}
           getValidMoves={game?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
