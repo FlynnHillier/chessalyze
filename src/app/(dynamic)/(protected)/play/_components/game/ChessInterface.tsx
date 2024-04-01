@@ -10,6 +10,11 @@ import { useSession } from "~/app/_components/providers/session.provider";
 import { FaChessKing, FaChess } from "react-icons/fa";
 import { FaRegChessKing } from "react-icons/fa6";
 
+/**
+ * Overlay shown when game is over.
+ *
+ * Should display brief information about how & why the game ended.
+ */
 function GameEndOverlay({
   isShown,
   reason,
@@ -56,6 +61,10 @@ function GameEndOverlay({
   );
 }
 
+/**
+ * Display player of game's name
+ *
+ */
 function GameBanner({ player }: { player?: Player }) {
   return (
     <div className="flex h-full w-full flex-row justify-start bg-stone-800 p-1">
@@ -66,6 +75,10 @@ function GameBanner({ player }: { player?: Player }) {
   );
 }
 
+/**
+ * Allow interaction with chess board and server
+ *
+ */
 export default function ChessInterface() {
   const game = useGame().game;
   const conclusion = useGame().conclusion;
