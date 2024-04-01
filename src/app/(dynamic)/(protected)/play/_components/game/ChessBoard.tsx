@@ -2,7 +2,7 @@
 
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { CSSProperties, useMemo, useState } from "react";
+import { CSSProperties, useCallback, useMemo, useState } from "react";
 import { PromotionSymbol, Color, Square } from "~/types/game.types";
 import { Move } from "chess.js";
 import {
@@ -28,6 +28,8 @@ type Props = {
 //TODO
 // - Once pull request to react-chessboard is accepted, implement support using onPieceSelect event prop
 // - Respect the boolean values returned from react chessboard events, implement async support if possible.
+//
+// - FEN is reset on inital page load if already in game (only in strict mode)
 
 export function ChessBoard({
   getValidMoves,
@@ -71,7 +73,16 @@ export function ChessBoard({
       },
       {} as { [key in Square]: CSSProperties },
     );
-  }, [selectedTile]);
+  }, [selectedTile, turn, getValidMoves, disabled]);
+
+  const isDraggablePiece = useCallback(
+    ({ piece }: { piece: Piece }) => {
+      if (disabled) return false;
+
+      return piece.length > 0 && piece[0] == orientation;
+    },
+    [disabled],
+  );
 
   async function onMovementAttempt({
     source,
@@ -139,6 +150,10 @@ export function ChessBoard({
     return false;
   }
 
+  function onPieceDragBegin(piece: Piece, sourceSquare: Square) {
+    setSelectedTile(sourceSquare);
+  }
+
   async function onSquareClick(square: Square) {
     if (selectedTile) {
       if (await onMovementAttempt({ source: selectedTile, target: square }))
@@ -146,12 +161,6 @@ export function ChessBoard({
     }
 
     setSelectedTile(square);
-  }
-
-  function isDraggablePiece({ piece }: { piece: Piece }): boolean {
-    if (disabled) return false;
-
-    return piece.length > 0 && piece[0] == orientation;
   }
 
   return (
@@ -171,6 +180,7 @@ export function ChessBoard({
         onSquareClick={onSquareClick}
         onPromotionCheck={onPromotionCheck}
         isDraggablePiece={isDraggablePiece}
+        onPieceDragBegin={onPieceDragBegin}
       />
     </div>
   );

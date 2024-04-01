@@ -7,7 +7,71 @@ import { useGame } from "~/app/_components/providers/game.provider";
 import { Movement, Player, BW, Color } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { useSession } from "~/app/_components/providers/session.provider";
+import { FaChessKing, FaChess } from "react-icons/fa";
+import { FaRegChessKing } from "react-icons/fa6";
 
+/**
+ * Overlay shown when game is over.
+ *
+ * Should display brief information about how & why the game ended.
+ */
+function GameEndOverlay({
+  isShown,
+  reason,
+  victor,
+  hideSelf,
+}: {
+  isShown: boolean;
+  reason?: string;
+  victor?: Color | null;
+  hideSelf?: () => any;
+}) {
+  const [verboseVictor, setVerboseVictor] = useState<
+    "white" | "black" | "draw"
+  >();
+  const [icon, setIcon] = useState<JSX.Element>();
+
+  useEffect(() => {
+    if (victor === null) {
+      setVerboseVictor("draw");
+      setIcon(<FaChess />);
+    } else if (victor === "w") {
+      setVerboseVictor("white");
+      setIcon(<FaRegChessKing />);
+    } else if (victor === "b") {
+      setVerboseVictor("black");
+      setIcon(<FaChessKing />);
+    } else {
+      setIcon(undefined);
+    }
+  }, [victor]);
+
+  return (
+    <div
+      className={`z-10 flex h-full w-full items-center justify-center bg-black bg-opacity-60 ${isShown ? "" : "hidden"}`}
+      onClick={hideSelf}
+    >
+      <div className="relative h-fit w-2/5 text-wrap rounded-md bg-white px-2 py-3 text-center text-lg font-semibold text-black">
+        <div
+          className="absolute left-0 top-0 aspect-square w-1/6 select-none text-gray-500 hover:cursor-pointer hover:text-gray-600"
+          onClick={hideSelf}
+        >
+          x
+        </div>
+
+        <span className="font-bold"> Game over!</span>
+        <br />
+        {`${verboseVictor ?? verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
+        <div className="flex w-full items-center justify-center">{icon}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Display player of game's name
+ *
+ */
 function GameBanner({ player }: { player?: Player }) {
   return (
     <div className="flex h-full w-full flex-row justify-start bg-stone-800 p-1">
@@ -18,17 +82,36 @@ function GameBanner({ player }: { player?: Player }) {
   );
 }
 
+/**
+ * Allow interaction with chess board and server
+ *
+ */
 export default function ChessInterface() {
-  const game = useGame().game.game;
+  const game = useGame().game;
+  const conclusion = useGame().conclusion;
   const { user } = useSession();
   const trpcMoveMutation = trpc.game.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
+  const [showGameEndOverlay, setShowGameEndOverlay] =
+    useState<boolean>(!!conclusion);
 
+  useEffect(() => {
+    setShowGameEndOverlay(!!conclusion);
+  }, [conclusion]);
+
+  /**
+   *  Decide and set board orientation based on the current match's players.
+   */
   useEffect(() => {
     setOrientation(user?.id === game?.players.b.pid ? "b" : "w");
   }, [user, game?.players.b.pid, game?.players.w.pid]);
 
-  async function onMovement(move: Movement) {
+  /**
+   *
+   * @param move movement that has occured
+   * @returns Promise<boolean> true if move was a success
+   */
+  async function onMovement(move: Movement): Promise<boolean> {
     const { success } = await trpcMoveMutation.mutateAsync({
       move: move,
     });
@@ -42,17 +125,26 @@ export default function ChessInterface() {
           player={orientation === "b" ? game?.players.w : game?.players.b}
         />
       </div>
-      <div className="w-full">
+      <div className="grid w-full grid-cols-1 grid-rows-1 [&>div]:col-start-1 [&>div]:row-start-1 ">
         <ChessBoard
           turn={game?.state.turn}
           FEN={
             game?.state.fen ??
+            conclusion?.conclusion.boardState ??
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           }
           getValidMoves={game?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
           disabled={!game || game.state.turn !== orientation}
+        />
+        <GameEndOverlay
+          isShown={showGameEndOverlay}
+          hideSelf={() => {
+            setShowGameEndOverlay(false);
+          }}
+          reason={conclusion?.conclusion.termination}
+          victor={conclusion?.conclusion.victor}
         />
       </div>
       <div className="w-ful h-1/6">

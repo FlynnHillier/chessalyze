@@ -9,6 +9,7 @@ import {
   BW,
   Player,
   Movement,
+  RetrospectiveMovement,
 } from "~/types/game.types";
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
@@ -49,13 +50,13 @@ export class GameInstance {
   public readonly players: BW<Player>;
 
   private readonly game: Chess = new Chess();
-  private summary: GameSummary | null = null;
   private terminated: boolean = false;
   private time: {
     isTimed: boolean;
-    start: number | null;
+    start: number;
     clock: ChessClock;
   };
+  private moveHistory: RetrospectiveMovement[] = [];
 
   private readonly events = {
     /**
@@ -88,15 +89,18 @@ export class GameInstance {
       );
     }).bind(this),
 
-    onEnd: (() => {
+    /**
+     * Runs on game end
+     */
+    onEnd: ((summary: GameSummary) => {
       logDev({
-        message: [`ending game '${this.id}'`, this.summary],
+        message: [`ending game '${this.id}'`, summary],
         color: loggingColourCode.FgGreen,
         category: loggingCategories.game,
       });
 
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
-      emitGameEndEvent({ room: socketRoom }, {});
+      emitGameEndEvent({ room: socketRoom }, summary);
 
       socketRoom.deregister();
 
@@ -135,7 +139,7 @@ export class GameInstance {
         this.end("timeout", this.getOppositePerspective(timedOutPerspective));
       }),
       isTimed: times !== null,
-      start: null,
+      start: Date.now(),
     };
 
     this._master._events.onCreate(this);
@@ -163,7 +167,7 @@ export class GameInstance {
 
   private end(termination: GameTermination, victor: Color) {
     const now = Date.now();
-    this.summary = {
+    const summary: GameSummary = {
       id: this.id,
       players: this.players,
       conclusion: {
@@ -171,16 +175,16 @@ export class GameInstance {
         termination: termination,
         victor: victor,
       },
-      moves: this.game.history() as string[],
+      moves: this.moveHistory,
       time: {
-        start: this.time.start ?? 0,
+        start: this.time.start,
         end: now,
-        duration: now - (this.time.start ?? 0),
+        duration: now - this.time.start,
       },
     };
     this.time.clock.stop();
     this.terminated = true;
-    this.events.onEnd();
+    this.events.onEnd(summary);
   }
 
   private getNaturalTermination(): GameTermination {
@@ -202,6 +206,8 @@ export class GameInstance {
     targetSquare: Square,
     promotion?: "n" | "b" | "r" | "q",
   ): boolean {
+    const now = Date.now();
+    const initiator: Color = this.game.turn();
     const moveResult =
       this.game.move({
         from: sourceSquare,
@@ -210,15 +216,31 @@ export class GameInstance {
       }) === null
         ? false
         : true;
+
     if (moveResult === false) {
       return false;
     }
 
-    this.events.onMove({
+    const movement: Movement = {
       source: sourceSquare,
       target: targetSquare,
       promotion: promotion,
+    };
+
+    this.moveHistory.push({
+      move: movement,
+      initiator: {
+        ...this.players[initiator],
+        color: initiator,
+      },
+      time: {
+        sinceStart: now - this.time.start,
+        timestamp: now,
+        clocks: this.time.isTimed ? this.time.clock.getDurations() : undefined,
+      },
     });
+
+    this.events.onMove(movement);
 
     if (this.game.isGameOver() || this.game.isDraw()) {
       this.end(
@@ -246,14 +268,6 @@ export class GameInstance {
 
   public getTurn(): Color {
     return this.game.turn();
-  }
-
-  public isConcluded(): boolean {
-    return this.summary !== null;
-  }
-
-  public getSummary(): GameSummary | null {
-    return this.summary;
   }
 
   public getCaptured(): BW<{ [key in PieceSymbol]: number }> {
@@ -304,8 +318,6 @@ export class GameInstance {
     promotion?: "n" | "b" | "r" | "q",
   ) {
     const verboseMoves: Move[] = this.game.moves({ verbose: true }) as Move[];
-
-    console.log({ sourceSquare, targetSquare, promotion }, verboseMoves);
 
     return verboseMoves.some((move) => {
       return (
