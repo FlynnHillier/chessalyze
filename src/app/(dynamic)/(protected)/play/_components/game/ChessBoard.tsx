@@ -71,7 +71,7 @@ export function ChessBoard({
       },
       {} as { [key in Square]: CSSProperties },
     );
-  }, [selectedTile]);
+  }, [selectedTile, turn]);
 
   async function onMovementAttempt({
     source,
@@ -139,6 +139,10 @@ export function ChessBoard({
     return false;
   }
 
+  function onPieceDragBegin(piece: Piece, sourceSquare: Square) {
+    setSelectedTile(sourceSquare);
+  }
+
   async function onSquareClick(square: Square) {
     if (selectedTile) {
       if (await onMovementAttempt({ source: selectedTile, target: square }))
@@ -171,6 +175,7 @@ export function ChessBoard({
         onSquareClick={onSquareClick}
         onPromotionCheck={onPromotionCheck}
         isDraggablePiece={isDraggablePiece}
+        onPieceDragBegin={onPieceDragBegin}
       />
     </div>
   );
