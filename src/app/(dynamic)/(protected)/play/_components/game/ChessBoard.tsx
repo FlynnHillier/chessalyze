@@ -28,6 +28,8 @@ type Props = {
 //TODO
 // - Once pull request to react-chessboard is accepted, implement support using onPieceSelect event prop
 // - Respect the boolean values returned from react chessboard events, implement async support if possible.
+//
+// - FEN is reset on inital page load if already in game (only in strict mode)
 
 export function ChessBoard({
   getValidMoves,
