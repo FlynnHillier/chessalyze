@@ -7,20 +7,10 @@ import { OneOf } from "~/types/util/util.types";
 abstract class EventClass<
   E extends { [key: string]: (...args: any[]) => any },
 > {
-  protected abstract readonly events: { [K in keyof E]: Set<E[K]> };
+  private readonly events: { [K in keyof E]: Set<E[K]> };
 
-  protected constructor(
-    events?: Partial<{
-      [K in keyof E]: E[K][];
-    }>,
-  ) {
-    if (events)
-      Object.entries(events).forEach(([key, cbs]) => {
-        // This type cast is hacky. But typescript moans without it, as it cannot infer type of cbs
-        (cbs as E[""][]).forEach((cb) => {
-          this.registerEvent(key as keyof E, cb);
-        });
-      });
+  protected constructor(events: { [K in keyof E]: Set<E[K]> }) {
+    this.events = events;
   }
 
   /**
@@ -72,13 +62,6 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
     initial: number;
     remaining: number;
   };
-  events: {
-    [K in keyof TickerEventSignatures]: Set<TickerEventSignatures[K]>;
-  } = {
-    onTick: new Set(),
-    onTimeout: new Set(),
-    onDurationChange: new Set(),
-  };
 
   public constructor(
     duration: number,
@@ -94,7 +77,11 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
       }>;
     } = {},
   ) {
-    super(events);
+    super({
+      onTick: new Set(events?.onTick),
+      onTimeout: new Set(events?.onTimeout),
+      onDurationChange: new Set(events?.onDurationChange),
+    });
 
     this.duration = {
       initial: duration,
@@ -113,32 +100,6 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
 
   public isTimedOut(): boolean {
     return this.timedOut;
-  }
-
-  /**
-   * Register a callback to be ran when event occurs.
-   *
-   * @param event a given event
-   * @param cb callback to run when event specified occurs
-   */
-  public registerEvent<T extends keyof TickerEventSignatures>(
-    event: T,
-    cb: TickerEventSignatures[T],
-  ) {
-    this.events[event].add(cb);
-  }
-
-  /**
-   * De-register a registered callback to be ran when event occurs.
-   *
-   * @param event a given event
-   * @param cb callback to no longer be ran when event specified occurs
-   */
-  public deregisterEvent<T extends keyof TickerEventSignatures>(
-    event: T,
-    cb: TickerEventSignatures[T],
-  ) {
-    this.events[event].delete(cb);
   }
 
   /**
@@ -206,9 +167,7 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
 
     if (!this.isTimedOut) {
       this.timedOut = true;
-      this.events.onTimeout.forEach((cb) => {
-        cb();
-      });
+      this.event("onTimeout");
     }
   }
 
@@ -219,8 +178,7 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
     this.lastTick = Date.now();
     this.setDuration(this.duration.remaining - this.tickIntervalMS);
 
-    if (!this.isTimedOut())
-      this.events.onTick.forEach((cb) => cb(this.duration.remaining));
+    if (!this.isTimedOut()) this.event("onTick", this.duration.remaining);
   }
 }
 
@@ -242,22 +200,12 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
   private readonly tickers: BW<ClientIntervalTick>;
   private active: Color | false = false;
   private timedOut: boolean = false;
-
-  readonly events: {
-    [K in keyof ClientChessClockEventSignatures]: Set<
-      ClientChessClockEventSignatures[K]
-    >;
-  } = {
-    onTimeout: new Set(),
-    onTick: new Set(),
-    onDurationChange: new Set(),
-  };
-
   public constructor(
     duration: BW<number>,
     {
       start,
       tickInterval,
+      events,
     }: {
       start?: Color;
       tickInterval?: number;
@@ -266,7 +214,11 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
       }>;
     } = {},
   ) {
-    super();
+    super({
+      onTimeout: new Set(events?.onTimeout),
+      onTick: new Set(events?.onTick),
+      onDurationChange: new Set(events?.onDurationChange),
+    });
     this.tickers = {
       w: new ClientIntervalTick(duration.w, {
         tickIntervalMS: tickInterval,
