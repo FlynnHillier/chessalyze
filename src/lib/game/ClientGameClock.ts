@@ -230,6 +230,7 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
 type ClientChessClockEventSignatures = {
   onTimeout: (color: Color) => any;
   onTick: (color: Color, remaining: OneOf<BW<number>>) => any;
+  onDurationChange: (color: Color, remaining: OneOf<BW<number>>) => any;
 };
 
 /**
@@ -249,6 +250,7 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
   } = {
     onTimeout: new Set(),
     onTick: new Set(),
+    onDurationChange: new Set(),
   };
 
   public constructor(
@@ -279,6 +281,13 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
               this._onTick("w", { w: remaining });
             },
           ],
+          onDurationChange: [
+            (remaining) => {
+              this._onDurationChange("w", {
+                w: remaining,
+              });
+            },
+          ],
         },
       }),
       b: new ClientIntervalTick(duration.b, {
@@ -292,6 +301,13 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
           onTick: [
             (remaining) => {
               this._onTick("b", { b: remaining });
+            },
+          ],
+          onDurationChange: [
+            (remaining) => {
+              this._onDurationChange("b", {
+                b: remaining,
+              });
             },
           ],
         },
@@ -378,5 +394,11 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
     ...args: Parameters<ClientChessClockEventSignatures["onTick"]>
   ) {
     this.event("onTick", ...args);
+  }
+
+  private _onDurationChange(
+    ...args: Parameters<ClientChessClockEventSignatures["onDurationChange"]>
+  ) {
+    this.event("onDurationChange", ...args);
   }
 }
