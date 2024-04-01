@@ -7,6 +7,54 @@ import { useGame } from "~/app/_components/providers/game.provider";
 import { Movement, Player, BW, Color } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { useSession } from "~/app/_components/providers/session.provider";
+import { FaChessKing, FaChess } from "react-icons/fa";
+import { FaRegChessKing } from "react-icons/fa6";
+
+function GameEndOverlay({
+  isShown,
+  reason,
+  victor,
+  hideSelf,
+}: {
+  isShown: boolean;
+  reason?: string;
+  victor?: Color | null;
+  hideSelf?: () => any;
+}) {
+  const [verboseVictor, setVerboseVictor] = useState<
+    "white" | "black" | "draw"
+  >();
+  const [icon, setIcon] = useState<JSX.Element>();
+
+  useEffect(() => {
+    if (victor === null) {
+      setVerboseVictor("draw");
+      setIcon(<FaChess />);
+    } else if (victor === "w") {
+      setVerboseVictor("white");
+      setIcon(<FaRegChessKing />);
+    } else if (victor === "b") {
+      setVerboseVictor("black");
+      setIcon(<FaChessKing />);
+    } else {
+      setIcon(undefined);
+    }
+  }, [victor]);
+
+  return (
+    <div
+      className={`z-10 flex h-full w-full items-center justify-center bg-black bg-opacity-60 ${isShown ? "" : "hidden"}`}
+      onClick={hideSelf}
+    >
+      <div className="h-fit w-1/4 text-wrap rounded-sm bg-white p-2 text-center text-lg font-semibold text-black">
+        <span className="font-bold"> Game over!</span>
+        <br />
+        {`${verboseVictor ?? verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
+        <div className="flex w-full items-center justify-center">{icon}</div>
+      </div>
+    </div>
+  );
+}
 
 function GameBanner({ player }: { player?: Player }) {
   return (
@@ -19,23 +67,17 @@ function GameBanner({ player }: { player?: Player }) {
 }
 
 export default function ChessInterface() {
-  const game = useGame().game.game;
+  const game = useGame().game;
+  const conclusion = useGame().conclusion;
   const { user } = useSession();
   const trpcMoveMutation = trpc.game.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
-  const [FEN, setFen] = useState<string>(
-    game?.state.fen ??
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-  );
+  const [showGameEndOverlay, setShowGameEndOverlay] =
+    useState<boolean>(!!conclusion);
 
-  /**
-   * Sync FEN to context FEN, only if game is present.
-   *
-   * This causes board state to be 'remembered' after game ends so board doesnt immediately reset.
-   */
   useEffect(() => {
-    if (game) setFen(game.state.fen);
-  }, [game?.state.fen]);
+    setShowGameEndOverlay(!!conclusion);
+  }, [conclusion]);
 
   /**
    *  Decide and set board orientation based on the current match's players.
@@ -63,14 +105,25 @@ export default function ChessInterface() {
           player={orientation === "b" ? game?.players.w : game?.players.b}
         />
       </div>
-      <div className="w-full">
+      <div className="grid w-full grid-cols-1 grid-rows-1 [&>div]:col-start-1 [&>div]:row-start-1 ">
         <ChessBoard
           turn={game?.state.turn}
-          FEN={FEN}
+          FEN={
+            game?.state.fen ??
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+          }
           getValidMoves={game?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
           disabled={!game || game.state.turn !== orientation}
+        />
+        <GameEndOverlay
+          isShown={showGameEndOverlay}
+          hideSelf={() => {
+            setShowGameEndOverlay(false);
+          }}
+          reason={conclusion?.conclusion.termination}
+          victor={conclusion?.conclusion.victor}
         />
       </div>
       <div className="w-ful h-1/6">

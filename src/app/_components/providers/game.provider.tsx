@@ -20,6 +20,7 @@ import {
   Color,
   Square,
   Movement,
+  GameSummary,
 } from "~/types/game.types";
 import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
@@ -34,6 +35,10 @@ export type GAMECONTEXT =
   | {
       present: false;
       game: undefined;
+      conclusion?: {
+        players: GameSummary["players"];
+        conclusion: GameSummary["conclusion"];
+      };
     }
   | {
       present: true;
@@ -50,6 +55,7 @@ export type GAMECONTEXT =
           getValidMoves: Chess["moves"];
         };
       };
+      conclusion: undefined;
     };
 
 const defaultContext: GAMECONTEXT = {
@@ -65,7 +71,12 @@ type RdcrActnLoad = ReducerAction<
   }
 >;
 
-type RdcrActnEnd = ReducerAction<"END", {}>;
+type RdcrActnEnd = ReducerAction<
+  "END",
+  {
+    conclusion: NonNullable<GAMECONTEXT["conclusion"]>;
+  }
+>;
 
 type RdcrActnMove = ReducerAction<
   "MOVE",
@@ -162,6 +173,7 @@ function reducer<A extends GameRdcrActn>(
               : undefined,
           },
         },
+        conclusion: undefined,
       };
     }
     case "MOVE": {
@@ -219,6 +231,7 @@ function reducer<A extends GameRdcrActn>(
       return {
         present: false,
         game: undefined,
+        conclusion: payload.conclusion,
       };
     }
     default:
@@ -233,8 +246,12 @@ const GameContext = createContext(
   },
 );
 
-export function useGame() {
-  return useContext(GameContext);
+export function useGame(): GAMECONTEXT {
+  return useContext(GameContext).game;
+}
+
+export function useDispatchGame(): Dispatch<GameRdcrActn> {
+  return useContext(GameContext).dispatchGame;
 }
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
@@ -303,7 +320,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       //TODO: zod validation
       dispatchGame({
         type: "END",
-        payload: {},
+        payload: {
+          conclusion: {
+            conclusion: data.conclusion,
+            players: data.players,
+          },
+        },
       });
     },
     [dispatchGame],

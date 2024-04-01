@@ -4,15 +4,18 @@ import { TRPCError } from "@trpc/server";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useGame } from "~/app/_components/providers/game.provider";
+import {
+  useDispatchGame,
+  useGame,
+} from "~/app/_components/providers/game.provider";
 import { useLobby } from "~/app/_components/providers/lobby.provider";
 import { trpc } from "~/app/_trpc/client";
 
 export default function JoinPage() {
   const { lobby, dispatchLobby } = useLobby();
-  const { game } = useGame();
+  const game = useGame();
+  const dispatchGame = useDispatchGame();
   const router = useRouter();
-  const { dispatchGame } = useGame();
   const searchParams = useSearchParams();
   const JoinLobbyMutation = trpc.lobby.join.useMutation();
 

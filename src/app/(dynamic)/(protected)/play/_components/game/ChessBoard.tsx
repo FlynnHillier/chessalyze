@@ -2,7 +2,7 @@
 
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { CSSProperties, useMemo, useState } from "react";
+import { CSSProperties, useCallback, useMemo, useState } from "react";
 import { PromotionSymbol, Color, Square } from "~/types/game.types";
 import { Move } from "chess.js";
 import {
@@ -71,7 +71,16 @@ export function ChessBoard({
       },
       {} as { [key in Square]: CSSProperties },
     );
-  }, [selectedTile, turn]);
+  }, [selectedTile, turn, getValidMoves, disabled]);
+
+  const isDraggablePiece = useCallback(
+    ({ piece }: { piece: Piece }) => {
+      if (disabled) return false;
+
+      return piece.length > 0 && piece[0] == orientation;
+    },
+    [disabled],
+  );
 
   async function onMovementAttempt({
     source,
@@ -150,12 +159,6 @@ export function ChessBoard({
     }
 
     setSelectedTile(square);
-  }
-
-  function isDraggablePiece({ piece }: { piece: Piece }): boolean {
-    if (disabled) return false;
-
-    return piece.length > 0 && piece[0] == orientation;
   }
 
   return (
