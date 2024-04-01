@@ -51,7 +51,14 @@ function GameEndOverlay({
       className={`z-10 flex h-full w-full items-center justify-center bg-black bg-opacity-60 ${isShown ? "" : "hidden"}`}
       onClick={hideSelf}
     >
-      <div className="h-fit w-1/4 text-wrap rounded-sm bg-white p-2 text-center text-lg font-semibold text-black">
+      <div className="relative h-fit w-2/5 text-wrap rounded-md bg-white px-2 py-3 text-center text-lg font-semibold text-black">
+        <div
+          className="absolute left-0 top-0 aspect-square w-1/6 select-none text-gray-500 hover:cursor-pointer hover:text-gray-600"
+          onClick={hideSelf}
+        >
+          x
+        </div>
+
         <span className="font-bold"> Game over!</span>
         <br />
         {`${verboseVictor ?? verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
