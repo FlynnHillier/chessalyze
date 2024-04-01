@@ -32,6 +32,16 @@ export type Movement = {
   promotion?: PromotionSymbol;
 };
 
+export type RetrospectiveMovement = {
+  move: Movement;
+  time: {
+    sinceStart: number;
+    timestamp: number;
+    clocks?: BW<number>;
+  };
+  initiator: Player & { color: Color };
+};
+
 /**
  * refers to a user while handling game management
  */
@@ -57,7 +67,7 @@ export type GameSummary = {
     b: Player;
   };
   conclusion: GameConclusion;
-  moves: string[];
+  moves: RetrospectiveMovement[];
   time: {
     start: number;
     end: number;

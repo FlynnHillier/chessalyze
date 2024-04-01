@@ -1,8 +1,9 @@
 import { GameEvent } from "~/lib/ws/events/game/game.events.ws";
 import { ExtractEmitData, EmitEventType } from "~/lib/ws/events.ws.types";
 import { EmitSocketOptions, emit } from "~/lib/ws/emit.ws";
+import { GameSummary } from "~/types/game.types";
 
-export type GameEndEvent = EmitEventType<"GAME_END", {}>;
+export type GameEndEvent = EmitEventType<`${GameEvent.GAME_END}`, GameSummary>;
 
 export const emitGameEndEvent = (
   sockets: EmitSocketOptions,
