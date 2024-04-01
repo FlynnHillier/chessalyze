@@ -63,7 +63,7 @@ export class GameInstance {
      */
     onStart: (() => {
       logDev({
-        message: `started game '${this.id}' with player's '${this.players.w.pid}' & '${this.players.b.pid}'`,
+        message: `started game '${this.id}'. w:'${this.players.w.pid}' & b:'${this.players.b.pid}'`,
         color: loggingColourCode.FgGreen,
         category: loggingCategories.game,
       });
@@ -304,6 +304,9 @@ export class GameInstance {
     promotion?: "n" | "b" | "r" | "q",
   ) {
     const verboseMoves: Move[] = this.game.moves({ verbose: true }) as Move[];
+
+    console.log({ sourceSquare, targetSquare, promotion }, verboseMoves);
+
     return verboseMoves.some((move) => {
       return (
         move.from === sourceSquare &&

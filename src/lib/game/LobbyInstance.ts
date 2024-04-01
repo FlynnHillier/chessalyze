@@ -82,7 +82,7 @@ export class LobbyInstance {
     onJoin: ((lobby: LobbyInstance, joining: Player) => {
       logDev({
         message: [
-          `@'${joining.pid}' joining @'${this.player.pid}' in lobby '${lobby.id}'`,
+          `player:'${joining.pid}' joining player:'${this.player.pid}' in lobby '${lobby.id}'`,
         ],
         color: loggingColourCode.FgGreen,
         category: loggingCategories.lobby,
