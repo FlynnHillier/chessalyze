@@ -18,10 +18,6 @@ export const env = createEnv({
         (str) => !str.includes("YOUR_POSTGRES_URL_HERE"),
         "You forgot to change the default URL",
       ),
-    NEXTAUTH_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
     OAUTH_GOOGLE_CLIENTID: z.string(),
     OAUTH_GOOGLE_CLIENTSECRET: z.string(),
   },
@@ -33,7 +29,6 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     PORT: z.preprocess((p) => Number(p), z.number()).default(3000),
-    WSS_PORT: z.preprocess((p) => Number(p), z.number()).default(3001),
   },
 
   /**
@@ -43,11 +38,9 @@ export const env = createEnv({
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     POSTGRES_URL: process.env.POSTGRES_URL,
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     OAUTH_GOOGLE_CLIENTID: process.env.OAUTH_GOOGLE_CLIENTID,
     OAUTH_GOOGLE_CLIENTSECRET: process.env.OAUTH_GOOGLE_CLIENTSECRET,
     NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
-    NEXT_PUBLIC_WSS_PORT: process.env.NEXT_PUBLIC_WSS_PORT,
   },
   /**
    * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
