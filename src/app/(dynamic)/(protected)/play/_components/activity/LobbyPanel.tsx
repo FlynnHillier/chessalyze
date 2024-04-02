@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
@@ -35,6 +35,29 @@ export function LobbyPanel() {
     useState<boolean>(false);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  /**
+   * based on timed option selection get number representation
+   *
+   */
+  const timedOptionAsNumber: number | undefined = useMemo(() => {
+    if (timingPreference === "non-timed" || !timedOption) return undefined;
+
+    switch (timedOption) {
+      case "30s":
+        return 30000;
+      case "1m":
+        return 60000;
+      case "5m":
+        return 300000;
+      case "10m":
+        return 600000;
+      case "30m":
+        return 1800000;
+      case "1h":
+        return 3600000;
+    }
+  }, [timedOption, timingPreference]);
 
   /**
    * Show an error in the panel
@@ -92,12 +115,22 @@ export function LobbyPanel() {
   }
 
   /**
-   * Generate a new lobby for the player
+   * Generate a new lobby for the player with configuration options passed
    *
    */
   async function generateLobby() {
     try {
-      const r = await createLobbyMutation.mutateAsync();
+      const r = await createLobbyMutation.mutateAsync({
+        config: {
+          time:
+            timingPreference === "timed" && timedOptionAsNumber
+              ? {
+                  w: timedOptionAsNumber,
+                  b: timedOptionAsNumber,
+                }
+              : undefined,
+        },
+      });
       dispatchLobby({
         type: "START",
         payload: {

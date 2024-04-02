@@ -1,12 +1,9 @@
 import { UUID } from "~/types/common.types";
 import { v1 as uuidv1 } from "uuid";
-import { Player } from "~/types/game.types";
+import { Player, BW } from "~/types/game.types";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 import { GameInstance } from "~/lib/game/GameInstance";
-import {
-  getLobbySocketRoom,
-  getOrCreateLobbySocketRoom,
-} from "~/lib/ws/rooms/lobby.room.ws";
+import { getOrCreateLobbySocketRoom } from "~/lib/ws/rooms/lobby.room.ws";
 import { emitLobbyEndEvent } from "~/lib/ws/events/lobby/lobby.end.event.ws";
 import {
   logDev,
@@ -49,6 +46,9 @@ export class LobbyInstance {
 
   public readonly player: Player;
   public readonly id: UUID;
+  private readonly config: {
+    readonly time?: BW<number>;
+  };
 
   private readonly events = {
     /**
@@ -97,7 +97,7 @@ export class LobbyInstance {
    *
    * @param player player to inhabit lobby
    */
-  public constructor(player: Player) {
+  public constructor(player: Player, config: LobbyInstance["config"] = {}) {
     if (this._lobbyMaster.getByPlayer(player.pid))
       throw new LobbyExistsError(
         "Unable to create new lobby, player is already in one.",
@@ -105,6 +105,7 @@ export class LobbyInstance {
 
     this.id = uuidv1();
     this.player = player;
+    this.config = config;
 
     this.events.onCreate();
   }
@@ -146,6 +147,6 @@ export class LobbyInstance {
 
     this.events.onJoin(this, player);
 
-    return new GameInstance({ p1: this.player, p2: player });
+    return new GameInstance({ p1: this.player, p2: player }, this.config.time);
   }
 }
