@@ -32,12 +32,13 @@ export type Movement = {
   promotion?: PromotionSymbol;
 };
 
-export type RetrospectiveMovement = {
+export type VerboseMovement = {
   move: Movement;
   time: {
+    isTimed: boolean;
     sinceStart: number;
     timestamp: number;
-    clocks?: BW<number>;
+    remaining?: BW<number>;
   };
   initiator: Player & { color: Color };
 };
@@ -55,8 +56,9 @@ export interface GameSnapshot {
   FEN: FEN;
   captured: BW<{ [key in CapturableSymbol]: number }>;
   time: {
-    isTimed: boolean;
-    remaining: BW<number>;
+    start: number;
+    now: number;
+    remaining?: BW<number>;
   };
 }
 
@@ -67,7 +69,7 @@ export type GameSummary = {
     b: Player;
   };
   conclusion: GameConclusion;
-  moves: RetrospectiveMovement[];
+  moves: VerboseMovement[];
   time: {
     start: number;
     end: number;

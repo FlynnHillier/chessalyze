@@ -9,7 +9,7 @@ import {
   BW,
   Player,
   Movement,
-  RetrospectiveMovement,
+  VerboseMovement,
 } from "~/types/game.types";
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
@@ -56,7 +56,7 @@ export class GameInstance {
     start: number;
     clock: ChessClock;
   };
-  private moveHistory: RetrospectiveMovement[] = [];
+  private moveHistory: VerboseMovement[] = [];
 
   private readonly events = {
     /**
@@ -76,16 +76,10 @@ export class GameInstance {
     /**
      * Runs on movement
      */
-    onMove: ((move: Movement) => {
+    onMove: ((move: VerboseMovement) => {
       emitGameMoveEvent(
         { room: getOrCreateGameSocketRoom({ id: this.id }) },
-        {
-          move: move,
-          time: {
-            isTimed: this.time.isTimed,
-            remaining: this.time.clock.getDurations(),
-          },
-        },
+        move,
       );
     }).bind(this),
 
@@ -157,8 +151,11 @@ export class GameInstance {
       players: this.players,
       captured: this.getCaptured(),
       time: {
-        isTimed: this.time.isTimed,
-        remaining: this.time.clock.getDurations(),
+        start: this.time.start,
+        now: Date.now(),
+        remaining: this.time.isTimed
+          ? this.time.clock.getDurations()
+          : undefined,
       },
     };
   }
@@ -227,20 +224,25 @@ export class GameInstance {
       promotion: promotion,
     };
 
-    this.moveHistory.push({
+    const verboseMovement: VerboseMovement = {
       move: movement,
       initiator: {
         ...this.players[initiator],
         color: initiator,
       },
       time: {
+        isTimed: this.time.isTimed,
         sinceStart: now - this.time.start,
         timestamp: now,
-        clocks: this.time.isTimed ? this.time.clock.getDurations() : undefined,
+        remaining: this.time.isTimed
+          ? this.time.clock.getDurations()
+          : undefined,
       },
-    });
+    };
 
-    this.events.onMove(movement);
+    this.moveHistory.push(verboseMovement);
+
+    this.events.onMove(verboseMovement);
 
     if (this.game.isGameOver() || this.game.isDraw()) {
       this.end(
@@ -268,6 +270,13 @@ export class GameInstance {
 
   public getTurn(): Color {
     return this.game.turn();
+  }
+
+  /**
+   * Get total time elapsed since game start
+   */
+  public getTimeSinceStart(): number {
+    return Date.now() - this.time.start;
   }
 
   public getCaptured(): BW<{ [key in PieceSymbol]: number }> {
