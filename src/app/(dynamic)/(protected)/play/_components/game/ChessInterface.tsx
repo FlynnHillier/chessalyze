@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useInterval } from "usehooks-ts";
 
 import { ChessBoard } from "./ChessBoard";
 import { useGame } from "~/app/_components/providers/game.provider";
@@ -69,14 +70,38 @@ function GameEndOverlay({
 }
 
 /**
- * Display player of game's name
+ * Display player of game's name & their remaining time
  *
+ * @param player player on 'this side of the board'
+ * @param time remaining time for specified player
  */
-function GameBanner({ player }: { player?: Player }) {
+function GameBanner({ player, time }: { player?: Player; time?: number }) {
+  /**
+   * Timestamp string generated from passed ms number
+   *
+   * Timestamp includes ms if time < 10 seconds
+   */
+  const timestamp: string | undefined = useMemo(() => {
+    if (!time) return;
+    const ts = new Date(time);
+    const [minutes, seconds, milliseconds] = [
+      ts.getMinutes().toString().padStart(2, "0"),
+      ts.getSeconds().toString().padStart(2, "0"),
+      ts.getMilliseconds().toString().padStart(2, "0").substring(0, 2),
+    ];
+
+    if (time < 10000) return `${minutes}:${seconds}:${milliseconds}`;
+
+    return `${minutes}:${seconds}`;
+  }, [time]);
+
   return (
-    <div className="flex h-full w-full flex-row justify-start bg-stone-800 p-1">
-      <div className="text- rounded-lg bg-stone-900 px-2 py-1.5">
+    <div className="flex h-full w-full flex-row justify-between bg-inherit p-1 font-semibold">
+      <div className="w-1/5 min-w-fit rounded-lg bg-stone-900 px-2 py-1.5 text-center">
         {player?.pid ?? "player"}
+      </div>
+      <div className="w-1/5 rounded-lg bg-stone-900 px-2 py-1.5 text-center">
+        {timestamp ?? "00:00"}
       </div>
     </div>
   );
@@ -94,6 +119,54 @@ export default function ChessInterface() {
   const [orientation, setOrientation] = useState<Color>("w");
   const [showGameEndOverlay, setShowGameEndOverlay] =
     useState<boolean>(!!conclusion);
+  const [time, setTime] = useState<BW<number>>();
+  const [clockUpdateInterval, setClockUpdateInterval] = useState<number | null>(
+    null,
+  );
+
+  /**
+   * When game context time is updated, push update to state also.
+   */
+  useEffect(() => {
+    setTime(game?.time.remaining);
+  }, [game?.time.lastUpdated]);
+
+  /**
+   * Dictate the interval at which the currently active clock is updated at.
+   *
+   * If in game, set the interval to a medium speed unless we are below 10 seconds at which point, update rapidly.
+   *
+   * If not in game, clear interval.
+   *
+   */
+  useEffect(() => {
+    setClockUpdateInterval(() => {
+      if (!time || !game) return null;
+
+      if (time[game.state.turn] < 10000) return 100;
+
+      return 250;
+    });
+  }, [time?.w, time?.b]);
+
+  /**
+   * Actively update clock state for currently active clock
+   *
+   * Only runs when game is present & is timed.
+   */
+  useInterval(() => {
+    setTime((prev) => {
+      if (!game?.time.remaining) return undefined;
+
+      return {
+        w: prev?.w ?? game.time.remaining.w,
+        b: prev?.b ?? game.time.remaining.b,
+        [game.state.turn]:
+          game.time.remaining[game.state.turn] -
+          (Date.now() - game.time.lastUpdated),
+      };
+    });
+  }, clockUpdateInterval);
 
   useEffect(() => {
     setShowGameEndOverlay(!!conclusion);
@@ -119,10 +192,11 @@ export default function ChessInterface() {
   }
 
   return (
-    <div className="flex h-full w-full max-w-xl flex-col">
+    <div className="flex h-full w-full max-w-xl flex-col rounded-lg bg-stone-800 px-2">
       <div className="h-1/6 w-full">
         <GameBanner
           player={orientation === "b" ? game?.players.w : game?.players.b}
+          time={time?.[orientation === "b" ? "w" : "b"]}
         />
       </div>
       <div className="grid w-full grid-cols-1 grid-rows-1 [&>div]:col-start-1 [&>div]:row-start-1 ">
@@ -149,6 +223,7 @@ export default function ChessInterface() {
       </div>
       <div className="w-ful h-1/6">
         <GameBanner
+          time={time?.[orientation === "b" ? "b" : "w"]}
           player={orientation === "b" ? game?.players.b : game?.players.w}
         />
       </div>

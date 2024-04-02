@@ -18,13 +18,12 @@ import {
   PromotionSymbol,
   GameSnapshot,
   Color,
-  Square,
   Movement,
   GameSummary,
+  VerboseMovement,
 } from "~/types/game.types";
 import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
-import { ChessClock } from "~/lib/game/GameClock";
 import { useWebSocket } from "next-ws/client";
 import { GameMoveEvent } from "~/lib/ws/events/game/game.move.event.ws";
 import { validateWSMessage } from "~/app/_components/providers/ws.provider";
@@ -51,8 +50,12 @@ export type GAMECONTEXT =
           turn: Color;
         };
         engine: {
-          clock?: ChessClock;
           getValidMoves: Chess["moves"];
+        };
+        time: {
+          start: number;
+          lastUpdated: number;
+          remaining?: BW<number>;
         };
       };
       conclusion: undefined;
@@ -81,19 +84,8 @@ type RdcrActnEnd = ReducerAction<
 type RdcrActnMove = ReducerAction<
   "MOVE",
   {
-    move: {
-      source: Square;
-      target: Square;
-      promotion?: PromotionSymbol;
-    };
-    time:
-      | {
-          isTimed: false;
-        }
-      | {
-          isTimed: true;
-          remaining: BW<number>;
-        };
+    move: Movement;
+    time: Pick<VerboseMovement["time"], "remaining" | "timestamp">;
   }
 >;
 
@@ -144,20 +136,14 @@ function reducer<A extends GameRdcrActn>(
     case "LOAD": {
       const { game, present } = payload;
 
-      if (state.game?.engine.clock?.isActive()) {
-        //stop any previous active clocks (shouldn't happen)
-        state.game.engine.clock.stop();
-      }
-
-      const instance = game ? new Chess(game.FEN) : new Chess();
-      const clockTimeOutCallback = (color: Color) => {};
-
       if (!present || !game) {
         return {
           present: false,
           game: undefined,
         };
       }
+
+      const instance = game ? new Chess(game.FEN) : new Chess();
 
       return {
         present: present,
@@ -168,9 +154,11 @@ function reducer<A extends GameRdcrActn>(
           state: extractInstanceState(instance),
           engine: {
             getValidMoves: instance.moves.bind(instance),
-            clock: game.time.isTimed
-              ? new ChessClock(game.time.remaining, clockTimeOutCallback)
-              : undefined,
+          },
+          time: {
+            start: game.time.start,
+            lastUpdated: game.time.now,
+            remaining: game.time.remaining,
           },
         },
         conclusion: undefined,
@@ -180,7 +168,6 @@ function reducer<A extends GameRdcrActn>(
       if (!state.game) return { ...state };
 
       const { move, time } = payload;
-      const { clock } = state.game.engine;
       const instance = new Chess(state.game.state.fen);
       const turn = instance.turn();
 
@@ -201,33 +188,23 @@ function reducer<A extends GameRdcrActn>(
         state.game.captured[turn][movement.captured as PromotionSymbol]++;
       }
 
-      if (clock && time.isTimed) {
-        // Switch & sync client clock if game is timed.
-        clock.editDuration({
-          w: time.remaining.w,
-          b: time.remaining.b,
-        });
-        clock.switch();
-      }
-
       return {
         ...state,
         game: {
           ...state.game,
           state: extractInstanceState(instance),
           engine: {
-            clock: clock,
             getValidMoves: instance.moves.bind(instance),
+          },
+          time: {
+            start: state.game.time.start,
+            lastUpdated: time.timestamp,
+            remaining: time.remaining,
           },
         },
       };
     }
     case "END": {
-      if (state.game?.engine.clock?.isActive()) {
-        //stop any previous active clocks
-        state.game.engine.clock.stop();
-      }
-
       return {
         present: false,
         game: undefined,
@@ -277,7 +254,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             promotion: data.move.promotion,
           },
           time: {
-            isTimed: data.time.isTimed,
+            timestamp: data.time.timestamp,
             remaining: data.time.remaining,
           },
         },
@@ -301,7 +278,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             players: data.players,
             FEN: data.FEN,
             time: {
-              isTimed: data.time.isTimed,
+              start: data.time.start,
+              now: data.time.now,
               remaining: data.time.remaining,
             },
             captured: data.captured,
@@ -380,7 +358,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                 players: data.game.players,
                 captured: data.game.captured,
                 time: {
-                  isTimed: data.game.time.isTimed,
+                  start: data.game.time.start,
+                  now: data.game.time.now,
                   remaining: data.game.time.remaining,
                 },
               }
