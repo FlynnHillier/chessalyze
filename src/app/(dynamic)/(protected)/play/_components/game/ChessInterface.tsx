@@ -77,28 +77,31 @@ function GameEndOverlay({
  */
 function GameBanner({ player, time }: { player?: Player; time?: number }) {
   /**
-   * Timestamp data generated from passed ms number
+   * Timestamp string generated from passed ms number
+   *
+   * Timestamp includes ms if time < 10 seconds
    */
-  const timestamp = useMemo(() => {
+  const timestamp: string | undefined = useMemo(() => {
     if (!time) return;
     const ts = new Date(time);
+    const [minutes, seconds, milliseconds] = [
+      ts.getMinutes().toString().padStart(2, "0"),
+      ts.getSeconds().toString().padStart(2, "0"),
+      ts.getMilliseconds().toString().padStart(2, "0").substring(0, 2),
+    ];
 
-    return {
-      minutes: ts.getMinutes().toString().padStart(2, "0"),
-      seconds: ts.getSeconds().toString().padStart(2, "0"),
-      milliseconds: ts.getMilliseconds().toString().padStart(2, "0"),
-    };
+    if (time < 10000) return `${minutes}:${seconds}:${milliseconds}`;
+
+    return `${minutes}:${seconds}`;
   }, [time]);
 
   return (
-    <div className="flex h-full w-full flex-row justify-start bg-stone-800 p-1">
-      <div className="text- rounded-lg bg-stone-900 px-2 py-1.5">
+    <div className="flex h-full w-full flex-row justify-between bg-inherit p-1 font-semibold">
+      <div className="w-1/5 min-w-fit rounded-lg bg-stone-900 px-2 py-1.5 text-center">
         {player?.pid ?? "player"}
       </div>
-      <div className="flex w-full justify-end">
-        <div className="text- rounded-lg bg-stone-900 px-2 py-1.5">
-          {timestamp ? `${timestamp.minutes}:${timestamp.seconds}` : "00:00"}
-        </div>
+      <div className="w-1/5 rounded-lg bg-stone-900 px-2 py-1.5 text-center">
+        {timestamp ?? "00:00"}
       </div>
     </div>
   );
@@ -117,7 +120,9 @@ export default function ChessInterface() {
   const [showGameEndOverlay, setShowGameEndOverlay] =
     useState<boolean>(!!conclusion);
   const [time, setTime] = useState<BW<number>>();
-  const [clockUpdateInterval, setClockUpdateInterval] = useState<number>(250);
+  const [clockUpdateInterval, setClockUpdateInterval] = useState<number | null>(
+    null,
+  );
 
   /**
    * When game context time is updated, push update to state also.
@@ -127,7 +132,27 @@ export default function ChessInterface() {
   }, [game?.time.lastUpdated]);
 
   /**
+   * Dictate the interval at which the currently active clock is updated at.
+   *
+   * If in game, set the interval to a medium speed unless we are below 10 seconds at which point, update rapidly.
+   *
+   * If not in game, clear interval.
+   *
+   */
+  useEffect(() => {
+    setClockUpdateInterval(() => {
+      if (!time || !game) return null;
+
+      if (time[game.state.turn] < 10000) return 100;
+
+      return 250;
+    });
+  }, [time?.w, time?.b]);
+
+  /**
    * Actively update clock state for currently active clock
+   *
+   * Only runs when game is present & is timed.
    */
   useInterval(() => {
     setTime((prev) => {
@@ -167,7 +192,7 @@ export default function ChessInterface() {
   }
 
   return (
-    <div className="flex h-full w-full max-w-xl flex-col">
+    <div className="flex h-full w-full max-w-xl flex-col rounded-lg bg-stone-800 px-2">
       <div className="h-1/6 w-full">
         <GameBanner
           player={orientation === "b" ? game?.players.w : game?.players.b}
