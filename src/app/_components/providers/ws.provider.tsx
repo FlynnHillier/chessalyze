@@ -49,7 +49,7 @@ export function validateWSMessage(e: MessageEvent<string>): null | EmitEvent {
 export function WSProvider({ children }: { children: ReactNode }) {
   return (
     <WebSocketProvider url={`ws://localhost:${env.PORT}/api/ws`}>
-      <div>{children}</div>
+      {children}
     </WebSocketProvider>
   );
 }

@@ -12,9 +12,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
 
   return (
     <SessionProvider session={session} user={user}>
-      <TRPCProvider>
-        <div>{children}</div>
-      </TRPCProvider>
+      <TRPCProvider>{children}</TRPCProvider>
     </SessionProvider>
   );
 }

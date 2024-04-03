@@ -18,7 +18,7 @@ export default async function RootLayout({
       <body className="dark:bg-stone-700 dark:text-orange-50">
         <div className="flex h-full w-full flex-row">
           <SideNavBar />
-          <div className="h-full w-full p-5">{children}</div>
+          <div className="h-full w-full  p-5">{children}</div>
         </div>
       </body>
     </html>
