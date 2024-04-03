@@ -1,18 +1,16 @@
 import { UUID } from "~/types/common.types";
 import { v1 as uuidv1 } from "uuid";
-import { Player } from "~/types/game.types";
+import { Player, GameTimePreset, BW } from "~/types/game.types";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 import { GameInstance } from "~/lib/game/GameInstance";
-import {
-  getLobbySocketRoom,
-  getOrCreateLobbySocketRoom,
-} from "~/lib/ws/rooms/lobby.room.ws";
+import { getOrCreateLobbySocketRoom } from "~/lib/ws/rooms/lobby.room.ws";
 import { emitLobbyEndEvent } from "~/lib/ws/events/lobby/lobby.end.event.ws";
 import {
   logDev,
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
+import { Color } from "chess.js";
 
 class LobbyError extends Error {
   constructor(code: string, message?: string) {
@@ -37,7 +35,17 @@ class InvalidLobbyError extends LobbyError {
   }
 }
 
-export interface LobbyEventCallbacks {}
+export const timedPresetNumberValues: {
+  [key in GameTimePreset]: number;
+} = {
+  "30s": 30000,
+  "1m": 60000,
+  "5m": 300000,
+  "10m": 600000,
+  "15m": 900000,
+  "30m": 1800000,
+  "1h": 3600000,
+};
 
 /**
  * A player lobby
@@ -49,6 +57,15 @@ export class LobbyInstance {
 
   public readonly player: Player;
   public readonly id: UUID;
+  public readonly config: Partial<{
+    readonly time: {
+      preset?: GameTimePreset;
+      verbose: BW<number>;
+    };
+    readonly color: {
+      preference: Color;
+    };
+  }>;
 
   private readonly events = {
     /**
@@ -97,7 +114,7 @@ export class LobbyInstance {
    *
    * @param player player to inhabit lobby
    */
-  public constructor(player: Player) {
+  public constructor(player: Player, config: LobbyInstance["config"] = {}) {
     if (this._lobbyMaster.getByPlayer(player.pid))
       throw new LobbyExistsError(
         "Unable to create new lobby, player is already in one.",
@@ -105,6 +122,7 @@ export class LobbyInstance {
 
     this.id = uuidv1();
     this.player = player;
+    this.config = config;
 
     this.events.onCreate();
   }
@@ -146,6 +164,15 @@ export class LobbyInstance {
 
     this.events.onJoin(this, player);
 
-    return new GameInstance({ p1: this.player, p2: player });
+    return new GameInstance(
+      {
+        p1: {
+          ...this.player,
+          preference: this.config.color?.preference,
+        },
+        p2: player,
+      },
+      this.config.time?.verbose,
+    );
   }
 }

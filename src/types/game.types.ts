@@ -1,5 +1,7 @@
 import { UUID } from "~/types/common.types";
 import { Square as chessJSSquare, Color as chessJSColor } from "chess.js";
+import { z } from "zod";
+import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
 
 export type FEN = string;
 
@@ -16,6 +18,8 @@ export type GameTermination =
 export type PromotionSymbol = "r" | "b" | "n" | "q";
 
 export type CapturableSymbol = "r" | "b" | "n" | "q" | "p";
+
+export type GameTimePreset = z.infer<typeof zodGameTimePreset>;
 
 export type Square = chessJSSquare;
 
