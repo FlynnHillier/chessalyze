@@ -1,12 +1,22 @@
 "use client";
 
-import { SetStateAction, useState, Dispatch } from "react";
+type Option = Partial<{
+  text: string;
+  element: React.ReactNode;
+  tailwind: CustomTailwind;
+}>;
 
-interface customTailwind {
-  selected?: string;
-  nonSelected?: string;
-  all?: string;
-}
+type CustomTailwind = Partial<{
+  enabled: SelectionConditionalTailwind;
+  disabled: SelectionConditionalTailwind;
+  any: SelectionConditionalTailwind;
+}>;
+
+type SelectionConditionalTailwind = Partial<{
+  isSelected: string;
+  nonSelected: string;
+  any: string;
+}>;
 
 /**
  * A button which allows for a single selection of multiple options.
@@ -20,38 +30,68 @@ export default function MultiButton<O extends string | undefined>({
   customTailwind,
   disabled,
 }: {
-  options: { [key in NonNullable<O>]: string };
+  options: { [key in NonNullable<O>]: Option };
   selected: O;
-  onSelection: Dispatch<SetStateAction<O>> | ((selected: O) => any);
-  customTailwind?: {
-    enabled?: customTailwind;
-    disabled?: customTailwind;
-    anyAbled?: customTailwind;
-    container?: string;
-  };
+  onSelection: (selected: O) => any;
+  customTailwind?: CustomTailwind & { container?: string };
   disabled?: boolean;
 }) {
   return (
     <div className={`flex h-fit w-full flex-row ${customTailwind?.container}`}>
-      {Object.keys(options).map((option) => {
-        const text = options[option as NonNullable<O>];
-        const isSelected = option === selected;
+      {Object.entries(options).map(([_key, _option]) => {
+        const key = _key as NonNullable<O>;
+        const { element, text, tailwind } = _option as Option;
+
+        const isSelected = key === selected;
 
         return (
           <button
             disabled={disabled}
-            key={option}
-            className={`
-              w-full  ${!disabled ? "hover:cursor-pointer" : ""} 
-              ${customTailwind?.anyAbled?.all} ${isSelected ? customTailwind?.anyAbled?.selected : customTailwind?.anyAbled?.nonSelected}
-              ${!disabled ? `${customTailwind?.enabled?.all} ${isSelected ? customTailwind?.enabled?.selected : customTailwind?.enabled?.nonSelected}` : ""}
-              ${disabled ? `${customTailwind?.disabled?.all} ${isSelected ? customTailwind?.disabled?.selected : customTailwind?.disabled?.nonSelected}` : ""}
-              `}
+            key={key}
+            className={[
+              "w-full",
+              !disabled && "hover:cursor-pointer",
+              customTailwind?.any?.any,
+              customTailwind?.any?.[isSelected ? "isSelected" : "nonSelected"],
+              !disabled &&
+                [
+                  customTailwind?.enabled?.any,
+                  customTailwind?.enabled?.[
+                    isSelected ? "isSelected" : "nonSelected"
+                  ],
+                ].join(" "),
+              disabled &&
+                [
+                  customTailwind?.disabled?.any,
+                  customTailwind?.disabled?.[
+                    isSelected ? "isSelected" : "nonSelected"
+                  ],
+                ].join(" "),
+              tailwind?.any?.any,
+              tailwind &&
+                tailwind.any?.[isSelected ? "isSelected" : "nonSelected"],
+              !disabled &&
+                [
+                  tailwind?.enabled?.any,
+                  tailwind?.enabled?.[
+                    isSelected ? "isSelected" : "nonSelected"
+                  ],
+                ].join(" "),
+              disabled &&
+                [
+                  tailwind?.disabled?.any,
+                  tailwind?.disabled?.[
+                    isSelected ? "isSelected" : "nonSelected"
+                  ],
+                ].join(" "),
+            ]
+              .filter((e) => !!e)
+              .join(" ")}
             onClick={() => {
-              if (selected !== option) onSelection(option as O);
+              if (!isSelected) onSelection(key);
             }}
           >
-            {text}
+            {element ?? text ?? key}
           </button>
         );
       })}

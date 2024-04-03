@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState, useReducer } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
-import { FaRegCopy } from "react-icons/fa";
+import { FaRegCopy, FaChessKing } from "react-icons/fa";
+import { FaChess, FaRegChessKing } from "react-icons/fa6";
 
 import { trpc } from "~/app/_trpc/client";
 import { useLobby } from "~/app/_components/providers/lobby.provider";
@@ -23,6 +24,9 @@ type LocalConfig = {
     preference: "timed" | "non-timed";
     preset?: GameTimePreset;
   };
+  color: {
+    preference: "random" | "white" | "black";
+  };
 };
 
 type RDCRActnLobbyConfig =
@@ -41,6 +45,14 @@ type RDCRActnLobbyConfig =
           preset: LocalConfig["time"]["preset"];
         };
       }
+    >
+  | ReducerAction<
+      "COLOR_OPTION",
+      {
+        color: {
+          preference: LocalConfig["color"]["preference"];
+        };
+      }
     >;
 
 /**
@@ -55,6 +67,7 @@ function localConfigReducer(
       const { time } = action.payload;
 
       return {
+        ...state,
         time: {
           preference: time.preference,
           preset: state.time.preset,
@@ -65,9 +78,21 @@ function localConfigReducer(
       const { time } = action.payload;
 
       return {
+        ...state,
         time: {
           preference: "timed",
           preset: time.preset,
+        },
+      };
+    }
+
+    case "COLOR_OPTION": {
+      const { color } = action.payload;
+
+      return {
+        ...state,
+        color: {
+          preference: color.preference,
         },
       };
     }
@@ -87,6 +112,9 @@ export function LobbyPanel() {
 
   const [localConfig, dispatchLocalConfig] = useReducer(localConfigReducer, {
     time: { preference: "non-timed", preset: "10m" },
+    color: {
+      preference: "random",
+    },
   });
 
   const [disableConfigurationChanges, setDisabledConfigurationChanges] =
@@ -254,8 +282,8 @@ export function LobbyPanel() {
       <MultiButton<TimingPreference>
         disabled={disableConfigurationChanges}
         options={{
-          timed: "timed",
-          "non-timed": "non-timed",
+          timed: {},
+          "non-timed": {},
         }}
         onSelection={(selection: TimingPreference) => {
           dispatchLocalConfig({
@@ -269,15 +297,15 @@ export function LobbyPanel() {
         }}
         selected={localConfig.time.preference}
         customTailwind={{
-          anyAbled: {
-            all: "rounded px-1 py-1.5 font-semibold",
+          any: {
+            any: "rounded px-1 py-1.5 font-semibold",
           },
           enabled: {
-            selected: "bg-green-600 hover:bg-green-700",
+            isSelected: "bg-green-600 hover:bg-green-700",
             nonSelected: "bg-stone-800 hover:bg-stone-950",
           },
           disabled: {
-            selected: "bg-green-800 text-stone-400",
+            isSelected: "bg-green-800 text-stone-400",
             nonSelected: "bg-stone-800 text-stone-500",
           },
           container: "gap-2 px-2 py-1 rounded",
@@ -291,13 +319,13 @@ export function LobbyPanel() {
         <MultiButton<GameTimePreset | undefined>
           disabled={disableConfigurationChanges}
           options={{
-            "30s": "30s",
-            "1m": "1m",
-            "5m": "5m",
-            "10m": "10m",
-            "15m": "15m",
-            "30m": "30m",
-            "1h": "1h",
+            "30s": {},
+            "1m": {},
+            "5m": {},
+            "10m": {},
+            "15m": {},
+            "30m": {},
+            "1h": {},
           }}
           onSelection={(selected: GameTimePreset | undefined) => {
             dispatchLocalConfig({
@@ -311,21 +339,116 @@ export function LobbyPanel() {
           }}
           selected={localConfig.time.preset}
           customTailwind={{
-            anyAbled: {
-              all: "rounded px-1 py-1.5 font-semibold",
+            any: {
+              any: "rounded px-1 py-1.5 font-semibold",
             },
             enabled: {
-              selected: "bg-green-600 hover:bg-green-700",
+              isSelected: "bg-green-600 hover:bg-green-700",
               nonSelected: "bg-stone-800 hover:bg-stone-950",
             },
             disabled: {
-              selected: "bg-green-800 text-stone-400",
+              isSelected: "bg-green-800 text-stone-400",
               nonSelected: "bg-stone-800 text-stone-500",
             },
             container: "gap-2 px-2 py-1 rounded",
           }}
         />
       )}
+
+      <MultiButton<"white" | "black" | "random">
+        disabled={disableConfigurationChanges}
+        onSelection={(selection) => {
+          dispatchLocalConfig({
+            type: "COLOR_OPTION",
+            payload: {
+              color: {
+                preference: selection,
+              },
+            },
+          });
+        }}
+        selected={localConfig.color.preference}
+        customTailwind={{
+          any: {
+            any: "rounded font-semibold",
+          },
+          disabled: {
+            any: "opacity-50",
+          },
+          container: "gap-2 px-2 py-1 rounded",
+        }}
+        options={{
+          black: {
+            tailwind: {
+              any: {
+                any: "bg-black text-white border-2",
+                isSelected: "border-green-600",
+                nonSelected: "border-transparent",
+              },
+            },
+            element: (
+              <div
+                className={`flex h-full w-full flex-row items-center justify-center gap-1 rounded border-2 px-1 py-1.5
+                ${localConfig.color.preference === "black" ? "border-black" : "border-transparent"}
+              `}
+              >
+                <FaChessKing />
+                black
+              </div>
+            ),
+          },
+          random: {
+            element: (
+              <div className="flex h-full w-full flex-row items-center justify-center">
+                <div
+                  className={`h-full w-full rounded-l border-y-2 border-l-2 bg-black text-white 
+                  ${localConfig.color.preference === "random" ? "border-y-green-600 border-l-green-600" : "border-transparent"}`}
+                >
+                  <div
+                    className={`flex h-full w-full flex-row items-center justify-end gap-1 rounded-l-sm border-y-2 border-l-2 py-1.5 pl-1
+                    ${localConfig.color.preference === "random" ? "border-black" : "border-transparent"}
+                  `}
+                  >
+                    <FaChess />
+                    ran
+                  </div>
+                </div>
+                <div
+                  className={`h-full w-full rounded-r border-y-2 border-r-2 bg-white text-black 
+                  ${localConfig.color.preference === "random" ? "border-y-green-600 border-r-green-600" : "border-transparent"}`}
+                >
+                  <div
+                    className={`flex h-full w-full flex-row items-center justify-start gap-1 rounded-r-sm border-y-2 border-r-2 py-1.5 pr-1
+                    ${localConfig.color.preference === "random" ? "border-black" : "border-transparent"}
+                  `}
+                  >
+                    dom
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+          white: {
+            tailwind: {
+              any: {
+                any: "bg-white text-black border-2",
+                isSelected: "border-green-600",
+                nonSelected: "border-transparent",
+              },
+            },
+            element: (
+              <div
+                className={`flex h-full w-full flex-row items-center justify-center gap-1 rounded-sm border-2 px-1 py-1.5
+                  ${localConfig.color.preference === "white" ? "border-black" : "border-transparent"}
+                `}
+              >
+                <FaRegChessKing />
+                white
+              </div>
+            ),
+          },
+        }}
+      />
 
       {/* 
         Create a lobby

@@ -20,16 +20,16 @@ export default function ActivityPanel() {
         <div className="w-full">
           <MultiButton<Opponent>
             options={{
-              friend: "friend",
-              online: "online",
+              friend: {},
+              online: {},
             }}
             selected={opponent}
             onSelection={setOpponent}
             customTailwind={{
-              enabled: {
-                selected: "bg-stone-900",
+              any: {
+                isSelected: "bg-stone-900",
                 nonSelected: "bg-stone-800 hover:bg-stone-950",
-                all: "px-1 py-1.5 font-semibold text-xl",
+                any: "px-1 py-1.5 font-semibold text-xl",
               },
             }}
           />
