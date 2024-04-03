@@ -34,32 +34,39 @@ export const trpcLobbyCreateProcedure = LOBBYPROCEDURE.use(
             },
           )
           .optional(),
+        color: z
+          .object({
+            preference: z.union([z.literal("w"), z.literal("b")]),
+          })
+          .optional(),
       }),
     }),
   )
   .mutation(({ ctx, input }) => {
     const { id } = ctx.user;
 
+    const { time: _time, color } = input.config;
+
     /**
      * Based on timing configuration option, convert template to verbose or just pass provided verbose times
      */
     const time: LobbyInstance["config"]["time"] = (() => {
-      if (!input.config.time) return undefined;
+      if (!_time) return undefined;
 
-      if (input.config.time.preset)
+      if (_time.preset)
         return {
-          preset: input.config.time.preset,
+          preset: _time.preset,
           verbose: {
-            w: timedPresetNumberValues[input.config.time.preset],
-            b: timedPresetNumberValues[input.config.time.preset],
+            w: timedPresetNumberValues[_time.preset],
+            b: timedPresetNumberValues[_time.preset],
           },
         };
 
-      if (input.config.time.verbose)
+      if (_time.verbose)
         return {
           verbose: {
-            w: input.config.time.verbose?.w,
-            b: input.config.time.verbose?.b,
+            w: _time.verbose?.w,
+            b: _time.verbose?.b,
           },
         };
 
@@ -76,6 +83,7 @@ export const trpcLobbyCreateProcedure = LOBBYPROCEDURE.use(
       },
       {
         time: time,
+        color: color,
       },
     );
 
@@ -83,12 +91,8 @@ export const trpcLobbyCreateProcedure = LOBBYPROCEDURE.use(
       lobby: {
         id: lobby.id,
         config: {
-          time: lobby.config.time
-            ? {
-                preset: lobby.config.time.preset,
-                verbose: lobby.config.time.verbose,
-              }
-            : undefined,
+          time: time,
+          color: color,
         },
       },
     };

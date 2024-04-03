@@ -13,7 +13,7 @@ import SyncLoader from "~/app/_components/loading/SyncLoader";
 import MultiButton from "~/app/_components/common/MultiButton";
 import { TRPCClientError } from "@trpc/client";
 
-import { GameTimePreset } from "~/types/game.types";
+import { GameTimePreset, Color } from "~/types/game.types";
 
 import { ReducerAction } from "~/types/util/context.types";
 
@@ -25,7 +25,7 @@ type LocalConfig = {
     preset?: GameTimePreset;
   };
   color: {
-    preference: "random" | "white" | "black";
+    preference: "random" | Color;
   };
 };
 
@@ -111,7 +111,7 @@ export function LobbyPanel() {
   const leaveLobbyMutation = trpc.lobby.leave.useMutation();
 
   const [localConfig, dispatchLocalConfig] = useReducer(localConfigReducer, {
-    time: { preference: "non-timed", preset: "10m" },
+    time: { preference: "timed", preset: "10m" },
     color: {
       preference: "random",
     },
@@ -126,7 +126,7 @@ export function LobbyPanel() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   /**
-   * Sync context config to local config
+   * Sync context time config to local config
    */
   useEffect(() => {
     if (lobby.lobby?.config.time)
@@ -148,6 +148,20 @@ export function LobbyPanel() {
         },
       });
   }, [lobby.lobby?.config.time?.preset, lobby.lobby?.config.time?.verbose]);
+
+  /**
+   * sync context color config to local config
+   */
+  useEffect(() => {
+    dispatchLocalConfig({
+      type: "COLOR_OPTION",
+      payload: {
+        color: {
+          preference: lobby.lobby?.config.color?.preference ?? "random",
+        },
+      },
+    });
+  }, [lobby.lobby?.config.color?.preference]);
 
   /**
    * Disallow further changes to lobby configuration
@@ -210,8 +224,11 @@ export function LobbyPanel() {
    */
   async function generateLobby() {
     try {
-      if (localConfig.time.preference === "timed" && !localConfig.time.preset)
-        return showError("option must be selected for game time");
+      if (
+        (localConfig.time.preference === "timed" && !localConfig.time.preset) ||
+        !localConfig.color.preference
+      )
+        return showError("Please choose atleast one option for all options!");
 
       const r = await createLobbyMutation.mutateAsync({
         config: {
@@ -221,6 +238,12 @@ export function LobbyPanel() {
                   preset: localConfig.time.preset,
                 }
               : undefined,
+          color:
+            localConfig.color.preference === "random"
+              ? undefined
+              : {
+                  preference: localConfig.color.preference,
+                },
         },
       });
       dispatchLobby({
@@ -355,7 +378,7 @@ export function LobbyPanel() {
         />
       )}
 
-      <MultiButton<"white" | "black" | "random">
+      <MultiButton<LocalConfig["color"]["preference"]>
         disabled={disableConfigurationChanges}
         onSelection={(selection) => {
           dispatchLocalConfig({
@@ -378,7 +401,7 @@ export function LobbyPanel() {
           container: "gap-2 px-2 py-1 rounded",
         }}
         options={{
-          black: {
+          b: {
             tailwind: {
               any: {
                 any: "bg-black text-white border-2",
@@ -389,7 +412,7 @@ export function LobbyPanel() {
             element: (
               <div
                 className={`flex h-full w-full flex-row items-center justify-center gap-1 rounded border-2 px-1 py-1.5
-                ${localConfig.color.preference === "black" ? "border-black" : "border-transparent"}
+                ${localConfig.color.preference === "b" ? "border-black" : "border-transparent"}
               `}
               >
                 <FaChessKing />
@@ -428,7 +451,7 @@ export function LobbyPanel() {
               </div>
             ),
           },
-          white: {
+          w: {
             tailwind: {
               any: {
                 any: "bg-white text-black border-2",
@@ -439,7 +462,7 @@ export function LobbyPanel() {
             element: (
               <div
                 className={`flex h-full w-full flex-row items-center justify-center gap-1 rounded-sm border-2 px-1 py-1.5
-                  ${localConfig.color.preference === "white" ? "border-black" : "border-transparent"}
+                  ${localConfig.color.preference === "w" ? "border-black" : "border-transparent"}
                 `}
               >
                 <FaRegChessKing />
@@ -463,7 +486,9 @@ export function LobbyPanel() {
         }}
         disabled={
           lobby.present ||
-          (localConfig.time.preference === "timed" && !localConfig.time.preset)
+          (localConfig.time.preference === "timed" &&
+            !localConfig.time.preset) ||
+          !localConfig.color.preference
         }
         className="roundedpx-3 flex h-full w-full flex-row items-center justify-center gap-1 text-wrap rounded py-2 text-lg font-semibold text-white"
       >

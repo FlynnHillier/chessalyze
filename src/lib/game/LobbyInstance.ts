@@ -10,6 +10,7 @@ import {
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
+import { Color } from "chess.js";
 
 class LobbyError extends Error {
   constructor(code: string, message?: string) {
@@ -56,12 +57,15 @@ export class LobbyInstance {
 
   public readonly player: Player;
   public readonly id: UUID;
-  public readonly config: {
-    readonly time?: {
+  public readonly config: Partial<{
+    readonly time: {
       preset?: GameTimePreset;
       verbose: BW<number>;
     };
-  };
+    readonly color: {
+      preference: Color;
+    };
+  }>;
 
   private readonly events = {
     /**
@@ -161,7 +165,13 @@ export class LobbyInstance {
     this.events.onJoin(this, player);
 
     return new GameInstance(
-      { p1: this.player, p2: player },
+      {
+        p1: {
+          ...this.player,
+          preference: this.config.color?.preference,
+        },
+        p2: player,
+      },
       this.config.time?.verbose,
     );
   }

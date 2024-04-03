@@ -40,6 +40,10 @@ class InvalidGameError extends GameError {
   }
 }
 
+export type JoiningPlayer = Player & {
+  preference?: Color;
+};
+
 /**
  * A player chess game
  */
@@ -109,7 +113,7 @@ export class GameInstance {
    * @param times if specified, represent clock times for players. Default null.
    */
   public constructor(
-    players: { p1: Player; p2: Player },
+    players: { p1: JoiningPlayer; p2: JoiningPlayer },
     times: BW<number> | null = null,
   ) {
     if (
@@ -337,23 +341,51 @@ export class GameInstance {
     });
   }
 
-  private _generateColorConfiguration(p1: Player, p2: Player): BW<Player> {
-    // if (p1.preference === null && p2.preference === null || p2.preference === p1.preference) {
-    //generate random configuration
+  private _generateColorConfiguration(
+    p1: JoiningPlayer,
+    p2: JoiningPlayer,
+  ): BW<Player> {
+    const nonJoiningPlayers: { p1: Player; p2: Player } = {
+      p1: {
+        pid: p1.pid,
+      },
+      p2: {
+        pid: p2.pid,
+      },
+    };
+
+    if (p2.preference && !p1.preference)
+      return p2.preference === "w"
+        ? {
+            b: nonJoiningPlayers.p1,
+            w: nonJoiningPlayers.p2,
+          }
+        : {
+            w: nonJoiningPlayers.p1,
+            b: nonJoiningPlayers.p2,
+          };
+
+    if (p1.preference && !p2.preference)
+      return p1.preference === "w"
+        ? {
+            w: nonJoiningPlayers.p1,
+            b: nonJoiningPlayers.p2,
+          }
+        : {
+            b: nonJoiningPlayers.p1,
+            w: nonJoiningPlayers.p2,
+          };
+
+    // No player preferences, or both players preferences collide.
     return Math.random() < 0.5
       ? {
-          b: { pid: p1.pid },
-          w: { pid: p2.pid },
+          b: nonJoiningPlayers.p1,
+          w: nonJoiningPlayers.p2,
         }
       : {
-          w: { pid: p1.pid },
-          b: { pid: p2.pid },
+          w: nonJoiningPlayers.p1,
+          b: nonJoiningPlayers.p2,
         };
-
-    // return { //configuration that honours preferences
-    //   w: p1.preference === "w" ? { id: p1.id, displayName: p1.displayName } : p2.preference === null ? { id: p2.id, displayName: p2.displayName } : { id: p1.id, displayName: p1.displayName },
-    //   b: p1.preference === "b" ? { id: p1.id, displayName: p1.displayName } : p2.preference === null ? { id: p2.id, displayName: p2.displayName } : { id: p1.id, displayName: p1.displayName }
-    // }
   }
 
   private getOppositePerspective(p: Color): Color {

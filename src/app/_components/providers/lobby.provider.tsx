@@ -12,6 +12,7 @@ import { ReducerAction } from "~/types/util/context.types";
 import { UUID } from "~/types/common.types";
 import { BW, GameTimePreset } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
+import { Color } from "chess.js";
 
 export interface LOBBYCONTEXT {
   present: boolean;
@@ -22,6 +23,9 @@ export interface LOBBYCONTEXT {
         verbose: BW<number>;
         preset?: GameTimePreset;
       };
+      color?: {
+        preference: Color;
+      };
     };
   };
 }
@@ -31,21 +35,18 @@ const defaultContext: LOBBYCONTEXT = {
   lobby: undefined,
 };
 
-type RdcrActnLoad = ReducerAction<"LOAD", LOBBYCONTEXT>;
-
-type RdcrActnStart = ReducerAction<
-  "START",
-  {
-    lobby: {
-      id: UUID;
-      config: NonNullable<LOBBYCONTEXT["lobby"]>["config"];
-    };
-  }
->;
-
-type RdcrActnEnd = ReducerAction<"END", {}>;
-
-type LobbyRdcrActn = RdcrActnLoad | RdcrActnStart | RdcrActnEnd;
+type LobbyRdcrActn =
+  | ReducerAction<"LOAD", LOBBYCONTEXT>
+  | ReducerAction<
+      "START",
+      {
+        lobby: {
+          id: UUID;
+          config: NonNullable<LOBBYCONTEXT["lobby"]>["config"];
+        };
+      }
+    >
+  | ReducerAction<"END", {}>;
 
 function reducer<A extends LobbyRdcrActn>(
   state: LOBBYCONTEXT,
@@ -69,6 +70,7 @@ function reducer<A extends LobbyRdcrActn>(
         present: false,
         lobby: undefined,
       };
+
     default:
       return { ...state };
   }
