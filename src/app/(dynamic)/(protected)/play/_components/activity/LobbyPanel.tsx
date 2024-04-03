@@ -157,7 +157,10 @@ export function LobbyPanel() {
       type: "COLOR_OPTION",
       payload: {
         color: {
-          preference: lobby.lobby?.config.color?.preference ?? "random",
+          preference:
+            lobby.lobby?.config.color?.preference ??
+            localConfig.color.preference ??
+            "random",
         },
       },
     });
