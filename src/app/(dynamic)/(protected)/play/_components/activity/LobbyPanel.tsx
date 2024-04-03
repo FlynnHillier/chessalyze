@@ -143,7 +143,7 @@ export function LobbyPanel() {
         type: "TIME_PREFERENCE",
         payload: {
           time: {
-            preference: "non-timed",
+            preference: localConfig.time.preference ?? "non-timed",
           },
         },
       });
