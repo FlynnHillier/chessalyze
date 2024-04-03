@@ -8,16 +8,21 @@ interface customTailwind {
   all?: string;
 }
 
-export default function MultiButton<O extends string>({
+/**
+ * A button which allows for a single selection of multiple options.
+ *
+ * Generic type O, defines available options. undefined option means no selection has been made.
+ */
+export default function MultiButton<O extends string | undefined>({
   options,
   selected,
   onSelection,
   customTailwind,
   disabled,
 }: {
-  options: { [key in O]: string };
+  options: { [key in NonNullable<O>]: string };
   selected: O;
-  onSelection: Dispatch<SetStateAction<O>>;
+  onSelection: Dispatch<SetStateAction<O>> | ((selected: O) => any);
   customTailwind?: {
     enabled?: customTailwind;
     disabled?: customTailwind;
@@ -29,7 +34,7 @@ export default function MultiButton<O extends string>({
   return (
     <div className={`flex h-fit w-full flex-row ${customTailwind?.container}`}>
       {Object.keys(options).map((option) => {
-        const text = options[option as O];
+        const text = options[option as NonNullable<O>];
         const isSelected = option === selected;
 
         return (

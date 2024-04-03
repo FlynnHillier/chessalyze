@@ -15,6 +15,14 @@ export const trpcLobbyStatusProcedure = LOBBYPROCEDURE.query(({ ctx }) => {
     present: true,
     lobby: {
       id: lobby.id,
+      config: {
+        time: lobby.config.time
+          ? {
+              preset: lobby.config.time.preset,
+              verbose: lobby.config.time.verbose,
+            }
+          : undefined,
+      },
     },
   };
 });

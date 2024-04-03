@@ -1,6 +1,6 @@
 import { UUID } from "~/types/common.types";
 import { v1 as uuidv1 } from "uuid";
-import { Player, BW } from "~/types/game.types";
+import { Player, GameTimePreset, BW } from "~/types/game.types";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 import { GameInstance } from "~/lib/game/GameInstance";
 import { getOrCreateLobbySocketRoom } from "~/lib/ws/rooms/lobby.room.ws";
@@ -34,7 +34,17 @@ class InvalidLobbyError extends LobbyError {
   }
 }
 
-export interface LobbyEventCallbacks {}
+export const timedPresetNumberValues: {
+  [key in GameTimePreset]: number;
+} = {
+  "30s": 30000,
+  "1m": 60000,
+  "5m": 300000,
+  "10m": 600000,
+  "15m": 900000,
+  "30m": 1800000,
+  "1h": 3600000,
+};
 
 /**
  * A player lobby
@@ -46,8 +56,11 @@ export class LobbyInstance {
 
   public readonly player: Player;
   public readonly id: UUID;
-  private readonly config: {
-    readonly time?: BW<number>;
+  public readonly config: {
+    readonly time?: {
+      preset?: GameTimePreset;
+      verbose: BW<number>;
+    };
   };
 
   private readonly events = {
@@ -147,6 +160,9 @@ export class LobbyInstance {
 
     this.events.onJoin(this, player);
 
-    return new GameInstance({ p1: this.player, p2: player }, this.config.time);
+    return new GameInstance(
+      { p1: this.player, p2: player },
+      this.config.time?.verbose,
+    );
   }
 }

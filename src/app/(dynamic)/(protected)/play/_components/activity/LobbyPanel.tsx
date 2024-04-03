@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useReducer } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
@@ -12,9 +12,70 @@ import SyncLoader from "~/app/_components/loading/SyncLoader";
 import MultiButton from "~/app/_components/common/MultiButton";
 import { TRPCClientError } from "@trpc/client";
 
+import { GameTimePreset } from "~/types/game.types";
+
+import { ReducerAction } from "~/types/util/context.types";
+
 type TimingPreference = "timed" | "non-timed";
 
-type TimedOption = "30s" | "1m" | "5m" | "10m" | "30m" | "1h";
+type LocalConfig = {
+  time: {
+    preference: "timed" | "non-timed";
+    preset?: GameTimePreset;
+  };
+};
+
+type RDCRActnLobbyConfig =
+  | ReducerAction<
+      "TIME_PREFERENCE",
+      {
+        time: {
+          preference: LocalConfig["time"]["preference"];
+        };
+      }
+    >
+  | ReducerAction<
+      "TIME_OPTION",
+      {
+        time: {
+          preset: LocalConfig["time"]["preset"];
+        };
+      }
+    >;
+
+/**
+ * Redcucer used to interface mutations made to local lobby configuration
+ */
+function localConfigReducer(
+  state: LocalConfig,
+  action: RDCRActnLobbyConfig,
+): LocalConfig {
+  switch (action.type) {
+    case "TIME_PREFERENCE": {
+      const { time } = action.payload;
+
+      return {
+        time: {
+          preference: time.preference,
+          preset: state.time.preset,
+        },
+      };
+    }
+    case "TIME_OPTION": {
+      const { time } = action.payload;
+
+      return {
+        time: {
+          preference: "timed",
+          preset: time.preset,
+        },
+      };
+    }
+
+    default:
+      return { ...state };
+  }
+}
 
 /**
  * Interface to configure and create a lobby
@@ -24,9 +85,9 @@ export function LobbyPanel() {
   const createLobbyMutation = trpc.lobby.create.useMutation();
   const leaveLobbyMutation = trpc.lobby.leave.useMutation();
 
-  const [timingPreference, setTimingPreference] =
-    useState<TimingPreference>("non-timed");
-  const [timedOption, setTimedOption] = useState<TimedOption>("10m");
+  const [localConfig, dispatchLocalConfig] = useReducer(localConfigReducer, {
+    time: { preference: "non-timed", preset: "10m" },
+  });
 
   const [disableConfigurationChanges, setDisabledConfigurationChanges] =
     useState<boolean>(false);
@@ -37,44 +98,28 @@ export function LobbyPanel() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   /**
-   * based on timed option selection get number representation
-   *
+   * Sync context config to local config
    */
-  const timedOptionAsNumber: number | undefined = useMemo(() => {
-    if (timingPreference === "non-timed" || !timedOption) return undefined;
-
-    switch (timedOption) {
-      case "30s":
-        return 30000;
-      case "1m":
-        return 60000;
-      case "5m":
-        return 300000;
-      case "10m":
-        return 600000;
-      case "30m":
-        return 1800000;
-      case "1h":
-        return 3600000;
-    }
-  }, [timedOption, timingPreference]);
-
-  /**
-   * Show an error in the panel
-   */
-  const showError = useCallback(
-    (errorMessage: string) => {
-      setErrorMessage(errorMessage);
-    },
-    [setErrorMessage],
-  );
-
-  /**
-   * Hide any present error message
-   */
-  const hideError = useCallback(() => {
-    if (errorMessage) setErrorMessage(undefined);
-  }, [setErrorMessage]);
+  useEffect(() => {
+    if (lobby.lobby?.config.time)
+      dispatchLocalConfig({
+        type: "TIME_OPTION",
+        payload: {
+          time: {
+            preset: lobby.lobby.config.time.preset,
+          },
+        },
+      });
+    else
+      dispatchLocalConfig({
+        type: "TIME_PREFERENCE",
+        payload: {
+          time: {
+            preference: "non-timed",
+          },
+        },
+      });
+  }, [lobby.lobby?.config.time?.preset, lobby.lobby?.config.time?.verbose]);
 
   /**
    * Disallow further changes to lobby configuration
@@ -93,6 +138,23 @@ export function LobbyPanel() {
   useEffect(() => {
     setHasCopiedChallengeLink(false);
   }, [lobby.present]);
+
+  /**
+   * Show an error in the panel
+   */
+  const showError = useCallback(
+    (errorMessage: string) => {
+      setErrorMessage(errorMessage);
+    },
+    [setErrorMessage],
+  );
+
+  /**
+   * Hide any present error message
+   */
+  const hideError = useCallback(() => {
+    if (errorMessage) setErrorMessage(undefined);
+  }, [setErrorMessage]);
 
   /**
    * Cancel players current lobby
@@ -120,13 +182,15 @@ export function LobbyPanel() {
    */
   async function generateLobby() {
     try {
+      if (localConfig.time.preference === "timed" && !localConfig.time.preset)
+        return showError("option must be selected for game time");
+
       const r = await createLobbyMutation.mutateAsync({
         config: {
           time:
-            timingPreference === "timed" && timedOptionAsNumber
+            localConfig.time.preference === "timed"
               ? {
-                  w: timedOptionAsNumber,
-                  b: timedOptionAsNumber,
+                  preset: localConfig.time.preset,
                 }
               : undefined,
         },
@@ -136,6 +200,14 @@ export function LobbyPanel() {
         payload: {
           lobby: {
             id: r.lobby.id,
+            config: {
+              time: r.lobby.config.time
+                ? {
+                    verbose: r.lobby.config.time.verbose,
+                    preset: r.lobby.config.time.preset,
+                  }
+                : undefined,
+            },
           },
         },
       });
@@ -185,8 +257,17 @@ export function LobbyPanel() {
           timed: "timed",
           "non-timed": "non-timed",
         }}
-        onSelection={setTimingPreference}
-        selected={timingPreference}
+        onSelection={(selection: TimingPreference) => {
+          dispatchLocalConfig({
+            type: "TIME_PREFERENCE",
+            payload: {
+              time: {
+                preference: selection,
+              },
+            },
+          });
+        }}
+        selected={localConfig.time.preference}
         customTailwind={{
           anyAbled: {
             all: "rounded px-1 py-1.5 font-semibold",
@@ -206,19 +287,29 @@ export function LobbyPanel() {
       {/* 
         Select timing option if timing preference is timed
       */}
-      {timingPreference === "timed" && (
-        <MultiButton<TimedOption>
+      {localConfig.time.preference === "timed" && (
+        <MultiButton<GameTimePreset | undefined>
           disabled={disableConfigurationChanges}
           options={{
             "30s": "30s",
             "1m": "1m",
             "5m": "5m",
             "10m": "10m",
+            "15m": "15m",
             "30m": "30m",
             "1h": "1h",
           }}
-          onSelection={setTimedOption}
-          selected={timedOption}
+          onSelection={(selected: GameTimePreset | undefined) => {
+            dispatchLocalConfig({
+              type: "TIME_OPTION",
+              payload: {
+                time: {
+                  preset: selected,
+                },
+              },
+            });
+          }}
+          selected={localConfig.time.preset}
           customTailwind={{
             anyAbled: {
               all: "rounded px-1 py-1.5 font-semibold",
@@ -247,7 +338,10 @@ export function LobbyPanel() {
           enabled: "hover:bg-stone-600 bg-stone-700",
           disabled: "bg-stone-800  text-stone-500",
         }}
-        disabled={lobby.present}
+        disabled={
+          lobby.present ||
+          (localConfig.time.preference === "timed" && !localConfig.time.preset)
+        }
         className="roundedpx-3 flex h-full w-full flex-row items-center justify-center gap-1 text-wrap rounded py-2 text-lg font-semibold text-white"
       >
         <IoIosLink />
