@@ -6,6 +6,7 @@ import {
   useReducer,
   useEffect,
   Dispatch,
+  ReactNode,
 } from "react";
 import { ReducerAction } from "~/types/util/context.types";
 
@@ -120,7 +121,11 @@ export function useChallengeConfiguration() {
 /**
  * Provide context regarding current non-staged challenge configuration to all child components
  */
-export function ChallengeConfigurationContextProvider() {
+export function ChallengeConfigurationContextProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [challengeConfiguration, dispatchChallengeConfiguration] = useReducer(
     reducer,
     defaultChallengeConfiguration,
@@ -174,6 +179,8 @@ export function ChallengeConfigurationContextProvider() {
         challengeConfiguration,
         dispatchChallengeConfiguration,
       }}
-    ></ChallengeConfigurationContext.Provider>
+    >
+      {children}
+    </ChallengeConfigurationContext.Provider>
   );
 }
