@@ -16,6 +16,7 @@ import { TRPCClientError } from "@trpc/client";
 import { GameTimePreset, Color } from "~/types/game.types";
 
 import { ReducerAction } from "~/types/util/context.types";
+import LobbyConfigurationInterface from "~/app/(dynamic)/(protected)/play/(panel)/_components/LobbyConfiguration";
 
 type TimingPreference = "timed" | "non-timed";
 
@@ -302,181 +303,53 @@ export function LobbyPanel() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 px-2">
-        {/*   
-        Select timing preference
-      */}
-        <MultiButton<TimingPreference>
-          disabled={disableConfigurationChanges}
-          options={{
-            timed: {},
-            "non-timed": {},
-          }}
-          onSelection={(selection: TimingPreference) => {
-            dispatchLocalConfig({
-              type: "TIME_PREFERENCE",
-              payload: {
-                time: {
-                  preference: selection,
-                },
-              },
-            });
-          }}
-          selected={localConfig.time.preference}
-          customTailwind={{
-            any: {
-              any: "rounded px-1 py-1.5 font-semibold",
-            },
-            enabled: {
-              isSelected: "bg-green-600 hover:bg-green-700",
-              nonSelected: "bg-stone-800 hover:bg-stone-950",
-            },
-            disabled: {
-              isSelected: "bg-green-800 text-stone-400",
-              nonSelected: "bg-stone-800 text-stone-500",
-            },
-            container: "gap-2 rounded",
-          }}
-        />
-
-        {/* 
-        Select timing option if timing preference is timed
-      */}
-        {localConfig.time.preference === "timed" && (
-          <MultiButton<GameTimePreset | undefined>
-            disabled={disableConfigurationChanges}
-            options={{
-              "30s": {},
-              "1m": {},
-              "5m": {},
-              "10m": {},
-              "15m": {},
-              "30m": {},
-              "1h": {},
-            }}
-            onSelection={(selected: GameTimePreset | undefined) => {
+      <LobbyConfigurationInterface
+        disabled={disableConfigurationChanges}
+        interactable={true}
+        state={{
+          color: {
+            selection: localConfig.color.preference,
+            onSelection: (selection) => {
               dispatchLocalConfig({
-                type: "TIME_OPTION",
+                type: "COLOR_OPTION",
                 payload: {
-                  time: {
-                    preset: selected,
+                  color: {
+                    preference: selection,
                   },
                 },
               });
-            }}
-            selected={localConfig.time.preset}
-            customTailwind={{
-              any: {
-                any: "rounded px-1 py-1.5 font-semibold",
-              },
-              enabled: {
-                isSelected: "bg-green-600 hover:bg-green-700",
-                nonSelected: "bg-stone-800 hover:bg-stone-950",
-              },
-              disabled: {
-                isSelected: "bg-green-800 text-stone-400",
-                nonSelected: "bg-stone-800 text-stone-500",
-              },
-              container: "gap-2 rounded",
-            }}
-          />
-        )}
-
-        <MultiButton<LocalConfig["color"]["preference"]>
-          disabled={disableConfigurationChanges}
-          onSelection={(selection) => {
-            dispatchLocalConfig({
-              type: "COLOR_OPTION",
-              payload: {
-                color: {
-                  preference: selection,
-                },
-              },
-            });
-          }}
-          selected={localConfig.color.preference}
-          customTailwind={{
-            any: {
-              any: "rounded font-semibold",
             },
-            disabled: {
-              any: "opacity-50",
-            },
-            container: "gap-2 rounded",
-          }}
-          options={{
-            b: {
-              tailwind: {
-                any: {
-                  any: "bg-black text-white border-2",
-                  isSelected: "border-green-600",
-                  nonSelected: "border-transparent",
-                },
+          },
+          timing: {
+            preference: {
+              selection: localConfig.time.preference,
+              onSelection: (selection) => {
+                dispatchLocalConfig({
+                  type: "TIME_PREFERENCE",
+                  payload: {
+                    time: {
+                      preference: selection,
+                    },
+                  },
+                });
               },
-              element: (
-                <div
-                  className={`flex h-full w-full flex-row items-center justify-center gap-1 rounded border-2 px-1 py-1.5
-                ${localConfig.color.preference === "b" ? "border-black" : "border-transparent"}
-              `}
-                >
-                  <FaChessKing />
-                  black
-                </div>
-              ),
             },
-            random: {
-              element: (
-                <div className="flex h-full w-full flex-row items-center justify-center">
-                  <div
-                    className={`h-full w-full rounded-l border-y-2 border-l-2 bg-black text-white 
-                  ${localConfig.color.preference === "random" ? "border-y-green-600 border-l-green-600" : "border-transparent"}`}
-                  >
-                    <div
-                      className={`flex h-full w-full flex-row items-center justify-end gap-1 rounded-l-sm border-y-2 border-l-2 py-1.5 pl-1
-                    ${localConfig.color.preference === "random" ? "border-black" : "border-transparent"}
-                  `}
-                    >
-                      <FaChess />
-                      ran
-                    </div>
-                  </div>
-                  <div
-                    className={`h-full w-full rounded-r border-y-2 border-r-2 bg-white text-black 
-                  ${localConfig.color.preference === "random" ? "border-y-green-600 border-r-green-600" : "border-transparent"}`}
-                  >
-                    <div
-                      className={`flex h-full w-full flex-row items-center justify-start gap-1 rounded-r-sm border-y-2 border-r-2 py-1.5 pr-1
-                    ${localConfig.color.preference === "random" ? "border-black" : "border-transparent"}
-                  `}
-                    >
-                      dom
-                    </div>
-                  </div>
-                </div>
-              ),
-            },
-            w: {
-              tailwind: {
-                any: {
-                  any: "bg-white text-black border-2",
-                  isSelected: "border-green-600",
-                  nonSelected: "border-transparent",
-                },
+            option: {
+              selection: localConfig.time.preset,
+              onSelection: (selection) => {
+                dispatchLocalConfig({
+                  type: "TIME_OPTION",
+                  payload: {
+                    time: {
+                      preset: selection,
+                    },
+                  },
+                });
               },
-              element: (
-                <div
-                  className={`flex h-full w-full flex-row items-center justify-center gap-1 rounded-sm border-2 px-1 py-1.5
-                  ${localConfig.color.preference === "w" ? "border-black" : "border-transparent"}
-                `}
-                >
-                  <FaRegChessKing />
-                  white
-                </div>
-              ),
             },
-          }}
-        />
-      </div>
+          },
+        }}
+      />
 
       {/* 
         Create a lobby
