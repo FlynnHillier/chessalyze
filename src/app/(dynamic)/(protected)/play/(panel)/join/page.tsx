@@ -14,6 +14,7 @@ import { LobbyConfig } from "~/lib/game/LobbyInstance";
 import { FaChessKing } from "react-icons/fa";
 
 import SyncLoader from "~/app/_components/loading/SyncLoader";
+import PanelWithSubHeader from "~/app/(dynamic)/(protected)/play/(panel)/_components/misc/PanelWithSubHeader";
 
 /**
  * Allow user to view & accept challenge
@@ -101,10 +102,7 @@ export default function JoinPanel() {
   //TODO: add actual UI here
   // - once friends are added, option to invite friends appears here.
   return (
-    <>
-      <div className="h-fit w-full bg-stone-800">
-        <span className="text-nowrap text-lg font-bold">Accept challenge?</span>
-      </div>
+    <PanelWithSubHeader text={"Accept challenge?"}>
       <div className="flex h-fit w-1/2 min-w-fit flex-col items-center gap-2 overflow-hidden rounded bg-inherit text-center font-semibold">
         <div className="flex flex-col items-center justify-center gap-1 p-3 text-center font-semibold">
           {trpcQueryLobbyMutation.isLoading && (
@@ -122,6 +120,6 @@ export default function JoinPanel() {
           </div>
         </div>
       </div>
-    </>
+    </PanelWithSubHeader>
   );
 }

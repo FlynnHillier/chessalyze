@@ -10,9 +10,7 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
         <div className="text-gra text-green w-full pb-2 text-3xl font-bold">
           <h1>Play chess!</h1>
         </div>
-        <div className="flex flex-col items-center gap-2 bg-stone-900 text-center font-semibold">
-          {children}
-        </div>
+        <div className="bg-stone-900 text-center font-semibold">{children}</div>
       </div>
     </div>
   );

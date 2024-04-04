@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import MultiButton from "~/app/_components/common/MultiButton";
 import { LobbyPanel } from "~/app/(dynamic)/(protected)/play/(panel)/_components/LobbyPanel";
+import PanelWithSubHeader from "~/app/(dynamic)/(protected)/play/(panel)/_components/misc/PanelWithSubHeader";
 
 type Opponent = "online" | "friend";
 
@@ -14,7 +15,7 @@ export default function DefaultPlayPanel() {
   const [opponent, setOpponent] = useState<Opponent>("friend");
 
   return (
-    <>
+    <PanelWithSubHeader text={"VS"}>
       <div className="flex w-full flex-col gap-1">
         <MultiButton<Opponent>
           options={{
@@ -33,6 +34,6 @@ export default function DefaultPlayPanel() {
         />
         {opponent === "friend" ? <LobbyPanel /> : <>Coming soon!</>}
       </div>
-    </>
+    </PanelWithSubHeader>
   );
 }
