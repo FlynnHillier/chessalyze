@@ -41,7 +41,7 @@ export function PanelErrorMessageContextProvider({
 }: {
   children: ReactNode;
 }) {
-  const [error, setError] = useState<string | null>("null");
+  const [error, setError] = useState<string | null>(null);
   const [clearErrorTimeout, setClearErrorTimeout] = useState<number | null>(
     null,
   );
