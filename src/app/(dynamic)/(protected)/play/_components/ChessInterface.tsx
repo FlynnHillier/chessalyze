@@ -192,7 +192,7 @@ export default function ChessInterface() {
   }
 
   return (
-    <div className="flex h-full w-full max-w-xl flex-col rounded-lg bg-stone-800 px-2">
+    <div className="flex h-full w-full max-w-2xl flex-col rounded-lg bg-stone-800 px-2">
       <div className="h-1/6 w-full">
         <GameBanner
           player={orientation === "b" ? game?.players.w : game?.players.b}

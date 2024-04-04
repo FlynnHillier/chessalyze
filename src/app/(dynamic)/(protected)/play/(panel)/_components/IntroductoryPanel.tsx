@@ -3,11 +3,14 @@
 import { useState } from "react";
 import MultiButton from "~/app/_components/common/MultiButton";
 
-import { LobbyPanel } from "~/app/(dynamic)/(protected)/play/_components/activity/LobbyPanel";
+import { LobbyPanel } from "~/app/(dynamic)/(protected)/play/(panel)/_components/LobbyPanel";
 
 type Opponent = "online" | "friend";
 
-export default function ActivityPanel() {
+/**
+ * The panel the user is exposed to on the default /play route
+ */
+export default function IntroductoryPanel() {
   const [opponent, setOpponent] = useState<Opponent>("friend");
 
   return (
@@ -34,7 +37,7 @@ export default function ActivityPanel() {
             }}
           />
         </div>
-        <div className="rounded bg-stone-900 p-2">
+        <div className="rounded bg-stone-900">
           {opponent === "friend" ? <LobbyPanel /> : <>Coming soon!</>}
         </div>
       </div>
