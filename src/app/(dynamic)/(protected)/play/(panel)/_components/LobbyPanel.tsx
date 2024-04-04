@@ -1,107 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState, useReducer } from "react";
+import { useEffect, useState } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
-import { FaRegCopy, FaChessKing } from "react-icons/fa";
-import { FaChess, FaRegChessKing } from "react-icons/fa6";
+import { FaRegCopy } from "react-icons/fa";
 
 import { trpc } from "~/app/_trpc/client";
 import { useLobby } from "~/app/_components/providers/lobby.provider";
 import AsyncButton from "~/app/_components/common/AsyncButton";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
-import MultiButton from "~/app/_components/common/MultiButton";
 import { TRPCClientError } from "@trpc/client";
 
-import { GameTimePreset, Color } from "~/types/game.types";
+import { useChallengeConfiguration } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/ChallengeConfiguration.provider";
+import { useMutatePanelErrorMessage } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
 
-import { ReducerAction } from "~/types/util/context.types";
 import LobbyConfigurationInterface from "~/app/(dynamic)/(protected)/play/(panel)/_components/LobbyConfiguration";
-
-type TimingPreference = "timed" | "non-timed";
-
-type LocalConfig = {
-  time: {
-    preference: "timed" | "non-timed";
-    preset?: GameTimePreset;
-  };
-  color: {
-    preference: "random" | Color;
-  };
-};
-
-type RDCRActnLobbyConfig =
-  | ReducerAction<
-      "TIME_PREFERENCE",
-      {
-        time: {
-          preference: LocalConfig["time"]["preference"];
-        };
-      }
-    >
-  | ReducerAction<
-      "TIME_OPTION",
-      {
-        time: {
-          preset: LocalConfig["time"]["preset"];
-        };
-      }
-    >
-  | ReducerAction<
-      "COLOR_OPTION",
-      {
-        color: {
-          preference: LocalConfig["color"]["preference"];
-        };
-      }
-    >;
-
-/**
- * Redcucer used to interface mutations made to local lobby configuration
- */
-function localConfigReducer(
-  state: LocalConfig,
-  action: RDCRActnLobbyConfig,
-): LocalConfig {
-  switch (action.type) {
-    case "TIME_PREFERENCE": {
-      const { time } = action.payload;
-
-      return {
-        ...state,
-        time: {
-          preference: time.preference,
-          preset: state.time.preset,
-        },
-      };
-    }
-    case "TIME_OPTION": {
-      const { time } = action.payload;
-
-      return {
-        ...state,
-        time: {
-          preference: "timed",
-          preset: time.preset,
-        },
-      };
-    }
-
-    case "COLOR_OPTION": {
-      const { color } = action.payload;
-
-      return {
-        ...state,
-        color: {
-          preference: color.preference,
-        },
-      };
-    }
-
-    default:
-      return { ...state };
-  }
-}
 
 /**
  * Interface to configure and create a lobby
@@ -110,13 +23,7 @@ export function LobbyPanel() {
   const { lobby, dispatchLobby } = useLobby();
   const createLobbyMutation = trpc.lobby.create.useMutation();
   const leaveLobbyMutation = trpc.lobby.leave.useMutation();
-
-  const [localConfig, dispatchLocalConfig] = useReducer(localConfigReducer, {
-    time: { preference: "timed", preset: "10m" },
-    color: {
-      preference: "random",
-    },
-  });
+  const { show: showError } = useMutatePanelErrorMessage();
 
   const [disableConfigurationChanges, setDisabledConfigurationChanges] =
     useState<boolean>(false);
@@ -124,48 +31,8 @@ export function LobbyPanel() {
   const [hasCopiedChallengeLink, setHasCopiedChallengeLink] =
     useState<boolean>(false);
 
-  const [errorMessage, setErrorMessage] = useState<string | undefined>();
-
-  /**
-   * Sync context time config to local config
-   */
-  useEffect(() => {
-    if (lobby.lobby?.config.time)
-      dispatchLocalConfig({
-        type: "TIME_OPTION",
-        payload: {
-          time: {
-            preset: lobby.lobby.config.time.preset,
-          },
-        },
-      });
-    else
-      dispatchLocalConfig({
-        type: "TIME_PREFERENCE",
-        payload: {
-          time: {
-            preference: localConfig.time.preference ?? "non-timed",
-          },
-        },
-      });
-  }, [lobby.lobby?.config.time?.preset, lobby.lobby?.config.time?.verbose]);
-
-  /**
-   * sync context color config to local config
-   */
-  useEffect(() => {
-    dispatchLocalConfig({
-      type: "COLOR_OPTION",
-      payload: {
-        color: {
-          preference:
-            lobby.lobby?.config.color?.preference ??
-            localConfig.color.preference ??
-            "random",
-        },
-      },
-    });
-  }, [lobby.lobby?.config.color?.preference]);
+  const { challengeConfiguration, dispatchChallengeConfiguration } =
+    useChallengeConfiguration();
 
   /**
    * Disallow further changes to lobby configuration
@@ -184,23 +51,6 @@ export function LobbyPanel() {
   useEffect(() => {
     setHasCopiedChallengeLink(false);
   }, [lobby.present]);
-
-  /**
-   * Show an error in the panel
-   */
-  const showError = useCallback(
-    (errorMessage: string) => {
-      setErrorMessage(errorMessage);
-    },
-    [setErrorMessage],
-  );
-
-  /**
-   * Hide any present error message
-   */
-  const hideError = useCallback(() => {
-    if (errorMessage) setErrorMessage(undefined);
-  }, [setErrorMessage]);
 
   /**
    * Cancel players current lobby
@@ -229,24 +79,25 @@ export function LobbyPanel() {
   async function generateLobby() {
     try {
       if (
-        (localConfig.time.preference === "timed" && !localConfig.time.preset) ||
-        !localConfig.color.preference
+        (challengeConfiguration.time.preference === "timed" &&
+          !challengeConfiguration.time.preset) ||
+        !challengeConfiguration.color.preference
       )
         return showError("Please choose atleast one option for all options!");
 
       const r = await createLobbyMutation.mutateAsync({
         config: {
           time:
-            localConfig.time.preference === "timed"
+            challengeConfiguration.time.preference === "timed"
               ? {
-                  preset: localConfig.time.preset,
+                  preset: challengeConfiguration.time.preset,
                 }
               : undefined,
           color:
-            localConfig.color.preference === "random"
+            challengeConfiguration.color.preference === "random"
               ? undefined
               : {
-                  preference: localConfig.color.preference,
+                  preference: challengeConfiguration.color.preference,
                 },
         },
       });
@@ -288,30 +139,16 @@ export function LobbyPanel() {
   }
 
   return (
-    <div
-      className="flex h-fit w-full flex-col gap-2 p-2 font-semibold text-gray-100"
-      onClick={() => {
-        hideError();
-      }}
-    >
-      {/* 
-        Error message display 
-      */}
-      {errorMessage && (
-        <div className="flex w-full justify-center rounded bg-red-800 p-2 text-center text-white">
-          {errorMessage}
-        </div>
-      )}
-
+    <div className="flex h-fit w-full flex-col gap-2 text-gray-100">
       <LobbyConfigurationInterface
         disabled={disableConfigurationChanges}
         interactable={true}
         state={{
           color: {
-            selection: localConfig.color.preference,
+            selection: challengeConfiguration.color.preference,
             onSelection: (selection) => {
-              dispatchLocalConfig({
-                type: "COLOR_OPTION",
+              dispatchChallengeConfiguration({
+                type: "COLOR",
                 payload: {
                   color: {
                     preference: selection,
@@ -322,9 +159,9 @@ export function LobbyPanel() {
           },
           timing: {
             preference: {
-              selection: localConfig.time.preference,
+              selection: challengeConfiguration.time.preference,
               onSelection: (selection) => {
-                dispatchLocalConfig({
+                dispatchChallengeConfiguration({
                   type: "TIME_PREFERENCE",
                   payload: {
                     time: {
@@ -335,9 +172,9 @@ export function LobbyPanel() {
               },
             },
             option: {
-              selection: localConfig.time.preset,
+              selection: challengeConfiguration.time.preset,
               onSelection: (selection) => {
-                dispatchLocalConfig({
+                dispatchChallengeConfiguration({
                   type: "TIME_OPTION",
                   payload: {
                     time: {
@@ -364,9 +201,9 @@ export function LobbyPanel() {
         }}
         disabled={
           lobby.present ||
-          (localConfig.time.preference === "timed" &&
-            !localConfig.time.preset) ||
-          !localConfig.color.preference
+          (challengeConfiguration.time.preference === "timed" &&
+            !challengeConfiguration.time.preset) ||
+          !challengeConfiguration.color.preference
         }
         className="roundedpx-3 flex h-full w-full flex-row items-center justify-center gap-1 text-wrap rounded py-2 text-lg font-semibold text-white"
       >

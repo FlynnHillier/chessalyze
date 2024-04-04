@@ -1,17 +1,14 @@
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
+import { PanelErrorMessageContextProvider } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
+import SyncLoader from "~/app/_components/loading/SyncLoader";
 
 /**
  * Layout for /play** panels
  */
 export default function PanelLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="container h-fit w-full min-w-96 overflow-hidden rounded bg-stone-800 pt-2 text-center">
-      <div className="flex flex-col">
-        <div className="text-gra text-green w-full pb-2 text-3xl font-bold">
-          <h1>Play chess!</h1>
-        </div>
-        <div className="bg-stone-900 text-center font-semibold">{children}</div>
-      </div>
-    </div>
+    <PanelErrorMessageContextProvider>
+      {children}
+    </PanelErrorMessageContextProvider>
   );
 }
