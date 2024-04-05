@@ -75,6 +75,7 @@ export default function Panel<
 
                 return (
                   <div
+                    key={option as string}
                     className={`px-1 py-1.5 text-xl hover:cursor-pointer ${isSelected ? "bg-stone-900" : "hover:bg-stone-950"} w-full`}
                     onClick={() => {
                       setSelection(option);

@@ -19,7 +19,7 @@ import LobbyConfigurationInterface from "~/app/(dynamic)/(protected)/play/(panel
 /**
  * Interface to configure and create a lobby
  */
-export function LobbyPanel() {
+export function CreateChallenge() {
   const { lobby, dispatchLobby } = useLobby();
   const createLobbyMutation = trpc.lobby.create.useMutation();
   const leaveLobbyMutation = trpc.lobby.leave.useMutation();

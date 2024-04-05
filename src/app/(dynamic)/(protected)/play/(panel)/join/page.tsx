@@ -11,7 +11,7 @@ import {
 } from "~/app/_components/providers/game.provider";
 import { trpc } from "~/app/_trpc/client";
 import { LobbyConfig } from "~/lib/game/LobbyInstance";
-import Panel from "~/app/(dynamic)/(protected)/play/_components/_panel/Panel";
+import Panel from "~/app/(dynamic)/(protected)/play/(panel)/_components/Panel";
 import { useMutatePanelErrorMessage } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import LobbyConfigurationInterface from "~/app/(dynamic)/(protected)/play/(panel)/_components/LobbyConfiguration";
