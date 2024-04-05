@@ -1,24 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import React from "react";
+import { useState, ReactNode, cloneElement } from "react";
 import {
   useMutatePanelErrorMessage,
   useReadPanelErrorMessage,
 } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
 
+type JSXElementWithChildren = {
+  children?: ReactNode;
+};
+
 export default function Panel<
-  T extends { [key: string]: JSX.Element } & { common: JSX.Element },
-  K extends Exclude<keyof T, "common">,
+  T extends { [key: string]: React.ReactElement<JSXElementWithChildren> },
+  K extends keyof T,
 >({
+  children,
   subtitle,
   content,
-  defaultContent,
 }: {
   subtitle?: string;
-  content: T;
-  defaultContent?: K;
+  content?: {
+    default?: K;
+    elements: T;
+  };
+  children?: ReactNode;
 }) {
-  const [selection, setSelection] = useState<K | undefined>(defaultContent);
+  const [selection, setSelection] = useState<K | undefined>(content?.default);
   const error = useReadPanelErrorMessage();
   const { hide } = useMutatePanelErrorMessage();
 
@@ -39,12 +47,12 @@ export default function Panel<
           </div>
         )}
 
-        {Object.keys(content).filter((k) => k !== "common").length > 0 && (
-          <div className="flex w-full flex-row justify-start bg-inherit">
-            {Object.entries(content)
-              .filter(([k, _]) => k !== "common")
-              .map(([_option, element]) => {
-                const option = _option as Exclude<K, "common">;
+        {content &&
+          Object.keys(content.elements).filter((k) => k !== "common").length >
+            0 && (
+            <div className="flex w-full flex-row justify-start bg-inherit">
+              {Object.entries(content.elements).map(([_option, element]) => {
+                const option = _option as K;
                 const isSelected = option === selection;
 
                 return (
@@ -58,8 +66,8 @@ export default function Panel<
                   </div>
                 );
               })}
-          </div>
-        )}
+            </div>
+          )}
 
         <div className="flex flex-col gap-2 bg-stone-900 p-3 text-center font-semibold">
           {error && (
@@ -68,8 +76,11 @@ export default function Panel<
             </div>
           )}
 
-          {selection && content[selection]}
-          {content["common"]}
+          {content &&
+            selection &&
+            React.cloneElement(content.elements[selection], {}, children)}
+
+          {(!content || Object.keys(content.elements).length === 0) && children}
         </div>
       </div>
     </div>

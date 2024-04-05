@@ -19,11 +19,12 @@ export default function DefaultPlayPanel() {
       <Panel
         subtitle="VS"
         content={{
-          common: <></>,
-          friend: <LobbyPanel />,
-          online: <>Coming soon!</>,
+          elements: {
+            friend: <LobbyPanel />,
+            online: <>Coming soon!</>,
+          },
+          default: "friend",
         }}
-        defaultContent="friend"
       />
     </ChallengeConfigurationContextProvider>
   );
