@@ -42,7 +42,7 @@ export default function LobbyConfigurationInterface({
   // for multiple MultiButtons that relate to one another and interact together based on props
 
   return (
-    <div className="flex flex-col gap-3 px-2">
+    <div className="flex flex-col gap-3">
       {/*   
         Select timing preference
       */}
