@@ -15,7 +15,7 @@ export default async function RestrictedLayout({
 
   if (!user) {
     // User is not logged in
-    redirect("auth/login");
+    redirect("/auth/login");
   }
 
   return (

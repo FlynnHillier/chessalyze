@@ -31,8 +31,8 @@ export default function MultiButton<O extends string | undefined>({
   disabled,
 }: {
   options: { [key in NonNullable<O>]: Option };
-  selected: O;
-  onSelection: (selected: O) => any;
+  selected?: O;
+  onSelection?: (selected: O) => any;
   customTailwind?: CustomTailwind & { container?: string };
   disabled?: boolean;
 }) {
@@ -50,7 +50,7 @@ export default function MultiButton<O extends string | undefined>({
             key={key}
             className={[
               "w-full",
-              !disabled && "hover:cursor-pointer",
+              !disabled !== false && "hover:cursor-pointer",
               customTailwind?.any?.any,
               customTailwind?.any?.[isSelected ? "isSelected" : "nonSelected"],
               !disabled &&
@@ -88,7 +88,7 @@ export default function MultiButton<O extends string | undefined>({
               .filter((e) => !!e)
               .join(" ")}
             onClick={() => {
-              if (!isSelected) onSelection(key);
+              if (!isSelected && onSelection) onSelection(key);
             }}
           >
             {element ?? text ?? key}

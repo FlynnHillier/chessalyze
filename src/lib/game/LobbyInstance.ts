@@ -45,7 +45,17 @@ export const timedPresetNumberValues: {
   "15m": 900000,
   "30m": 1800000,
   "1h": 3600000,
-};
+} as const;
+
+export type LobbyConfig = Partial<{
+  time: {
+    preset?: GameTimePreset;
+    verbose: BW<number>;
+  };
+  color: {
+    preference: Color;
+  };
+}>;
 
 /**
  * A player lobby
@@ -57,15 +67,7 @@ export class LobbyInstance {
 
   public readonly player: Player;
   public readonly id: UUID;
-  public readonly config: Partial<{
-    readonly time: {
-      preset?: GameTimePreset;
-      verbose: BW<number>;
-    };
-    readonly color: {
-      preference: Color;
-    };
-  }>;
+  public readonly config: LobbyConfig;
 
   private readonly events = {
     /**
