@@ -131,6 +131,7 @@ export default function JoinPanel() {
             players: game.players,
             FEN: game.FEN,
             time: game.time,
+            moves: game.moves,
           },
         },
       });

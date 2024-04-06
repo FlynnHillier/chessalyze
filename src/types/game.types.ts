@@ -64,6 +64,7 @@ export interface GameSnapshot {
     now: number;
     remaining?: BW<number>;
   };
+  moves:VerboseMovement[]
 }
 
 export type GameSummary = {

@@ -161,6 +161,7 @@ export class GameInstance {
           ? this.time.clock.getDurations()
           : undefined,
       },
+      moves: this.moveHistory,
     };
   }
 
