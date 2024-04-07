@@ -184,7 +184,7 @@ export default function ChessInterface() {
    * @param move movement that has occured
    * @returns Promise<boolean> true if move was a success
    */
-  async function onMovement(move: Movement): Promise<boolean> {
+  async function onMovement(move: Omit<Movement, "piece">): Promise<boolean> {
     const { success } = await trpcMoveMutation.mutateAsync({
       move: move,
     });

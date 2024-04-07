@@ -57,6 +57,7 @@ export type GAMECONTEXT =
           lastUpdated: number;
           remaining?: BW<number>;
         };
+        moves: VerboseMovement[];
       };
       conclusion: undefined;
     };
@@ -81,13 +82,7 @@ type RdcrActnEnd = ReducerAction<
   }
 >;
 
-type RdcrActnMove = ReducerAction<
-  "MOVE",
-  {
-    move: Movement;
-    time: Pick<VerboseMovement["time"], "remaining" | "timestamp">;
-  }
->;
+type RdcrActnMove = ReducerAction<"MOVE", VerboseMovement>;
 
 /**
  * Convert instance method exposed state into static object suitable for context.
@@ -124,8 +119,6 @@ function moveIsValid(instance: Chess, move: Movement): boolean {
 
 type GameRdcrActn = RdcrActnLoad | RdcrActnEnd | RdcrActnMove;
 
-//TODO: just re-instantiate Chess instance with new fen when we move.
-
 function reducer<A extends GameRdcrActn>(
   state: GAMECONTEXT,
   action: A,
@@ -160,6 +153,7 @@ function reducer<A extends GameRdcrActn>(
             lastUpdated: game.time.now,
             remaining: game.time.remaining,
           },
+          moves: game.moves,
         },
         conclusion: undefined,
       };
@@ -167,7 +161,7 @@ function reducer<A extends GameRdcrActn>(
     case "MOVE": {
       if (!state.game) return { ...state };
 
-      const { move, time } = payload;
+      const { move, time, initiator } = payload;
       const instance = new Chess(state.game.state.fen);
       const turn = instance.turn();
 
@@ -201,6 +195,14 @@ function reducer<A extends GameRdcrActn>(
             lastUpdated: time.timestamp,
             remaining: time.remaining,
           },
+          moves: [
+            ...state.game.moves,
+            {
+              initiator: initiator,
+              move: move,
+              time: time,
+            },
+          ],
         },
       };
     }
@@ -249,6 +251,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         type: "MOVE",
         payload: {
           move: {
+            piece: data.move.piece,
             source: data.move.source,
             target: data.move.target,
             promotion: data.move.promotion,
@@ -256,7 +259,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           time: {
             timestamp: data.time.timestamp,
             remaining: data.time.remaining,
+            isTimed: data.time.isTimed,
+            sinceStart: data.time.sinceStart,
+            moveDuration: data.time.moveDuration,
           },
+          initiator: data.initiator,
         },
       });
     },
@@ -283,6 +290,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
               remaining: data.time.remaining,
             },
             captured: data.captured,
+            moves: data.moves,
           },
         },
       });
@@ -362,6 +370,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                   now: data.game.time.now,
                   remaining: data.game.time.remaining,
                 },
+                moves: data.game.moves,
               }
             : undefined,
         },

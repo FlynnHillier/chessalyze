@@ -22,6 +22,7 @@ import {
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
+import { OneOf } from "~/types/util/util.types";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -59,8 +60,10 @@ export class GameInstance {
     isTimed: boolean;
     start: number;
     clock: ChessClock;
+    lastMove: number;
   };
   private moveHistory: VerboseMovement[] = [];
+  private summary: null | GameSummary = null;
 
   private readonly events = {
     /**
@@ -132,12 +135,15 @@ export class GameInstance {
 
     this.id = uuidv1();
     this.players = this._generateColorConfiguration(players.p1, players.p2);
+
+    const now = Date.now();
     this.time = {
       clock: new ChessClock(times ?? { w: 1, b: 1 }, (timedOutPerspective) => {
         this.end("timeout", this.getOppositePerspective(timedOutPerspective));
       }),
       isTimed: times !== null,
-      start: Date.now(),
+      start: now,
+      lastMove: now,
     };
 
     this._master._events.onCreate(this);
@@ -161,10 +167,30 @@ export class GameInstance {
           ? this.time.clock.getDurations()
           : undefined,
       },
+      moves: this.moveHistory,
     };
   }
 
   // ###GAME END
+
+  /**
+   * End the game by resignation
+   *
+   * @param color the colour which is resigning
+   * @param playerID the id of the player that wishes to resign
+   */
+  public resign({
+    color,
+    playerID,
+  }: OneOf<{ color: Color; playerID: string }>) {
+    if (playerID)
+      return this.end(
+        "resignation",
+        this.getOppositePerspective(this.getPlayerColor(playerID)),
+      );
+    if (color)
+      return this.end("resignation", this.getOppositePerspective(color));
+  }
 
   private end(termination: GameTermination, victor: Color) {
     const now = Date.now();
@@ -185,6 +211,7 @@ export class GameInstance {
     };
     this.time.clock.stop();
     this.terminated = true;
+    this.summary = summary;
     this.events.onEnd(summary);
   }
 
@@ -209,6 +236,7 @@ export class GameInstance {
   ): boolean {
     const now = Date.now();
     const initiator: Color = this.game.turn();
+
     const moveResult =
       this.game.move({
         from: sourceSquare,
@@ -222,7 +250,10 @@ export class GameInstance {
       return false;
     }
 
+    const piece = this.game.get(targetSquare)?.type;
+
     const movement: Movement = {
+      piece: piece,
       source: sourceSquare,
       target: targetSquare,
       promotion: promotion,
@@ -241,10 +272,12 @@ export class GameInstance {
         remaining: this.time.isTimed
           ? this.time.clock.getDurations()
           : undefined,
+        moveDuration: now - this.time.lastMove,
       },
     };
 
     this.moveHistory.push(verboseMovement);
+    this.time.lastMove = now;
 
     this.events.onMove(verboseMovement);
 
@@ -339,6 +372,10 @@ export class GameInstance {
         move.promotion === promotion
       );
     });
+  }
+
+  public getSummary() {
+    return this.summary;
   }
 
   private _generateColorConfiguration(

@@ -1,5 +1,9 @@
 import { UUID } from "~/types/common.types";
-import { Square as chessJSSquare, Color as chessJSColor } from "chess.js";
+import {
+  Square as chessJSSquare,
+  Color as chessJSColor,
+  PieceSymbol,
+} from "chess.js";
 import { z } from "zod";
 import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
 
@@ -31,6 +35,7 @@ export type BW<T> = {
 export type Color = chessJSColor;
 
 export type Movement = {
+  piece: PieceSymbol; //TODO add this
   source: Square;
   target: Square;
   promotion?: PromotionSymbol;
@@ -43,6 +48,7 @@ export type VerboseMovement = {
     sinceStart: number;
     timestamp: number;
     remaining?: BW<number>;
+    moveDuration: number;
   };
   initiator: Player & { color: Color };
 };
@@ -64,6 +70,7 @@ export interface GameSnapshot {
     now: number;
     remaining?: BW<number>;
   };
+  moves: VerboseMovement[];
 }
 
 export type GameSummary = {
