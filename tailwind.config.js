@@ -1,9 +1,9 @@
-import type { Config } from "tailwindcss";
 import * as containerQueries from "@tailwindcss/container-queries";
+import * as scrollbarHide from "tailwind-scrollbar-hide";
 
-const config: Config = {
+const config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
-  plugins: [containerQueries],
+  plugins: [containerQueries, scrollbarHide],
   theme: {
     extend: {
       keyframes: {
