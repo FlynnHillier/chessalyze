@@ -68,7 +68,7 @@ export default function Panel<
         {content &&
           Object.keys(content.elements).filter((k) => k !== "common").length >
             0 && (
-            <div className="flex w-full flex-row justify-start bg-inherit">
+            <div className="flex w-full flex-row justify-start bg-inherit font-bold">
               {Object.entries(content.elements).map(([_option, element]) => {
                 const option = _option as K;
                 const isSelected = option === selection;
