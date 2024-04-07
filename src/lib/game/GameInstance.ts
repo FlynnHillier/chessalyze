@@ -22,6 +22,7 @@ import {
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
+import { OneOf } from "~/types/util/util.types";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -62,6 +63,7 @@ export class GameInstance {
     lastMove: number;
   };
   private moveHistory: VerboseMovement[] = [];
+  private summary: null | GameSummary = null;
 
   private readonly events = {
     /**
@@ -171,6 +173,25 @@ export class GameInstance {
 
   // ###GAME END
 
+  /**
+   * End the game by resignation
+   *
+   * @param color the colour which is resigning
+   * @param playerID the id of the player that wishes to resign
+   */
+  public resign({
+    color,
+    playerID,
+  }: OneOf<{ color: Color; playerID: string }>) {
+    if (playerID)
+      return this.end(
+        "resignation",
+        this.getOppositePerspective(this.getPlayerColor(playerID)),
+      );
+    if (color)
+      return this.end("resignation", this.getOppositePerspective(color));
+  }
+
   private end(termination: GameTermination, victor: Color) {
     const now = Date.now();
     const summary: GameSummary = {
@@ -190,6 +211,7 @@ export class GameInstance {
     };
     this.time.clock.stop();
     this.terminated = true;
+    this.summary = summary;
     this.events.onEnd(summary);
   }
 
@@ -350,6 +372,10 @@ export class GameInstance {
         move.promotion === promotion
       );
     });
+  }
+
+  public getSummary() {
+    return this.summary;
   }
 
   private _generateColorConfiguration(
