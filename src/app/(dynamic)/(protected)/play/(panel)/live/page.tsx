@@ -60,22 +60,26 @@ export default function LivePanel() {
                       <div
                         className="block h-1/2 rounded-sm bg-gray-300"
                         style={{
-                          width: `${100 / (60 / 3.8)}%`,
+                          width: `${Math.min(100, 100 / (60000 / w.time.moveDuration))}%`,
                         }}
                       />
                     </div>
-                    <div className="col-span-1 col-start-2 text-xs">3.8</div>
+                    <div className="col-span-1 col-start-2 text-xs">
+                      {Math.round(w.time.moveDuration / 10) / 100}
+                    </div>
                   </div>
                   <div className="col-span-2 row-span-1  grid grid-cols-subgrid">
                     <div className="col-span-1 flex items-center justify-end">
                       <div
                         className="block h-1/2 rounded-sm bg-zinc-700"
                         style={{
-                          width: `${100 / (60 / 2.1)}%`,
+                          width: `${b ? Math.min(100, 100 / (60000 / b.time.moveDuration)) : "0"}%`,
                         }}
                       />
                     </div>
-                    <div className="col-span-1 col-start-2 text-xs">2.1</div>
+                    <div className="col-span-1 col-start-2 text-xs">
+                      {b && Math.round(b.time.moveDuration / 10) / 100}
+                    </div>
                   </div>
                 </div>
               </div>

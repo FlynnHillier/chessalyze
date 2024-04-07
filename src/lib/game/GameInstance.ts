@@ -59,6 +59,7 @@ export class GameInstance {
     isTimed: boolean;
     start: number;
     clock: ChessClock;
+    lastMove: number;
   };
   private moveHistory: VerboseMovement[] = [];
 
@@ -132,12 +133,15 @@ export class GameInstance {
 
     this.id = uuidv1();
     this.players = this._generateColorConfiguration(players.p1, players.p2);
+
+    const now = Date.now();
     this.time = {
       clock: new ChessClock(times ?? { w: 1, b: 1 }, (timedOutPerspective) => {
         this.end("timeout", this.getOppositePerspective(timedOutPerspective));
       }),
       isTimed: times !== null,
-      start: Date.now(),
+      start: now,
+      lastMove: now,
     };
 
     this._master._events.onCreate(this);
@@ -245,10 +249,12 @@ export class GameInstance {
         remaining: this.time.isTimed
           ? this.time.clock.getDurations()
           : undefined,
+        moveDuration: now - this.time.lastMove,
       },
     };
 
     this.moveHistory.push(verboseMovement);
+    this.time.lastMove = now;
 
     this.events.onMove(verboseMovement);
 

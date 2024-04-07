@@ -48,6 +48,7 @@ export type VerboseMovement = {
     sinceStart: number;
     timestamp: number;
     remaining?: BW<number>;
+    moveDuration: number;
   };
   initiator: Player & { color: Color };
 };

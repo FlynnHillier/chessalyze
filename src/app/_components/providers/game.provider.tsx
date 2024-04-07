@@ -261,6 +261,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             remaining: data.time.remaining,
             isTimed: data.time.isTimed,
             sinceStart: data.time.sinceStart,
+            moveDuration: data.time.moveDuration,
           },
           initiator: data.initiator,
         },
