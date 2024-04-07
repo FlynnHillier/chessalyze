@@ -96,7 +96,7 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
   }, [time]);
 
   return (
-    <div className="flex h-full w-full flex-row justify-between bg-inherit p-1 font-semibold">
+    <div className="flex h-full w-full flex-row justify-between bg-inherit py-1 font-semibold">
       <div className="w-1/5 min-w-fit rounded-lg bg-stone-900 px-2 py-1.5 text-center">
         {player?.pid ?? "player"}
       </div>
