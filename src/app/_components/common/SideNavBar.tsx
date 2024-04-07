@@ -24,7 +24,7 @@ const navOptions: NavOption[] = [
 
 export function SideNavBar() {
   return (
-    <div className="inline-block h-full truncate hover:text-wrap md:w-fit dark:bg-stone-800 dark:text-orange-100">
+    <div className="inline-block h-full w-fit dark:bg-stone-800 dark:text-orange-100">
       <div className="p-1 px-2 text-center text-3xl font-bold">Chessalyze</div>
       <div className="flex w-full flex-col">
         {navOptions.map((option) => (
