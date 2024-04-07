@@ -7,7 +7,11 @@ import { VerboseMovement } from "~/types/game.types";
 import {
   WhitePieceIcon,
   BlackPieceIcon,
+  PieceIcon,
 } from "~/app/(dynamic)/(protected)/play/_components/PieceIcon";
+import AsyncButton from "~/app/_components/common/AsyncButton";
+import { FiFlag } from "react-icons/fi";
+import SyncLoader from "~/app/_components/loading/SyncLoader";
 
 export default function LivePanel() {
   const game = useGame();
@@ -42,17 +46,28 @@ export default function LivePanel() {
 
   return (
     <Panel>
+      {game.game && (
+        <div className="flex flex-row items-center justify-center gap-2">
+          {PieceIcon("k", game.game.state.turn)}
+          <span className="text-lg font-bold">
+            {game.game?.state.turn === "w" ? "white" : "black"} to move
+          </span>
+        </div>
+      )}
+
       <div className=" flex h-52 flex-col rounded-sm bg-stone-950 p-3 ">
         <div className="scrollbar-hide h-full w-full overflow-scroll rounded-sm [&>div:nth-child(odd)]:bg-stone-900">
           {pairedMoveHistory.map(([w, b], i) => {
             return (
-              <div className="flex w-full flex-row items-center bg-stone-800 px-1 py-0.5 first:rounded-t-sm last:rounded-b-sm">
+              <div className="flex w-full flex-row items-center gap-3 bg-stone-800 px-1 py-0.5 first:rounded-t-sm last:rounded-b-sm">
                 <span className="font-medium">{i + 1}.</span>
-                <div className="flex w-1/4 flex-row items-center justify-center gap-0.5 font-bold ">
+                <div className="flex w-1/4 flex-row items-center justify-start gap-0.5 font-bold ">
                   {WhitePieceIcon(w.move.piece)} {w.move.target}
+                  {w.move.promotion ? "+" : ""}
                 </div>
-                <div className="flex w-1/4 flex-row items-center justify-center gap-0.5 font-bold ">
+                <div className="flex w-1/4 flex-row items-center justify-start gap-0.5 font-bold ">
                   {b && BlackPieceIcon(b.move.piece)} {b && b.move.target}
+                  {b && b.move.promotion ? "+" : ""}
                 </div>
                 <div className="ml-auto grid h-fit flex-grow grid-cols-[1fr_auto] grid-rows-2 gap-x-1">
                   <div className="col-span-2 row-span-1  grid grid-cols-subgrid">
@@ -88,6 +103,15 @@ export default function LivePanel() {
           <span ref={movesScrollEndRef} />
         </div>
       </div>
+      <AsyncButton
+        isLoading={false}
+        onLoading={<SyncLoader customTailwind="bg-green-700" />}
+        className="rounded bg-green-600 p-2"
+      >
+        <div className="flex flex-row flex-nowrap items-center justify-center gap-1">
+          Resign <FiFlag />
+        </div>
+      </AsyncButton>
     </Panel>
   );
 }
