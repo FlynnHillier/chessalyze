@@ -62,7 +62,7 @@ function ResignationButton() {
       <span className="text-lg font-bold">Are you sure?</span>
       <MultiButton
         customTailwind={{
-          container: "gap-2",
+          container: "gap-2 py-1 px-2",
           any: {
             any: "rounded p-2 bg-stone-900 hover:bg-stone-950 font-bold tracking-wide",
           },
