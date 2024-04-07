@@ -210,6 +210,8 @@ export class GameInstance {
   ): boolean {
     const now = Date.now();
     const initiator: Color = this.game.turn();
+    const piece = this.game.get(sourceSquare)?.type;
+
     const moveResult =
       this.game.move({
         from: sourceSquare,
@@ -224,6 +226,7 @@ export class GameInstance {
     }
 
     const movement: Movement = {
+      piece: piece,
       source: sourceSquare,
       target: targetSquare,
       promotion: promotion,

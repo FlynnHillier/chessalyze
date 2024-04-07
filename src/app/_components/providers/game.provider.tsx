@@ -251,6 +251,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         type: "MOVE",
         payload: {
           move: {
+            piece: data.move.piece,
             source: data.move.source,
             target: data.move.target,
             promotion: data.move.promotion,
