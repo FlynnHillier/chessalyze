@@ -41,8 +41,9 @@ class InvalidGameError extends GameError {
   }
 }
 
-export type JoiningPlayer = Player & {
-  preference?: Color;
+export type JoiningPlayer = {
+  player:Player,
+  preference?:Color
 };
 
 /**
@@ -116,17 +117,17 @@ export class GameInstance {
    * @param times if specified, represent clock times for players. Default null.
    */
   public constructor(
-    players: { p1: JoiningPlayer; p2: JoiningPlayer },
+    players: { p1: JoiningPlayer, p2:JoiningPlayer },
     times: BW<number> | null = null,
   ) {
     if (
-      this._master.getByPlayer(players.p1.pid) ||
-      this._master.getByPlayer(players.p2.pid)
+      this._master.getByPlayer(players.p1.player.pid) ||
+      this._master.getByPlayer(players.p2.player.pid)
     ) {
       // One or more players is already in a game.
       const inGame = [];
-      if (this._master.getByPlayer(players.p1.pid)) inGame.push(players.p1.pid);
-      if (this._master.getByPlayer(players.p2.pid)) inGame.push(players.p2.pid);
+      if (this._master.getByPlayer(players.p1.player.pid)) inGame.push(players.p1.player.pid);
+      if (this._master.getByPlayer(players.p2.player.pid)) inGame.push(players.p2.player.pid);
 
       throw new GameExistsError(
         `unable to create game. Player(s) '${inGame.join("' & '")}' is already in game.`,
@@ -383,12 +384,8 @@ export class GameInstance {
     p2: JoiningPlayer,
   ): BW<Player> {
     const nonJoiningPlayers: { p1: Player; p2: Player } = {
-      p1: {
-        pid: p1.pid,
-      },
-      p2: {
-        pid: p2.pid,
-      },
+      p1: p1.player,
+      p2: p2.player,
     };
 
     if (p2.preference && !p1.preference)

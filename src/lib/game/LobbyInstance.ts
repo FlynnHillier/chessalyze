@@ -169,10 +169,13 @@ export class LobbyInstance {
     return new GameInstance(
       {
         p1: {
-          ...this.player,
+          player:this.player,
           preference: this.config.color?.preference,
         },
-        p2: player,
+        p2: {
+          player:player,
+          preference:undefined
+        },
       },
       this.config.time?.verbose,
     );
