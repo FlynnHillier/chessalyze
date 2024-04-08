@@ -16,6 +16,8 @@ export const lucia = new Lucia(adapter, {
     return {
       // Map colums from user table to user object
       email: attributes.email,
+      image:attributes.image,
+      name:attributes.name,
     };
   },
 });
@@ -29,5 +31,7 @@ declare module "lucia" {
   interface DatabaseSessionAttributes {}
   interface DatabaseUserAttributes {
     email: string;
+    image:string;
+    name:string;
   }
 }

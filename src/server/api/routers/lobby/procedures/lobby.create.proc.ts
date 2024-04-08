@@ -43,7 +43,7 @@ export const trpcLobbyCreateProcedure = LOBBYPROCEDURE.use(
     }),
   )
   .mutation(({ ctx, input }) => {
-    const { id } = ctx.user;
+    const { id,email } = ctx.user;
 
     const { time: _time, color } = input.config;
 
@@ -80,6 +80,8 @@ export const trpcLobbyCreateProcedure = LOBBYPROCEDURE.use(
     const lobby = new LobbyInstance(
       {
         pid: id,
+        image:ctx.user.image,
+        username:ctx.user.name,
       },
       {
         time: time,
