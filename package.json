@@ -6,9 +6,7 @@
   "author": "FlynnHillier <flynnhillier@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev:wss": "tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json",
-    "dev:next": "next dev",
-    "dev": "run-p dev:*",
+    "dev": "next dev*",
     "drizzle": "drizzle-kit push:pg --config=./drizzle.config.ts"
   },
   "devDependencies": {
