@@ -10,6 +10,7 @@ import { trpc } from "~/app/_trpc/client";
 import { useSession } from "~/app/_components/providers/session.provider";
 import { FaChessKing, FaChess } from "react-icons/fa";
 import { FaRegChessKing } from "react-icons/fa6";
+import Image from "next/image";
 
 /**
  * Overlay shown when game is over.
@@ -96,13 +97,27 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
   }, [time]);
 
   return (
-    <div className="flex h-full w-full flex-row justify-between bg-inherit py-1 font-semibold">
-      <div className="w-1/5 min-w-fit rounded-lg bg-stone-900 px-2 py-1.5 text-center">
+    <div className="flex h-fit w-full flex-row justify-between bg-inherit bg-stone-900 px-2 font-semibold">
+      <div className="flex w-full flex-row items-center gap-2 bg-stone-900 py-1.5 text-center">
+        {
+          <div className="relative aspect-square h-full w-fit overflow-hidden rounded">
+            <Image
+              src={player ? player.image : "/blankuser.png"}
+              alt={
+                player
+                  ? `${player.username}'s profile picture`
+                  : "blank profile picture"
+              }
+              width={0}
+              height={0}
+              sizes="100vw" // seems to improve quality?
+              fill={true}
+            />
+          </div>
+        }
         {player?.username ?? "player"}
       </div>
-      <div className="w-1/5 rounded-lg bg-stone-900 px-2 py-1.5 text-center">
-        {timestamp ?? "00:00"}
-      </div>
+      <div className="w-1/5 py-3 text-center">{timestamp ?? "00:00"}</div>
     </div>
   );
 }
@@ -192,8 +207,8 @@ export default function ChessInterface() {
   }
 
   return (
-    <div className="flex h-full w-full max-w-2xl flex-col rounded-lg bg-stone-800 px-2">
-      <div className="h-1/6 w-full">
+    <div className="flex h-full w-full max-w-2xl flex-col rounded-lg bg-stone-800 p-2">
+      <div className=" w-full overflow-hidden rounded-t-md">
         <GameBanner
           player={orientation === "b" ? game?.players.w : game?.players.b}
           time={time?.[orientation === "b" ? "w" : "b"]}
@@ -221,10 +236,18 @@ export default function ChessInterface() {
           victor={conclusion?.conclusion.victor}
         />
       </div>
-      <div className="w-ful h-1/6">
+      <div className="w-full overflow-hidden rounded-b-md">
         <GameBanner
           time={time?.[orientation === "b" ? "b" : "w"]}
-          player={orientation === "b" ? game?.players.b : game?.players.w}
+          player={
+            game
+              ? orientation === "b"
+                ? game?.players.b
+                : game?.players.w
+              : user
+                ? { pid: user?.id, username: user?.name, image: user?.image }
+                : undefined
+          }
         />
       </div>
     </div>

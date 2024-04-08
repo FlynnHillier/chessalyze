@@ -10,7 +10,14 @@ const nextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [], //TODO:add allowed hosts for images here.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+        port: "",
+        pathname: "**",
+      },
+    ],
   },
 };
 
