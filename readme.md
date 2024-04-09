@@ -18,7 +18,7 @@ Once signed up, simply **create a challenge**:
 
 
 **Once they've accepted, it's game on.** From here it's simply the game of chess that we all know and love *(in real time!)*
-![game](readme\screenshots\game.png)
+![game](\readme\screenshots\game.png)
 
 
 ## **To Do!**
