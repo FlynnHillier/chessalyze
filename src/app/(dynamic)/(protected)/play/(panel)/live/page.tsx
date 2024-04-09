@@ -133,7 +133,7 @@ export default function LivePanel() {
       )}
 
       <div className=" flex h-52 flex-col rounded-sm bg-stone-950 p-3 ">
-        <div className="scrollbar-hide h-full w-full overflow-scroll rounded-sm [&>div:nth-child(odd)]:bg-stone-900">
+        <div className="h-full w-full overflow-scroll rounded-sm scrollbar-hide [&>div:nth-child(odd)]:bg-stone-900">
           {pairedMoveHistory.map(([w, b], i) => {
             return (
               <div className="flex w-full flex-row items-center gap-3 bg-stone-800 px-1 py-0.5 first:rounded-t-sm last:rounded-b-sm">

@@ -42,8 +42,8 @@ class InvalidGameError extends GameError {
 }
 
 export type JoiningPlayer = {
-  player:Player,
-  preference?:Color
+  player: Player;
+  preference?: Color;
 };
 
 /**
@@ -117,7 +117,7 @@ export class GameInstance {
    * @param times if specified, represent clock times for players. Default null.
    */
   public constructor(
-    players: { p1: JoiningPlayer, p2:JoiningPlayer },
+    players: { p1: JoiningPlayer; p2: JoiningPlayer },
     times: BW<number> | null = null,
   ) {
     if (
@@ -126,8 +126,10 @@ export class GameInstance {
     ) {
       // One or more players is already in a game.
       const inGame = [];
-      if (this._master.getByPlayer(players.p1.player.pid)) inGame.push(players.p1.player.pid);
-      if (this._master.getByPlayer(players.p2.player.pid)) inGame.push(players.p2.player.pid);
+      if (this._master.getByPlayer(players.p1.player.pid))
+        inGame.push(players.p1.player.pid);
+      if (this._master.getByPlayer(players.p2.player.pid))
+        inGame.push(players.p2.player.pid);
 
       throw new GameExistsError(
         `unable to create game. Player(s) '${inGame.join("' & '")}' is already in game.`,

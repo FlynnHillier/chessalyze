@@ -58,8 +58,8 @@ export type VerboseMovement = {
  */
 export type Player = {
   pid: UUID;
-  username:string,
-  image:string,
+  username: string;
+  image: string;
 };
 
 export interface GameSnapshot {
