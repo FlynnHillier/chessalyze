@@ -25,7 +25,11 @@ export const trpcLobbyJoinProcedure = LOBBYPROCEDURE.use(
         message: "Target lobby was not found or is no longer available.",
       });
 
-    const game = lobby.join({ pid: ctx.user.id,image:ctx.user.image, username:ctx.user.name });
+    const game = lobby.join({
+      pid: ctx.user.id,
+      image: ctx.user.image,
+      username: ctx.user.name,
+    });
 
     return {
       game: game.snapshot(),

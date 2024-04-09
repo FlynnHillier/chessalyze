@@ -1,3 +1,3 @@
-import { protectedProcedure } from "~/server/api/trpc"
+import { protectedProcedure } from "~/server/api/trpc";
 
-export const LOBBYPROCEDURE = protectedProcedure
+export const LOBBYPROCEDURE = protectedProcedure;
