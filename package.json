@@ -6,7 +6,9 @@
   "author": "FlynnHillier <flynnhillier@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "next dev*",
+    "dev": "next dev",
+    "postinstall": "npx next-ws-cli@latest patch",
+    "postuninstall": "npx next-ws-cli@latest patch",
     "drizzle": "drizzle-kit push:pg --config=./drizzle.config.ts"
   },
   "devDependencies": {
