@@ -10,15 +10,15 @@ Chessalyze's tech stack consists of the following: **Next 14, tRPC, Drizzle ORM,
 Authentication is handled using **Google Oauth**, this way signing up as simple as can be, and user's can rest assure their passwords are secure.
 
 Once signed up, simply **create a challenge**:
-![default display](readme\screenshots\default.png)
-![challenge](readme\screenshots\challenge.png)
+![default display](readme/screenshots/default.png)
+![challenge](readme/screenshots/challenge.png)
 
 **Copy the link generated and share it with your friend**. Here they can see the challenge details and can accept if they wish.
-![accept](readme\screenshots\accept.png)
+![accept](readme/screenshots/accept.png)
 
 
 **Once they've accepted, it's game on.** From here it's simply the game of chess that we all know and love *(in real time!)*
-![game](\readme\screenshots\game.png)
+![game](readme/screenshots/game.png)
 
 
 ## **To Do!**
