@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { OAuth2RequestError } from "arctic";
 import { generateId } from "lucia";
 import { db } from "~/lib/drizzle/db";
-import { accountConnections, users } from "~/lib/drizzle/schema";
+import { accountConnections, users } from "~/lib/drizzle/auth.schema";
 import { and, eq } from "drizzle-orm";
 
 const GOOGLEPROVIDERID = "GOOGLE";
