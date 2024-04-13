@@ -6,6 +6,7 @@ import {
 } from "chess.js";
 import { z } from "zod";
 import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
+import { CAPTURABLEPIECE, PROMOTIONPIECE, TILEIDS } from "~/constants/game";
 
 export type FEN = string;
 
@@ -19,13 +20,13 @@ export type GameTermination =
   | "timeout"
   | "timeout vs insufficient material";
 
-export type PromotionSymbol = "r" | "b" | "n" | "q";
+export type PromotionSymbol = (typeof PROMOTIONPIECE)[number];
 
-export type CapturableSymbol = "r" | "b" | "n" | "q" | "p";
+export type CapturableSymbol = (typeof CAPTURABLEPIECE)[number];
 
 export type GameTimePreset = z.infer<typeof zodGameTimePreset>;
 
-export type Square = chessJSSquare;
+export type Square = (typeof TILEIDS)[number];
 
 export type BW<T> = {
   w: T;
