@@ -39,6 +39,7 @@ export const moves = pgTable(
       .notNull()
       .references(() => games.id, { onDelete: "cascade" }),
     turn: integer("turn").notNull(),
+    fen: text("fen").notNull(),
     source: drizzleEnumTile("source").notNull(),
     target: drizzleEnumTile("target").notNull(),
     promotion: drizzleEnumPromotionPiece("promotion"),

@@ -268,6 +268,7 @@ export class GameInstance {
 
     const verboseMovement: VerboseMovement = {
       move: movement,
+      fen: this.game.fen(),
       initiator: {
         ...this.players[initiator],
         color: initiator,

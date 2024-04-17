@@ -44,6 +44,7 @@ export type Movement = {
 
 export type VerboseMovement = {
   move: Movement;
+  fen: FEN;
   time: {
     isTimed: boolean;
     sinceStart: number;

@@ -15,10 +15,11 @@ export async function saveGameSummary(summary: GameSummary) {
       await tx.insert(moves).values(
         summary.moves.map((move, i) => ({
           gameID: summary.id,
+          turn: i,
+          fen: move.fen,
           source: move.move.source,
           target: move.move.target,
           promotion: move.move.promotion,
-          turn: i,
           t_duration: move.time.moveDuration,
           t_w_remaining: move.time.remaining?.w,
           t_b_remaining: move.time.remaining?.b,
