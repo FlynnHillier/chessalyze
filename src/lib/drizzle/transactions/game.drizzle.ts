@@ -3,6 +3,11 @@ import { db } from "~/lib/drizzle/db";
 import { games, moves } from "~/lib/drizzle/games.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
 
+/**
+ * Store a given game summary into database.
+ *
+ * @param summary - summary to store in db
+ */
 export async function saveGameSummary(summary: GameSummary) {
   try {
     await db.transaction(async (tx) => {
