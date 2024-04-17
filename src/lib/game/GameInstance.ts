@@ -23,6 +23,7 @@ import {
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
 import { OneOf } from "~/types/util/util.types";
+import { saveGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -105,6 +106,8 @@ export class GameInstance {
       emitGameEndEvent({ room: socketRoom }, summary);
 
       socketRoom.deregister();
+
+      saveGameSummary(summary);
 
       this._master._events.onEnd(this);
     }).bind(this),
@@ -215,6 +218,7 @@ export class GameInstance {
     this.time.clock.stop();
     this.terminated = true;
     this.summary = summary;
+
     this.events.onEnd(summary);
   }
 

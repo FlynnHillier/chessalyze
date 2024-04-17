@@ -42,9 +42,9 @@ export const moves = pgTable(
     source: drizzleEnumTile("source").notNull(),
     target: drizzleEnumTile("target").notNull(),
     promotion: drizzleEnumPromotionPiece("promotion"),
-    t_duration: bigint("t_duration", { mode: "bigint" }),
-    t_start: bigint("t_start", { mode: "bigint" }),
-    t_end: bigint("t_end", { mode: "bigint" }),
+    t_duration: bigint("t_duration", { mode: "number" }),
+    t_w_remaining: bigint("t_w_remaining", { mode: "number" }),
+    t_b_remaining: bigint("t_b_remaining", { mode: "number" }),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.gameID, t.turn] }),
