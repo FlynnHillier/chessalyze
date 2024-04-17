@@ -30,6 +30,9 @@ export const games = pgTable("games", {
     onDelete: "set null",
   }),
   id: varchar("id").notNull().primaryKey(),
+  t_start: bigint("t_start", { mode: "number" }).notNull(),
+  t_end: bigint("t_start", { mode: "number" }).notNull(),
+  t_duration: bigint("t_start", { mode: "number" }).notNull(),
 });
 
 export const moves = pgTable(
@@ -43,7 +46,7 @@ export const moves = pgTable(
     source: drizzleEnumTile("source").notNull(),
     target: drizzleEnumTile("target").notNull(),
     promotion: drizzleEnumPromotionPiece("promotion"),
-    t_duration: bigint("t_duration", { mode: "number" }),
+    t_duration: bigint("t_duration", { mode: "number" }).notNull(),
     t_w_remaining: bigint("t_w_remaining", { mode: "number" }),
     t_b_remaining: bigint("t_b_remaining", { mode: "number" }),
   },

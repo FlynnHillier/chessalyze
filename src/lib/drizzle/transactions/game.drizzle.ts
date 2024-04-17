@@ -10,6 +10,9 @@ export async function saveGameSummary(summary: GameSummary) {
         id: summary.id,
         p_black: summary.players.b.pid,
         p_white: summary.players.w.pid,
+        t_duration: summary.time.duration,
+        t_start: summary.time.start,
+        t_end: summary.time.end,
       });
 
       await tx.insert(moves).values(
