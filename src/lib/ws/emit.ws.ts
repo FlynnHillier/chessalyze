@@ -1,7 +1,7 @@
 import { WebSocket } from "ws";
 import { env } from "~/env";
 import { EmitEvent } from "~/lib/ws/events.ws";
-import { OneOf } from "~/types/util/util.types";
+import { AtleastOneKey } from "~/types/util/util.types";
 import {
   logDev,
   loggingCategories,
@@ -9,7 +9,7 @@ import {
 } from "~/lib/logging/dev.logger";
 import { SocketRoom } from "~/lib/ws/rooms.ws";
 
-export type EmitSocketOptions = OneOf<{
+export type EmitSocketOptions = AtleastOneKey<{
   room: SocketRoom;
   socket: WebSocket;
 }>;
