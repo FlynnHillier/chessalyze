@@ -22,7 +22,7 @@ import {
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
-import { OneOf } from "~/types/util/util.types";
+import { AtleastOneKey } from "~/types/util/util.types";
 import { saveGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
 
 class GameError extends Error {
@@ -188,7 +188,7 @@ export class GameInstance {
   public resign({
     color,
     playerID,
-  }: OneOf<{ color: Color; playerID: string }>) {
+  }: AtleastOneKey<{ color: Color; playerID: string }>) {
     if (playerID)
       return this.end(
         "resignation",
