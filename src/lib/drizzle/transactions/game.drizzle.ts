@@ -2,7 +2,6 @@ import { GameSummary } from "~/types/game.types";
 import { db } from "~/lib/drizzle/db";
 import { games, moves } from "~/lib/drizzle/games.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
-
 /**
  * Store a given game summary into database.
  *
@@ -13,8 +12,8 @@ export async function saveGameSummary(summary: GameSummary) {
     await db.transaction(async (tx) => {
       await tx.insert(games).values({
         id: summary.id,
-        p_black: summary.players.b.pid,
-        p_white: summary.players.w.pid,
+        p_black_id: summary.players.b.pid,
+        p_white_id: summary.players.w.pid,
         t_duration: summary.time.duration,
         t_start: summary.time.start,
         t_end: summary.time.end,

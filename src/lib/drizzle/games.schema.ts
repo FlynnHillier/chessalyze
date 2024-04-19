@@ -12,6 +12,7 @@ import {
 
 import { users } from "@lib/drizzle/auth.schema";
 import { PROMOTIONPIECE, TILEIDS } from "~/constants/game";
+import { relations } from "drizzle-orm";
 
 // ENUMS
 export const drizzleEnumTile = pgEnum("tile", TILEIDS);
@@ -23,10 +24,10 @@ export const drizzleEnumPromotionPiece = pgEnum(
 // TABLES
 
 export const games = pgTable("games", {
-  p_white: varchar("p_white").references(() => users.id, {
+  p_white_id: varchar("p_white").references(() => users.id, {
     onDelete: "set null",
   }),
-  p_black: varchar("p_black").references(() => users.id, {
+  p_black_id: varchar("p_black").references(() => users.id, {
     onDelete: "set null",
   }),
   id: varchar("id").notNull().primaryKey(),
@@ -55,3 +56,20 @@ export const moves = pgTable(
     unq: unique().on(t.gameID, t.turn),
   }),
 );
+
+// RELATIONS
+export const movesRelations = relations(moves, ({ one }) => ({
+  game: one(games, { fields: [moves.gameID], references: [games.id] }),
+}));
+
+export const gameRelations = relations(games, ({ many, one }) => ({
+  moves: many(moves),
+  player_white: one(users, {
+    fields: [games.p_white_id],
+    references: [users.id],
+  }),
+  player_black: one(users, {
+    fields: [games.p_black_id],
+    references: [users.id],
+  }),
+}));
