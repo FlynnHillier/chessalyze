@@ -6,19 +6,16 @@ import {
 } from "chess.js";
 import { z } from "zod";
 import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
-import { CAPTURABLEPIECE, PROMOTIONPIECE, TILEIDS } from "~/constants/game";
+import {
+  CAPTURABLEPIECE,
+  PROMOTIONPIECE,
+  TERMINATIONS,
+  TILEIDS,
+} from "~/constants/game";
 
 export type FEN = string;
 
-export type GameTermination =
-  | "checkmate"
-  | "3-fold repition"
-  | "50 move rule"
-  | "insufficient material"
-  | "stalemate"
-  | "resignation"
-  | "timeout"
-  | "timeout vs insufficient material";
+export type GameTermination = (typeof TERMINATIONS)[number];
 
 export type PromotionSymbol = (typeof PROMOTIONPIECE)[number];
 
@@ -46,13 +43,15 @@ export type VerboseMovement = {
   move: Movement;
   fen: FEN;
   time: {
-    isTimed: boolean;
     sinceStart: number;
     timestamp: number;
     remaining?: BW<number>;
     moveDuration: number;
   };
-  initiator: Player & { color: Color };
+  initiator: {
+    player?: Player;
+    color: Color;
+  };
 };
 
 /**
@@ -61,7 +60,7 @@ export type VerboseMovement = {
 export type Player = {
   pid: UUID;
   username: string;
-  image: string;
+  image?: string;
 };
 
 export interface GameSnapshot {
@@ -79,10 +78,7 @@ export interface GameSnapshot {
 
 export type GameSummary = {
   id: UUID;
-  players: {
-    w: Player;
-    b: Player;
-  };
+  players: Partial<BW<Player>>;
   conclusion: GameConclusion;
   moves: VerboseMovement[];
   time: {

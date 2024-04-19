@@ -11,15 +11,24 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { users } from "@lib/drizzle/auth.schema";
-import { PROMOTIONPIECE, TILEIDS } from "~/constants/game";
+import {
+  PROMOTIONPIECE,
+  TILEIDS,
+  TERMINATIONS,
+  COLOR,
+  PIECE,
+} from "~/constants/game";
 import { relations } from "drizzle-orm";
 
 // ENUMS
 export const drizzleEnumTile = pgEnum("tile", TILEIDS);
+export const drizzleEnumPiece = pgEnum("piece", PIECE);
 export const drizzleEnumPromotionPiece = pgEnum(
   "promotion_piece",
   PROMOTIONPIECE,
 );
+export const drizzleEnumTerminations = pgEnum("termination", TERMINATIONS);
+export const drizzleEnumColor = pgEnum("color", COLOR);
 
 // TABLES
 
@@ -42,12 +51,18 @@ export const moves = pgTable(
     gameID: varchar("game_id")
       .notNull()
       .references(() => games.id, { onDelete: "cascade" }),
-    turn: integer("turn").notNull(),
     fen: text("fen").notNull(),
+    turn: integer("turn").notNull(),
+    initiator_pid: varchar("initiator_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    initiator_color: drizzleEnumColor("initiator_color").notNull(),
+    piece: drizzleEnumPiece("piece").notNull(),
     source: drizzleEnumTile("source").notNull(),
     target: drizzleEnumTile("target").notNull(),
     promotion: drizzleEnumPromotionPiece("promotion"),
     t_duration: bigint("t_duration", { mode: "number" }).notNull(),
+    t_timestamp: bigint("t_timestamp", { mode: "number" }).notNull(),
     t_w_remaining: bigint("t_w_remaining", { mode: "number" }),
     t_b_remaining: bigint("t_b_remaining", { mode: "number" }),
   },
@@ -60,6 +75,10 @@ export const moves = pgTable(
 // RELATIONS
 export const movesRelations = relations(moves, ({ one }) => ({
   game: one(games, { fields: [moves.gameID], references: [games.id] }),
+  initiator: one(users, {
+    fields: [moves.initiator_pid],
+    references: [users.id],
+  }),
 }));
 
 export const gameRelations = relations(games, ({ many, one }) => ({

@@ -11,7 +11,7 @@ export const users = pgTable("user", {
   id: varchar("id", {
     length: 255,
   }).primaryKey(),
-  name: text("name"),
+  name: text("name").notNull(),
   email: text("email").notNull(),
   image: text("image"),
 });
