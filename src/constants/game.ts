@@ -23,6 +23,20 @@ export const PROMOTIONPIECE = ["r", "n", "b", "q"] as const;
 export const CAPTURABLEPIECE = ["r", "b", "n", "q", "p"] as const;
 
 /**
+ * Possible reasons for the termination of a game
+ */
+export const TERMINATIONS = [
+  "checkmate",
+  "3-fold repition",
+  "50 move rule",
+  "insufficient material",
+  "stalemate",
+  "resignation",
+  "timeout",
+  "timeout vs insufficient material",
+] as const;
+
+/**
  * Tile Id's e.g a1, h8 etc.
  */
 export const TILEIDS = [
