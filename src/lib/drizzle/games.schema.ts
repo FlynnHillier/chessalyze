@@ -41,8 +41,8 @@ export const games = pgTable("games", {
   }),
   id: varchar("id").notNull().primaryKey(),
   t_start: bigint("t_start", { mode: "number" }).notNull(),
-  t_end: bigint("t_start", { mode: "number" }).notNull(),
-  t_duration: bigint("t_start", { mode: "number" }).notNull(),
+  t_end: bigint("t_end", { mode: "number" }).notNull(),
+  t_duration: bigint("t_duration", { mode: "number" }).notNull(),
 });
 
 export const moves = pgTable(
