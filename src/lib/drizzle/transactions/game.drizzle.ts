@@ -3,7 +3,7 @@ import { db } from "~/lib/drizzle/db";
 import { conclusions, games, moves } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
-import { eq, InferSelectModel } from "drizzle-orm";
+import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
 
 type PgUser = InferSelectModel<typeof users>;
@@ -157,6 +157,12 @@ export async function saveGameSummary(summary: GameSummary) {
   }
 }
 
+/**
+ * fetch a game summary from database, given the game's id.
+ *
+ * @param gameID id of game to fetch summary of
+ * @returns Promise<GameSummary>
+ */
 export async function getGameSummary(
   gameID: string,
 ): Promise<GameSummary | null> {
@@ -169,4 +175,26 @@ export async function getGameSummary(
   if (!result) return null;
 
   return pgGameSummaryQueryResultToGameSummary(result);
+}
+
+/**
+ * get game summary's related to specified player
+ *
+ * @param playerID player of whom game's should be fetched for
+ * @param \{count?} the maximum number of games to fetch. If true, fetch all. Defaults to 20.
+ * @returns Promise<GameSummarry[]>
+ */
+export async function getPlayerGameSummarys(
+  playerID: string,
+  { count }: { count?: true | number } = {},
+): Promise<GameSummary[]> {
+  count = count ?? 20;
+
+  const results = await db.query.games.findMany({
+    with: GameSummaryWithQuery,
+    where: or(eq(games.p_black_id, playerID), eq(games.p_white_id, playerID)),
+    limit: count === true ? undefined : count,
+  });
+
+  return results.map((r) => pgGameSummaryQueryResultToGameSummary(r));
 }

@@ -34,7 +34,7 @@ function QueryGameSummary() {
         placeholder="game id"
       ></input>
       <AsyncButton
-        disabled={gameID === undefined}
+        disabled={gameID === undefined || gameID === ""}
         isLoading={trpcDevGetGameSummary.isLoading}
         onLoading={<SyncLoader />}
         onClick={() => {
@@ -47,11 +47,56 @@ function QueryGameSummary() {
   );
 }
 
+/**
+ * Access game summarys related to a player stored in database and log it to client console.
+ */
+function QueryPlayerGameSummarys() {
+  const trpcDevGetPlayerGameSummarys =
+    trpc.dev.getPlayerGameSummarys.useMutation();
+  const [playerID, setPlayerID] = useState<string>();
+
+  useEffect(() => {
+    if (trpcDevGetPlayerGameSummarys.data !== undefined) {
+      console.log(trpcDevGetPlayerGameSummarys.data);
+    }
+  }, [trpcDevGetPlayerGameSummarys.data]);
+
+  useEffect(() => {
+    if (trpcDevGetPlayerGameSummarys.error) {
+      console.error(trpcDevGetPlayerGameSummarys.error);
+    }
+  }, [trpcDevGetPlayerGameSummarys.error]);
+
+  return (
+    <div className="flex flex-row">
+      <input
+        className="px-2 text-black outline-none"
+        onChange={(e) => {
+          setPlayerID(e.target.value);
+        }}
+        placeholder="player id"
+      ></input>
+      <AsyncButton
+        disabled={playerID === undefined || playerID === ""}
+        isLoading={trpcDevGetPlayerGameSummarys.isLoading}
+        onLoading={<SyncLoader />}
+        onClick={() => {
+          if (playerID)
+            trpcDevGetPlayerGameSummarys.mutate({ playerID: playerID });
+        }}
+      >
+        get player game summarys
+      </AsyncButton>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   return (
-    <div className="[&_button]:rounded [&_button]:bg-stone-800 [&_button]:p-2">
+    <div className="flex flex-col gap-2 [&_button]:rounded [&_button]:bg-stone-800 [&_button]:p-2">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
       <QueryGameSummary />
+      <QueryPlayerGameSummarys />
     </div>
   );
 }
