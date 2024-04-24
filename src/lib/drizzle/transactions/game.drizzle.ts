@@ -4,9 +4,22 @@ import { games, moves } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel } from "drizzle-orm";
-import { InferQueryResultType } from "~/types/drizzle.types";
+import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
 
 type PgUser = InferSelectModel<typeof users>;
+
+/**
+ * Generic query which selects fields necessary for constructing GameSummary from database.
+ */
+const GameSummaryWithQuery = {
+  moves: {
+    with: {
+      initiator: true,
+    },
+  },
+  player_black: true,
+  player_white: true,
+} as const satisfies QueryConfig<"games">["with"];
 
 /**
  * The return type of a query for a db Game Summary
@@ -14,16 +27,7 @@ type PgUser = InferSelectModel<typeof users>;
 type PgGameSummaryQueryType = InferQueryResultType<
   "games",
   {
-    columns: true;
-    with: {
-      moves: {
-        with: {
-          initiator: true;
-        };
-      };
-      player_black: true;
-      player_white: true;
-    };
+    with: typeof GameSummaryWithQuery;
   }
 >;
 
@@ -140,15 +144,7 @@ export async function getGameSummary(
 ): Promise<GameSummary | null> {
   const result: PgGameSummaryQueryType | null =
     (await db.query.games.findFirst({
-      with: {
-        moves: {
-          with: {
-            initiator: true,
-          },
-        },
-        player_white: true,
-        player_black: true,
-      },
+      with: GameSummaryWithQuery,
       where: eq(games.id, gameID),
     })) ?? null;
 
