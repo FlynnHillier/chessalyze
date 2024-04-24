@@ -1,6 +1,6 @@
 import { GameSummary, Player } from "~/types/game.types";
 import { db } from "~/lib/drizzle/db";
-import { games, moves } from "~/lib/drizzle/games.schema";
+import { conclusions, games, moves } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel } from "drizzle-orm";
@@ -19,6 +19,11 @@ const GameSummaryWithQuery = {
   },
   player_black: true,
   player_white: true,
+  conclusion: {
+    with: {
+      victor: true,
+    },
+  },
 } as const satisfies QueryConfig<"games">["with"];
 
 /**
@@ -57,9 +62,12 @@ function pgGameSummaryQueryResultToGameSummary(
   return {
     id: pgGameSummary.id,
     conclusion: {
-      boardState: "",
-      termination: "stalemate",
-      victor: "w",
+      victor:
+        pgGameSummary.conclusion.termination_type === "draw"
+          ? null
+          : pgGameSummary.conclusion.termination_type,
+      boardState: pgGameSummary.conclusion.fen,
+      termination: pgGameSummary.conclusion.termination_message,
     },
     players: {
       w: pgGameSummary.player_white
@@ -129,6 +137,16 @@ export async function saveGameSummary(summary: GameSummary) {
           t_b_remaining: move.time.remaining?.b,
         })),
       );
+
+      await tx.insert(conclusions).values({
+        gameID: summary.id,
+        fen: summary.conclusion.boardState,
+        termination_message: summary.conclusion.termination,
+        termination_type: summary.conclusion.victor ?? "draw",
+        victor_pid: summary.conclusion.victor
+          ? summary.players[summary.conclusion.victor]?.pid
+          : null,
+      });
     });
   } catch (e) {
     //TODO: add physical storage logging here.
