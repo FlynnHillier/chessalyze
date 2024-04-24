@@ -274,7 +274,6 @@ export class GameInstance {
         color: initiator,
       },
       time: {
-        isTimed: this.time.isTimed,
         sinceStart: now - this.time.start,
         timestamp: now,
         remaining: this.time.isTimed
