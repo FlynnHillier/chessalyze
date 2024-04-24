@@ -27,7 +27,15 @@ export const drizzleEnumPromotionPiece = pgEnum(
   "promotion_piece",
   PROMOTIONPIECE,
 );
-export const drizzleEnumTerminations = pgEnum("termination", TERMINATIONS);
+export const drizzleEnumTerminationMessages = pgEnum(
+  "termination_message",
+  TERMINATIONS,
+);
+export const drizzleEnumTerminationType = pgEnum("termination_type", [
+  "w",
+  "b",
+  "draw",
+]);
 export const drizzleEnumColor = pgEnum("color", COLOR);
 
 // TABLES
@@ -72,15 +80,22 @@ export const moves = pgTable(
   }),
 );
 
-// RELATIONS
-export const movesRelations = relations(moves, ({ one }) => ({
-  game: one(games, { fields: [moves.gameID], references: [games.id] }),
-  initiator: one(users, {
-    fields: [moves.initiator_pid],
-    references: [users.id],
+export const conclusions = pgTable("game_conclusions", {
+  gameID: varchar("game_id")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" })
+    .primaryKey(),
+  fen: text("fen").notNull(),
+  termination_message: drizzleEnumTerminationMessages(
+    "termination_message",
+  ).notNull(),
+  termination_type: drizzleEnumTerminationType("termination_type").notNull(),
+  victor_pid: varchar("victor_pid").references(() => users.id, {
+    onDelete: "set null",
   }),
-}));
+});
 
+// RELATIONS
 export const gameRelations = relations(games, ({ many, one }) => ({
   moves: many(moves),
   player_white: one(users, {
@@ -89,6 +104,25 @@ export const gameRelations = relations(games, ({ many, one }) => ({
   }),
   player_black: one(users, {
     fields: [games.p_black_id],
+    references: [users.id],
+  }),
+  conclusion: one(conclusions, {
+    fields: [games.id],
+    references: [conclusions.gameID],
+  }),
+}));
+
+export const movesRelations = relations(moves, ({ one }) => ({
+  game: one(games, { fields: [moves.gameID], references: [games.id] }),
+  initiator: one(users, {
+    fields: [moves.initiator_pid],
+    references: [users.id],
+  }),
+}));
+
+export const conclusionRelations = relations(conclusions, ({ one }) => ({
+  victor: one(users, {
+    fields: [conclusions.victor_pid],
     references: [users.id],
   }),
 }));
