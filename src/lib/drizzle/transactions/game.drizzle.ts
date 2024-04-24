@@ -4,19 +4,28 @@ import { games, moves } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel } from "drizzle-orm";
+import { InferQueryResultType } from "~/types/drizzle.types";
 
 type PgUser = InferSelectModel<typeof users>;
 
 /**
- * typescript type for drizzle game table including relations
+ * The return type of a query for a db Game Summary
  */
-type PgGameSummary = InferSelectModel<typeof games> & {
-  moves: (InferSelectModel<typeof moves> & {
-    initiator: PgUser;
-  })[];
-  player_white: PgUser;
-  player_black: PgUser;
-};
+type PgGameSummaryQueryType = InferQueryResultType<
+  "games",
+  {
+    columns: true;
+    with: {
+      moves: {
+        with: {
+          initiator: true;
+        };
+      };
+      player_black: true;
+      player_white: true;
+    };
+  }
+>;
 
 /**
  * convert database user to object compatible with game section of application
@@ -33,12 +42,14 @@ function pgUserToPlayer(pgUser: PgUser): Player {
 }
 
 /**
- * convert database game summary to object compatible with rest of application
+ * convert database game summary query result to GameSummary object
  *
  * @param pgGameSummary pg game summary to be converted to native game summary
  * @returns GameSummary
  */
-function pgGameSummaryToGameSummary(pgGameSummary: PgGameSummary): GameSummary {
+function pgGameSummaryQueryResultToGameSummary(
+  pgGameSummary: PgGameSummaryQueryType,
+): GameSummary {
   return {
     id: pgGameSummary.id,
     conclusion: {
@@ -62,9 +73,7 @@ function pgGameSummaryToGameSummary(pgGameSummary: PgGameSummary): GameSummary {
     moves: pgGameSummary.moves.map((pgMove) => ({
       fen: pgMove.fen,
       initiator: {
-        player: pgMove.initiator_pid
-          ? pgUserToPlayer(pgMove.initiator)
-          : undefined,
+        player: pgMove.initiator ? pgUserToPlayer(pgMove.initiator) : undefined,
         color: pgMove.initiator_color,
       },
       move: {
@@ -128,9 +137,8 @@ export async function saveGameSummary(summary: GameSummary) {
 
 export async function getGameSummary(
   gameID: string,
-  // ): Promise<GameSummary | null> {
-) {
-  return (
+): Promise<GameSummary | null> {
+  const result: PgGameSummaryQueryType | null =
     (await db.query.games.findFirst({
       with: {
         moves: {
@@ -142,6 +150,9 @@ export async function getGameSummary(
         player_black: true,
       },
       where: eq(games.id, gameID),
-    })) ?? null
-  );
+    })) ?? null;
+
+  if (!result) return null;
+
+  return pgGameSummaryQueryResultToGameSummary(result);
 }
