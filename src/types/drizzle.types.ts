@@ -6,7 +6,7 @@ import {
 import * as schema from "@lib/drizzle/schema";
 
 type TSchema = ExtractTablesWithRelations<typeof schema>;
-type QueryConfig<TableName extends keyof TSchema> = DBQueryConfig<
+export type QueryConfig<TableName extends keyof TSchema> = DBQueryConfig<
   "one" | "many",
   boolean,
   TSchema,
