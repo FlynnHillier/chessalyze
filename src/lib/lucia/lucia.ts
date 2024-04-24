@@ -1,6 +1,7 @@
 import { Lucia, User } from "lucia";
 import { adapter } from "~/lib/lucia/adapter";
 import { env } from "~/env";
+import { AuthPermissionsType } from "~/types/auth.types";
 
 export const lucia = new Lucia(adapter, {
   sessionCookie: {
@@ -18,6 +19,7 @@ export const lucia = new Lucia(adapter, {
       email: attributes.email,
       image: attributes.image,
       name: attributes.name,
+      permissions: attributes.permissions,
     };
   },
 });
@@ -33,5 +35,6 @@ declare module "lucia" {
     email: string;
     image: string;
     name: string;
+    permissions: AuthPermissionsType;
   }
 }

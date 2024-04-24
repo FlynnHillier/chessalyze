@@ -14,6 +14,7 @@ export const users = pgTable("user", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   image: text("image"),
+  permissions: integer("permission").notNull().default(0),
 });
 
 export const sessions = pgTable("session", {
