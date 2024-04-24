@@ -63,7 +63,7 @@ function GameEndOverlay({
 
         <span className="font-bold"> Game over!</span>
         <br />
-        {`${verboseVictor ?? verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
+        {`${verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
         <div className="flex w-full items-center justify-center">{icon}</div>
       </div>
     </div>
