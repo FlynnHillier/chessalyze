@@ -270,7 +270,7 @@ export class GameInstance {
       move: movement,
       fen: this.game.fen(),
       initiator: {
-        ...this.players[initiator],
+        player: this.players[initiator],
         color: initiator,
       },
       time: {
