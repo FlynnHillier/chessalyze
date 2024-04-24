@@ -54,7 +54,7 @@ export const games = pgTable("games", {
 });
 
 export const moves = pgTable(
-  "moves",
+  "game_moves",
   {
     gameID: varchar("game_id")
       .notNull()
