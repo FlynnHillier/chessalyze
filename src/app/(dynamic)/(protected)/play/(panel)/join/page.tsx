@@ -149,7 +149,7 @@ export default function JoinPanel() {
   }, []);
 
   useEffect(() => {
-    if (game.present) router.push("/play");
+    if (game.present) router.push("/play/live");
   }, [game.present]);
 
   //TODO: add actual UI here

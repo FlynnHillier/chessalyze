@@ -6,26 +6,29 @@ import {
 } from "chess.js";
 import { z } from "zod";
 import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
+import {
+  CAPTURABLEPIECE,
+  DECISIVE_TERMINATIONS,
+  DRAW_TERMINATIONS,
+  PROMOTIONPIECE,
+  TILEIDS,
+} from "~/constants/game";
 
 export type FEN = string;
 
-export type GameTermination =
-  | "checkmate"
-  | "3-fold repition"
-  | "50 move rule"
-  | "insufficient material"
-  | "stalemate"
-  | "resignation"
-  | "timeout"
-  | "timeout vs insufficient material";
+export type DecisiveGameTermination = (typeof DECISIVE_TERMINATIONS)[number];
 
-export type PromotionSymbol = "r" | "b" | "n" | "q";
+export type DrawGameTermination = (typeof DRAW_TERMINATIONS)[number];
 
-export type CapturableSymbol = "r" | "b" | "n" | "q" | "p";
+export type GameTermination = DecisiveGameTermination | DrawGameTermination;
+
+export type PromotionSymbol = (typeof PROMOTIONPIECE)[number];
+
+export type CapturableSymbol = (typeof CAPTURABLEPIECE)[number];
 
 export type GameTimePreset = z.infer<typeof zodGameTimePreset>;
 
-export type Square = chessJSSquare;
+export type Square = (typeof TILEIDS)[number];
 
 export type BW<T> = {
   w: T;
@@ -43,14 +46,17 @@ export type Movement = {
 
 export type VerboseMovement = {
   move: Movement;
+  fen: FEN;
   time: {
-    isTimed: boolean;
     sinceStart: number;
     timestamp: number;
     remaining?: BW<number>;
     moveDuration: number;
   };
-  initiator: Player & { color: Color };
+  initiator: {
+    player?: Player;
+    color: Color;
+  };
 };
 
 /**
@@ -59,7 +65,7 @@ export type VerboseMovement = {
 export type Player = {
   pid: UUID;
   username: string;
-  image: string;
+  image?: string;
 };
 
 export interface GameSnapshot {
@@ -77,10 +83,7 @@ export interface GameSnapshot {
 
 export type GameSummary = {
   id: UUID;
-  players: {
-    w: Player;
-    b: Player;
-  };
+  players: Partial<BW<Player>>;
   conclusion: GameConclusion;
   moves: VerboseMovement[];
   time: {

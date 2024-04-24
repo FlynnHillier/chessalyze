@@ -10,6 +10,8 @@ import {
   Player,
   Movement,
   VerboseMovement,
+  DecisiveGameTermination,
+  DrawGameTermination,
 } from "~/types/game.types";
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
@@ -22,7 +24,8 @@ import {
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
-import { OneOf } from "~/types/util/util.types";
+import { AtleastOneKey } from "~/types/util/util.types";
+import { saveGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -106,6 +109,8 @@ export class GameInstance {
 
       socketRoom.deregister();
 
+      saveGameSummary(summary);
+
       this._master._events.onEnd(this);
     }).bind(this),
   };
@@ -185,7 +190,7 @@ export class GameInstance {
   public resign({
     color,
     playerID,
-  }: OneOf<{ color: Color; playerID: string }>) {
+  }: AtleastOneKey<{ color: Color; playerID: string }>) {
     if (playerID)
       return this.end(
         "resignation",
@@ -195,7 +200,7 @@ export class GameInstance {
       return this.end("resignation", this.getOppositePerspective(color));
   }
 
-  private end(termination: GameTermination, victor: Color) {
+  private end(termination: GameTermination, victor: Color | null) {
     const now = Date.now();
     const summary: GameSummary = {
       id: this.id,
@@ -215,16 +220,19 @@ export class GameInstance {
     this.time.clock.stop();
     this.terminated = true;
     this.summary = summary;
+
     this.events.onEnd(summary);
   }
 
-  private getNaturalTermination(): GameTermination {
-    if (this.game.isCheckmate()) {
-      return "checkmate";
-    } else if (this.game.isStalemate()) {
+  private getDecisiveTermination(): DecisiveGameTermination {
+    return "checkmate";
+  }
+
+  private getDrawTermination(): DrawGameTermination {
+    if (this.game.isStalemate()) {
       return "stalemate";
     } else if (this.game.isThreefoldRepetition()) {
-      return "3-fold repition";
+      return "3-fold repitition";
     } else if (this.game.isInsufficientMaterial()) {
       return "insufficient material";
     } else {
@@ -264,12 +272,12 @@ export class GameInstance {
 
     const verboseMovement: VerboseMovement = {
       move: movement,
+      fen: this.game.fen(),
       initiator: {
-        ...this.players[initiator],
+        player: this.players[initiator],
         color: initiator,
       },
       time: {
-        isTimed: this.time.isTimed,
         sinceStart: now - this.time.start,
         timestamp: now,
         remaining: this.time.isTimed
@@ -284,12 +292,15 @@ export class GameInstance {
 
     this.events.onMove(verboseMovement);
 
-    if (this.game.isGameOver() || this.game.isDraw()) {
+    if (this.game.isDraw()) {
+      this.end(this.getDrawTermination(), null);
+    } else if (this.game.isGameOver()) {
       this.end(
-        this.getNaturalTermination(),
+        this.getDecisiveTermination(),
         this.getOppositePerspective(this.game.turn()),
       );
     }
+
     if (this.time.isTimed && !this.terminated) {
       this.time.clock.switch();
     }

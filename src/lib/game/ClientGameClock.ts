@@ -1,5 +1,5 @@
 import { BW, Color } from "~/types/game.types";
-import { OneOf } from "~/types/util/util.types";
+import { AtleastOneKey } from "~/types/util/util.types";
 
 /**
  * Class that easily allows for registering and de-registering of specified events
@@ -187,8 +187,8 @@ export class ClientIntervalTick extends EventClass<TickerEventSignatures> {
  */
 type ClientChessClockEventSignatures = {
   onTimeout: (color: Color) => any;
-  onTick: (color: Color, remaining: OneOf<BW<number>>) => any;
-  onDurationChange: (color: Color, remaining: OneOf<BW<number>>) => any;
+  onTick: (color: Color, remaining: AtleastOneKey<BW<number>>) => any;
+  onDurationChange: (color: Color, remaining: AtleastOneKey<BW<number>>) => any;
 };
 
 /**
@@ -324,7 +324,7 @@ export class ClientChessClock extends EventClass<ClientChessClockEventSignatures
     return this.activate(to);
   }
 
-  public setDuration(duration: OneOf<BW<number>>) {
+  public setDuration(duration: AtleastOneKey<BW<number>>) {
     if (duration.w) this.tickers.w.setDuration(duration.w);
     if (duration.b) this.tickers.b.setDuration(duration.b);
   }

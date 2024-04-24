@@ -63,7 +63,7 @@ function GameEndOverlay({
 
         <span className="font-bold"> Game over!</span>
         <br />
-        {`${verboseVictor ?? verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
+        {`${verboseVictor !== "draw" ? `${verboseVictor} wins` : `${verboseVictor}`} by ${reason}`}
         <div className="flex w-full items-center justify-center">{icon}</div>
       </div>
     </div>
@@ -102,7 +102,7 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
         {
           <div className="relative aspect-square h-full w-fit overflow-hidden rounded">
             <Image
-              src={player ? player.image : "/blankuser.png"}
+              src={player?.image ?? "/blankuser.png"}
               alt={
                 player
                   ? `${player.username}'s profile picture`

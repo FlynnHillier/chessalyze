@@ -161,7 +161,7 @@ function reducer<A extends GameRdcrActn>(
     case "MOVE": {
       if (!state.game) return { ...state };
 
-      const { move, time, initiator } = payload;
+      const { move, time, initiator, fen } = payload;
       const instance = new Chess(state.game.state.fen);
       const turn = instance.turn();
 
@@ -199,6 +199,7 @@ function reducer<A extends GameRdcrActn>(
             ...state.game.moves,
             {
               initiator: initiator,
+              fen: fen,
               move: move,
               time: time,
             },
@@ -250,6 +251,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       dispatchGame({
         type: "MOVE",
         payload: {
+          fen: data.fen,
           move: {
             piece: data.move.piece,
             source: data.move.source,
@@ -259,7 +261,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           time: {
             timestamp: data.time.timestamp,
             remaining: data.time.remaining,
-            isTimed: data.time.isTimed,
             sinceStart: data.time.sinceStart,
             moveDuration: data.time.moveDuration,
           },
