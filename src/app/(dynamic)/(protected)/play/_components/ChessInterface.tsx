@@ -102,7 +102,7 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
         {
           <div className="relative aspect-square h-full w-fit overflow-hidden rounded">
             <Image
-              src={player ? player.image : "/blankuser.png"}
+              src={player?.image ?? "/blankuser.png"}
               alt={
                 player
                   ? `${player.username}'s profile picture`
