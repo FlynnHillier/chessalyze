@@ -23,7 +23,7 @@ export const trpcDevRouter = createTRPCRouter({
         gameID: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       return await getGameSummary(input.gameID);
     }),
 });
