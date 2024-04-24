@@ -8,14 +8,19 @@ import { z } from "zod";
 import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
 import {
   CAPTURABLEPIECE,
+  DECISIVE_TERMINATIONS,
+  DRAW_TERMINATIONS,
   PROMOTIONPIECE,
-  TERMINATIONS,
   TILEIDS,
 } from "~/constants/game";
 
 export type FEN = string;
 
-export type GameTermination = (typeof TERMINATIONS)[number];
+export type DecisiveGameTermination = (typeof DECISIVE_TERMINATIONS)[number];
+
+export type DrawGameTermination = (typeof DRAW_TERMINATIONS)[number];
+
+export type GameTermination = DecisiveGameTermination | DrawGameTermination;
 
 export type PromotionSymbol = (typeof PROMOTIONPIECE)[number];
 

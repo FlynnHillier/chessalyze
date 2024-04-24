@@ -10,6 +10,8 @@ import {
   Player,
   Movement,
   VerboseMovement,
+  DecisiveGameTermination,
+  DrawGameTermination,
 } from "~/types/game.types";
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
@@ -198,7 +200,7 @@ export class GameInstance {
       return this.end("resignation", this.getOppositePerspective(color));
   }
 
-  private end(termination: GameTermination, victor: Color) {
+  private end(termination: GameTermination, victor: Color | null) {
     const now = Date.now();
     const summary: GameSummary = {
       id: this.id,
@@ -222,13 +224,15 @@ export class GameInstance {
     this.events.onEnd(summary);
   }
 
-  private getNaturalTermination(): GameTermination {
-    if (this.game.isCheckmate()) {
-      return "checkmate";
-    } else if (this.game.isStalemate()) {
+  private getDecisiveTermination(): DecisiveGameTermination {
+    return "checkmate";
+  }
+
+  private getDrawTermination(): DrawGameTermination {
+    if (this.game.isStalemate()) {
       return "stalemate";
     } else if (this.game.isThreefoldRepetition()) {
-      return "3-fold repition";
+      return "3-fold repitition";
     } else if (this.game.isInsufficientMaterial()) {
       return "insufficient material";
     } else {
@@ -288,12 +292,15 @@ export class GameInstance {
 
     this.events.onMove(verboseMovement);
 
-    if (this.game.isGameOver() || this.game.isDraw()) {
+    if (this.game.isDraw()) {
+      this.end(this.getDrawTermination(), null);
+    } else if (this.game.isGameOver()) {
       this.end(
-        this.getNaturalTermination(),
+        this.getDecisiveTermination(),
         this.getOppositePerspective(this.game.turn()),
       );
     }
+
     if (this.time.isTimed && !this.terminated) {
       this.time.clock.switch();
     }

@@ -23,17 +23,31 @@ export const PROMOTIONPIECE = ["r", "n", "b", "q"] as const;
 export const CAPTURABLEPIECE = ["r", "b", "n", "q", "p"] as const;
 
 /**
- * Possible reasons for the termination of a game
+ * Reasons for a game's termination in which there was a decisive victor.
  */
-export const TERMINATIONS = [
+export const DECISIVE_TERMINATIONS = [
   "checkmate",
-  "3-fold repition",
+  "timeout",
+  "resignation",
+] as const;
+
+/**
+ * Reasons for a game's termination in which there was no decisive victor.
+ */
+export const DRAW_TERMINATIONS = [
+  "3-fold repitition",
   "50 move rule",
   "insufficient material",
   "stalemate",
-  "resignation",
-  "timeout",
   "timeout vs insufficient material",
+] as const;
+
+/**
+ * Possible reasons for the termination of a game with any possible outcome regarding a victor
+ */
+export const TERMINATIONS = [
+  ...DRAW_TERMINATIONS,
+  ...DECISIVE_TERMINATIONS,
 ] as const;
 
 /**
