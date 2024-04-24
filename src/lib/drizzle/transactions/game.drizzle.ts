@@ -128,18 +128,20 @@ export async function saveGameSummary(summary: GameSummary) {
 
 export async function getGameSummary(
   gameID: string,
-): Promise<GameSummary | null> {
-  const result = await db.query.games.findFirst({
-    //TODO: change this query to also include moves initator
-    with: {
-      moves: true,
-      player_white: true,
-      player_black: true,
-    },
-    where: eq(games.id, gameID),
-  });
-
-  if (!result) return null;
-
-  return pgGameSummaryToGameSummary(result);
+  // ): Promise<GameSummary | null> {
+) {
+  return (
+    (await db.query.games.findFirst({
+      with: {
+        moves: {
+          with: {
+            initiator: true,
+          },
+        },
+        player_white: true,
+        player_black: true,
+      },
+      where: eq(games.id, gameID),
+    })) ?? null
+  );
 }
