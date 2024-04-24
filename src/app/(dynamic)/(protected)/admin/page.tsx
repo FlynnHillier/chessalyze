@@ -91,12 +91,47 @@ function QueryPlayerGameSummarys() {
   );
 }
 
+/**
+ * Access game summarys related to a player stored in database and log it to client console.
+ */
+function QueryRecentGameSummarys() {
+  const trpcDevGetRecentGameSummarys =
+    trpc.dev.getRecentGameSummarys.useMutation();
+
+  useEffect(() => {
+    if (trpcDevGetRecentGameSummarys.data !== undefined) {
+      console.log(trpcDevGetRecentGameSummarys.data);
+    }
+  }, [trpcDevGetRecentGameSummarys.data]);
+
+  useEffect(() => {
+    if (trpcDevGetRecentGameSummarys.error) {
+      console.error(trpcDevGetRecentGameSummarys.error);
+    }
+  }, [trpcDevGetRecentGameSummarys.error]);
+
+  return (
+    <div className="flex flex-row">
+      <AsyncButton
+        isLoading={trpcDevGetRecentGameSummarys.isLoading}
+        onLoading={<SyncLoader />}
+        onClick={() => {
+          trpcDevGetRecentGameSummarys.mutate();
+        }}
+      >
+        get recent game summarys
+      </AsyncButton>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   return (
     <div className="flex flex-col gap-2 [&_button]:rounded [&_button]:bg-stone-800 [&_button]:p-2">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
       <QueryGameSummary />
       <QueryPlayerGameSummarys />
+      <QueryRecentGameSummarys />
     </div>
   );
 }

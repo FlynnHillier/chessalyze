@@ -6,6 +6,7 @@ import z from "zod";
 import {
   getGameSummary,
   getPlayerGameSummarys,
+  getRecentGameSummarys,
 } from "~/lib/drizzle/transactions/game.drizzle";
 
 export const trpcDevRouter = createTRPCRouter({
@@ -38,4 +39,7 @@ export const trpcDevRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       return await getPlayerGameSummarys(input.playerID);
     }),
+  getRecentGameSummarys: devProcedure.mutation(async () => {
+    return await getRecentGameSummarys();
+  }),
 });

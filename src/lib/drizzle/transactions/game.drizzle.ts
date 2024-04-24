@@ -198,3 +198,25 @@ export async function getPlayerGameSummarys(
 
   return results.map((r) => pgGameSummaryQueryResultToGameSummary(r));
 }
+
+/**
+ * get the x most recent game summarys
+ *
+ * @param \{count?} the maximum number of games to fetch. If true, fetch all. Defaults to 20.
+ * @returns Promise<GameSummarry[]>
+ */
+export async function getRecentGameSummarys({
+  count,
+}: {
+  count?: number | true;
+} = {}) {
+  count = count ?? 20;
+
+  const results = await db.query.games.findMany({
+    with: GameSummaryWithQuery,
+    limit: count === true ? undefined : count,
+    orderBy: (games, { desc }) => [desc(games.t_end)],
+  });
+
+  return results.map((r) => pgGameSummaryQueryResultToGameSummary(r));
+}
