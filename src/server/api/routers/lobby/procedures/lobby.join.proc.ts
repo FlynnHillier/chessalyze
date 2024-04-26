@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { LOBBYPROCEDURE } from "~/server/api/routers/lobby/lobby.proc";
-import { trpcGameIsNotPresentMiddleware } from "~/server/api/routers/game/middleware/game.isNotPresent.mw";
+import { trpcGameIsNotPresentMiddleware } from "~/server/api/routers/game/play/middleware/game.isNotPresent.mw";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 
 export const trpcLobbyJoinProcedure = LOBBYPROCEDURE.use(

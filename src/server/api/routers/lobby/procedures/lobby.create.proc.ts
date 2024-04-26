@@ -1,5 +1,5 @@
 import { LOBBYPROCEDURE } from "~/server/api/routers/lobby/lobby.proc";
-import { trpcGameIsNotPresentMiddleware } from "~/server/api/routers/game/middleware/game.isNotPresent.mw";
+import { trpcGameIsNotPresentMiddleware } from "~/server/api/routers/game/play/middleware/game.isNotPresent.mw";
 import { trpcLobbyIsNotPresentMiddleware } from "~/server/api/routers/lobby/middleware/lobby.isNotPresent.mw";
 import {
   LobbyInstance,

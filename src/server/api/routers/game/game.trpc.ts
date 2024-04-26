@@ -1,11 +1,11 @@
 import { createTRPCRouter } from "~/server/api/trpc";
 
-import { trpcGameStatusProcedure } from "~/server/api/routers/game/procedures/game.status.proc";
-import { trpcGameMoveProcedure } from "~/server/api/routers/game/procedures/game.move.proc";
-import { trpcGameResignProcedure } from "~/server/api/routers/game/procedures/game.resign.proc";
+import { trpcGamePlayRouter } from "~/server/api/routers/game/play/game.play.trpc";
+import { trpcGameStatusProcedure } from "~/server/api/routers/game/_procedures/game.status.proc";
+import { trpcGameSummarysRouter } from "~/server/api/routers/game/summarys/game.summarys.trpc";
 
 export const trpcGameRouter = createTRPCRouter({
+  play: trpcGamePlayRouter,
   status: trpcGameStatusProcedure,
-  move: trpcGameMoveProcedure,
-  resign: trpcGameResignProcedure,
+  summary: trpcGameSummarysRouter,
 });

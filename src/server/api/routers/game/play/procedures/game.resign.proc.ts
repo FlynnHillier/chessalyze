@@ -1,6 +1,6 @@
 import { GAMEPROCEDURE } from "~/server/api/routers/game/game.proc";
 import { GameSummary } from "~/types/game.types";
-import { trpcGameIsPresentMiddleware } from "~/server/api/routers/game/middleware/game.isPresent.mw";
+import { trpcGameIsPresentMiddleware } from "~/server/api/routers/game/play/middleware/game.isPresent.mw";
 
 /**
  * Allow user to resign from their game.

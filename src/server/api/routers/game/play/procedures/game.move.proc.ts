@@ -1,9 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { GAMEPROCEDURE } from "~/server/api/routers/game/game.proc";
-import { trpcGameIsPresentMiddleware } from "~/server/api/routers/game/middleware/game.isPresent.mw";
-import { zodIsTileValidator } from "~/server/api/routers/game/zod/game.isTile.zod";
-import { zodIsPromotionPieceValidator } from "~/server/api/routers/game/zod/game.isPromotionPiece.zod";
+import { trpcGameIsPresentMiddleware } from "~/server/api/routers/game/play/middleware/game.isPresent.mw";
+import { zodIsTileValidator } from "~/server/api/routers/game/play/zod/game.isTile.zod";
+import { zodIsPromotionPieceValidator } from "~/server/api/routers/game/play/zod/game.isPromotionPiece.zod";
 
 export const trpcGameMoveProcedure = GAMEPROCEDURE.use(
   trpcGameIsPresentMiddleware,
