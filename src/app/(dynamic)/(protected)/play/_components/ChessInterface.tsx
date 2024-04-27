@@ -130,7 +130,7 @@ export default function ChessInterface() {
   const game = useGame().game;
   const conclusion = useGame().conclusion;
   const { user } = useSession();
-  const trpcMoveMutation = trpc.game.move.useMutation();
+  const trpcMoveMutation = trpc.game.play.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
   const [showGameEndOverlay, setShowGameEndOverlay] =
     useState<boolean>(!!conclusion);

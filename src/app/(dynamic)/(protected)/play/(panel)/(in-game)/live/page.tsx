@@ -23,7 +23,7 @@ function ResignationButton() {
   const game = useGame();
   const { show: showError } = useMutatePanelErrorMessage();
 
-  const trpcResignationSummary = trpc.game.resign.useMutation();
+  const trpcResignationSummary = trpc.game.play.resign.useMutation();
 
   async function resign() {
     if (trpcResignationSummary.isLoading) return;
