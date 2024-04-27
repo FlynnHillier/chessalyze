@@ -12,6 +12,7 @@ import {
   DRAW_TERMINATIONS,
   PROMOTIONPIECE,
   TILEIDS,
+  TIME_PRESET,
 } from "~/constants/game";
 
 export type FEN = string;
@@ -26,7 +27,7 @@ export type PromotionSymbol = (typeof PROMOTIONPIECE)[number];
 
 export type CapturableSymbol = (typeof CAPTURABLEPIECE)[number];
 
-export type GameTimePreset = z.infer<typeof zodGameTimePreset>;
+export type GameTimePreset = (typeof TIME_PRESET)[number];
 
 export type Square = (typeof TILEIDS)[number];
 
@@ -87,6 +88,15 @@ export type GameSummary = {
   conclusion: GameConclusion;
   moves: VerboseMovement[];
   time: {
+    clock?: {
+      initial: {
+        template?: GameTimePreset;
+        absolute: BW<number>;
+      };
+      end: {
+        absolute: BW<number>;
+      };
+    };
     start: number;
     end: number;
     duration: number;

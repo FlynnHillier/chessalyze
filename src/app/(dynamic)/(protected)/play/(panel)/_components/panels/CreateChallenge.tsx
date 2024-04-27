@@ -107,12 +107,14 @@ export function CreateChallenge() {
           lobby: {
             id: r.lobby.id,
             config: {
-              time: r.lobby.config.time
-                ? {
-                    verbose: r.lobby.config.time.verbose,
-                    preset: r.lobby.config.time.preset,
-                  }
-                : undefined,
+              time:
+                r.lobby.config.time &&
+                ((r.lobby.config.time.preset && {
+                  template: r.lobby.config.time.preset,
+                }) ||
+                  (r.lobby.config.time.verbose && {
+                    absolute: r.lobby.config.time.verbose,
+                  })),
             },
           },
         },

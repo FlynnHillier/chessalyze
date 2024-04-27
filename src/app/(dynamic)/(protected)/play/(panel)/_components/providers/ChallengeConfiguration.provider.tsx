@@ -141,7 +141,7 @@ export function ChallengeConfigurationContextProvider({
         type: "TIME_OPTION",
         payload: {
           time: {
-            preset: lobby.lobby.config.time.preset,
+            preset: lobby.lobby.config.time.template,
           },
         },
       });
@@ -154,7 +154,7 @@ export function ChallengeConfigurationContextProvider({
           },
         },
       });
-  }, [lobby.lobby?.config.time?.preset, lobby.lobby?.config.time?.verbose]);
+  }, [lobby.lobby?.config.time?.template, lobby.lobby?.config.time?.absolute]);
 
   /**
    * Sync active lobby context configuration to challenge configuration

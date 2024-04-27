@@ -11,6 +11,7 @@ import {
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
 import { Color } from "chess.js";
+import { ExactlyOneKey } from "~/types/util/util.types";
 
 class LobbyError extends Error {
   constructor(code: string, message?: string) {
@@ -35,23 +36,11 @@ class InvalidLobbyError extends LobbyError {
   }
 }
 
-export const timedPresetNumberValues: {
-  [key in GameTimePreset]: number;
-} = {
-  "30s": 30000,
-  "1m": 60000,
-  "5m": 300000,
-  "10m": 600000,
-  "15m": 900000,
-  "30m": 1800000,
-  "1h": 3600000,
-} as const;
-
 export type LobbyConfig = Partial<{
-  time: {
-    preset?: GameTimePreset;
-    verbose: BW<number>;
-  };
+  time?: ExactlyOneKey<{
+    template: GameTimePreset;
+    absolute: BW<number>;
+  }>;
   color: {
     preference: Color;
   };
@@ -177,7 +166,7 @@ export class LobbyInstance {
           preference: undefined,
         },
       },
-      this.config.time?.verbose,
+      this.config.time,
     );
   }
 }

@@ -13,16 +13,17 @@ import { UUID } from "~/types/common.types";
 import { BW, GameTimePreset } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { Color } from "chess.js";
+import { ExactlyOneKey } from "~/types/util/util.types";
 
 export interface LOBBYCONTEXT {
   present: boolean;
   lobby?: {
     id: string;
     config: {
-      time?: {
-        verbose: BW<number>;
-        preset?: GameTimePreset;
-      };
+      time?: ExactlyOneKey<{
+        absolute: BW<number>;
+        template: GameTimePreset;
+      }>;
       color?: {
         preference: Color;
       };

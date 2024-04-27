@@ -182,7 +182,7 @@ export default function JoinPanel() {
                       selection: target.config.time ? "timed" : "non-timed",
                     },
                     option: {
-                      selection: target.config.time?.preset,
+                      selection: target.config.time?.template,
                     },
                   },
                 }}

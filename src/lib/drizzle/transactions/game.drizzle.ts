@@ -1,10 +1,13 @@
 import { GameSummary, Player } from "~/types/game.types";
 import { db } from "~/lib/drizzle/db";
-import { conclusions, games, moves } from "~/lib/drizzle/games.schema";
+import { conclusions, games, moves, timings } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
+import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
+import path from "path";
+import { PUBLIC_FOLDER_PATH } from "~/config/config";
 
 type PgUser = InferSelectModel<typeof users>;
 
@@ -24,6 +27,7 @@ const GameSummaryWithQuery = {
       victor: true,
     },
   },
+  timings: true,
 } as const satisfies QueryConfig<"games">["with"];
 
 /**
@@ -78,9 +82,26 @@ function pgGameSummaryQueryResultToGameSummary(
         : undefined,
     },
     time: {
-      start: pgGameSummary.t_start,
-      end: pgGameSummary.t_end,
-      duration: pgGameSummary.t_duration,
+      start: pgGameSummary.timings.start,
+      end: pgGameSummary.timings.end,
+      duration: pgGameSummary.timings.duration,
+      clock: pgGameSummary.timings.clock
+        ? {
+            initial: {
+              absolute: {
+                w: pgGameSummary.timings.clock_start_w ?? -1,
+                b: pgGameSummary.timings.clock_start_b ?? -1,
+              },
+              template: pgGameSummary.timings.clock_template ?? undefined,
+            },
+            end: {
+              absolute: {
+                w: pgGameSummary.timings.clock_end_w ?? -1,
+                b: pgGameSummary.timings.clock_end_b ?? -1,
+              },
+            },
+          }
+        : undefined,
     },
     moves: pgGameSummary.moves.map((pgMove) => ({
       fen: pgMove.fen,
@@ -97,7 +118,7 @@ function pgGameSummaryQueryResultToGameSummary(
       time: {
         moveDuration: pgMove.t_duration,
         timestamp: pgMove.t_timestamp,
-        sinceStart: pgMove.t_timestamp - pgGameSummary.t_start,
+        sinceStart: pgMove.t_timestamp - pgGameSummary.timings.start,
       },
     })),
   };
@@ -115,9 +136,6 @@ export async function saveGameSummary(summary: GameSummary) {
         id: summary.id,
         p_black_id: summary.players.b?.pid,
         p_white_id: summary.players.w?.pid,
-        t_duration: summary.time.duration,
-        t_start: summary.time.start,
-        t_end: summary.time.end,
       });
 
       await tx.insert(moves).values(
@@ -147,11 +165,36 @@ export async function saveGameSummary(summary: GameSummary) {
           ? summary.players[summary.conclusion.victor]?.pid
           : null,
       });
+
+      await tx.insert(timings).values({
+        gameID: summary.id,
+        duration: summary.time.duration,
+        start: summary.time.start,
+        end: summary.time.end,
+        clock: !!summary.time.clock,
+        clock_template: summary.time.clock?.initial.template,
+        clock_start_w: summary.time.clock?.initial.absolute.w,
+        clock_start_b: summary.time.clock?.initial.absolute.b,
+        clock_end_w: summary.time.clock?.end.absolute.w,
+        clock_end_b: summary.time.clock?.end.absolute.b,
+      });
     });
   } catch (e) {
     //TODO: add physical storage logging here.
     logDev({
       message: ["failed to store game in datatbase", e],
+      color: loggingColourCode.FgRed,
+    });
+  }
+
+  try {
+    await ChessImageGenerator.fromFEN(
+      summary.conclusion.boardState,
+      path.join(PUBLIC_FOLDER_PATH, "chess", "games", `${summary.id}.png`),
+    );
+  } catch (e) {
+    logDev({
+      message: ["failed to store game image to public folder", e],
       color: loggingColourCode.FgRed,
     });
   }
@@ -215,7 +258,7 @@ export async function getRecentGameSummarys({
   const results = await db.query.games.findMany({
     with: GameSummaryWithQuery,
     limit: count === true ? undefined : count,
-    orderBy: (games, { desc }) => [desc(games.t_end)],
+    // orderBy: (timings, { desc }) => [desc(timings.)], //TODO: fix this to order by child table timings.end
   });
 
   return results.map((r) => pgGameSummaryQueryResultToGameSummary(r));
