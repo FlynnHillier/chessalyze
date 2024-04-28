@@ -1,6 +1,8 @@
 import { GameSummary, Player } from "~/types/game.types";
 import Image from "next/image";
 import { FaCrown } from "react-icons/fa";
+import { MdTimerOff, MdTimer } from "react-icons/md";
+import LiveRelativeTime from "../../common/time/LiveRelativeTimeText";
 
 function PlayerBanner({
   player,
@@ -11,7 +13,7 @@ function PlayerBanner({
 }) {
   return (
     <div className="flex flex-row items-center gap-2 text-lg font-bold">
-      <div className="relative aspect-square h-full w-10 overflow-hidden rounded">
+      <div className="relative aspect-square h-full w-9 overflow-hidden rounded">
         <Image
           src={player?.image ?? "/blankuser.png"}
           alt={
@@ -41,16 +43,36 @@ function PlayerBanner({
  */
 function GameSummaryPill({ summary }: { summary: GameSummary }) {
   return (
-    <div className="w-full rounded bg-stone-900 p-2">
-      <div className="flex w-full flex-col gap-1 p-1">
-        <PlayerBanner
-          player={summary.players.w}
-          victor={summary.conclusion.victor === "w"}
-        />
-        <PlayerBanner
-          player={summary.players.b}
-          victor={summary.conclusion.victor === "b"}
-        />
+    <div className="flex h-32 w-full flex-row items-center gap-2 rounded bg-stone-900 p-2">
+      <img
+        src={`/chess/games/${summary.id}.png`}
+        className="col-span-1 aspect-square h-full rounded object-fill"
+      />
+      <div className="flex h-full w-full flex-col gap-1 ">
+        <div className="col-span-1 flex w-full flex-col gap-3">
+          <PlayerBanner
+            player={summary.players.w}
+            victor={summary.conclusion.victor === "w"}
+          />
+          <PlayerBanner
+            player={summary.players.b}
+            victor={summary.conclusion.victor === "b"}
+          />
+        </div>
+        <div className="flex h-full w-full flex-row items-center justify-between  gap-1  font-semibold">
+          <div className="flex flex-row items-center gap-x-0.5">
+            {summary.time.clock ? (
+              <>
+                <MdTimer /> {summary.time.clock.initial.template}
+              </>
+            ) : (
+              <MdTimerOff />
+            )}
+          </div>
+          <div className="items-baseline text-xs font-semibold">
+            <LiveRelativeTime timestamp={summary.time.end} />
+          </div>
+        </div>
       </div>
     </div>
   );
