@@ -2,7 +2,7 @@ import { GameSummary, Player } from "~/types/game.types";
 import Image from "next/image";
 import { FaCrown } from "react-icons/fa";
 import { MdTimerOff, MdTimer } from "react-icons/md";
-import LiveRelativeTime2 from "../../common/time/LiveRelativeTime";
+import LiveRelativeTime from "../../common/time/LiveRelativeTime";
 
 function PlayerBanner({
   player,
@@ -70,7 +70,7 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
             )}
           </div>
           <div className="items-baseline text-xs font-semibold">
-            <LiveRelativeTime2 timestamp={Date.now() + 65000} />
+            <LiveRelativeTime timestamp={summary.time.end} />
           </div>
         </div>
       </div>
