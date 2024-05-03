@@ -55,7 +55,7 @@ export default function JoinPanel() {
 
   useEffect(() => {
     setLoading(() => {
-      if (game.present)
+      if (game.game)
         return {
           isLoading: true,
           message: "redirecting to your game...",
@@ -70,7 +70,7 @@ export default function JoinPanel() {
         isLoading: false,
       };
     });
-  }, [trpcQueryLobbyMutation.isLoading, game.present]);
+  }, [trpcQueryLobbyMutation.isLoading, game.game]);
 
   /**
    * Query information regarding specified lobby
@@ -124,7 +124,6 @@ export default function JoinPanel() {
       dispatchGame({
         type: "LOAD",
         payload: {
-          present: true,
           game: {
             id: game.id,
             captured: game.captured,
@@ -133,6 +132,7 @@ export default function JoinPanel() {
             time: game.time,
             moves: game.moves,
           },
+          live: true,
         },
       });
     } catch (e) {
@@ -143,14 +143,14 @@ export default function JoinPanel() {
 
   useEffect(() => {
     const target = searchParams.get("challenge");
-    if (!target || game.present) return router.push("/play");
+    if (!target || game.game) return router.push("/play");
 
     queryLobby(target);
   }, []);
 
   useEffect(() => {
-    if (game.present) router.push("/play/live");
-  }, [game.present]);
+    if (game.game) router.push("/play/live");
+  }, [game.game]);
 
   //TODO: add actual UI here
   // - once friends are added, option to invite friends appears here.

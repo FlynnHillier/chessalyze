@@ -21,6 +21,7 @@ import {
   Movement,
   GameSummary,
   VerboseMovement,
+  GameTermination,
 } from "~/types/game.types";
 import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
@@ -29,58 +30,43 @@ import { GameMoveEvent } from "~/lib/ws/events/game/game.move.event.ws";
 import { validateWSMessage } from "~/app/_components/providers/ws.provider";
 import { GameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
 import { GameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
+import { ExactlyOneKey } from "~/types/util/util.types";
 
-export type GAMECONTEXT =
-  | {
-      present: false;
-      game: undefined;
-      conclusion?: {
-        players: GameSummary["players"];
-        conclusion: GameSummary["conclusion"];
-      };
-    }
-  | {
-      present: true;
-      game: {
-        id: UUID;
-        players: BW<Player>;
-        captured: BW<{ [key in CapturableSymbol]: number }>;
-        state: {
-          fen: string;
-          turn: Color;
-        };
-        engine: {
-          getValidMoves: Chess["moves"];
-        };
-        time: {
-          start: number;
-          lastUpdated: number;
-          remaining?: BW<number>;
-        };
-        moves: VerboseMovement[];
-      };
-      conclusion: undefined;
+export type GAMECONTEXT = {
+  game?: {
+    id: UUID;
+    players: BW<Player>;
+    captured: BW<{ [key in CapturableSymbol]: number }>;
+    state: {
+      fen: string;
+      turn: Color;
     };
-
-const defaultContext: GAMECONTEXT = {
-  present: false,
-  game: undefined,
+    engine: {
+      getValidMoves: Chess["moves"];
+    };
+    time: {
+      start: number;
+      lastUpdated: number;
+      remaining?: BW<number>;
+    };
+    moves: VerboseMovement[];
+    viewing?: {
+      move: VerboseMovement; // This should be the move that allows retrospective viewing
+      index: number;
+      isLatest: boolean;
+    };
+  };
+  live: boolean;
+  conclusion?: {
+    victor?: Color;
+    reason: GameTermination;
+  };
 };
 
-type RdcrActnLoad = ReducerAction<
-  "LOAD",
-  {
-    present: boolean;
-    game?: GameSnapshot;
-  }
->;
-
-type RdcrActnEnd = ReducerAction<
-  "END",
-  {
-    conclusion: NonNullable<GAMECONTEXT["conclusion"]>;
-  }
->;
+const defaultContext: GAMECONTEXT = {
+  game: undefined,
+  live: false,
+};
 
 type RdcrActnMove = ReducerAction<"MOVE", VerboseMovement>;
 
@@ -117,7 +103,31 @@ function moveIsValid(instance: Chess, move: Movement): boolean {
     );
 }
 
-type GameRdcrActn = RdcrActnLoad | RdcrActnEnd | RdcrActnMove;
+type GameRdcrActn =
+  | ReducerAction<
+      "LOAD",
+      {
+        live: boolean;
+        game?: GameSnapshot;
+      }
+    >
+  | ReducerAction<
+      "END",
+      {
+        conclusion: NonNullable<GAMECONTEXT["conclusion"]>;
+      }
+    >
+  | ReducerAction<"MOVE", VerboseMovement>
+  | ReducerAction<
+      "VIEW",
+      ExactlyOneKey<{
+        latest: true;
+        index: ExactlyOneKey<{
+          relative: number;
+          value: number;
+        }>;
+      }>
+    >;
 
 function reducer<A extends GameRdcrActn>(
   state: GAMECONTEXT,
@@ -127,19 +137,18 @@ function reducer<A extends GameRdcrActn>(
 
   switch (type) {
     case "LOAD": {
-      const { game, present } = payload;
+      const { game, live } = payload;
 
-      if (!present || !game) {
+      if (!game) {
         return {
-          present: false,
           game: undefined,
+          live: false,
         };
       }
 
       const instance = game ? new Chess(game.FEN) : new Chess();
 
       return {
-        present: present,
         game: game && {
           id: game.id,
           players: game.players,
@@ -155,11 +164,11 @@ function reducer<A extends GameRdcrActn>(
           },
           moves: game.moves,
         },
-        conclusion: undefined,
+        live: live,
       };
     }
     case "MOVE": {
-      if (!state.game) return { ...state };
+      if (!state.game || !state.live) return { ...state };
 
       const { move, time, initiator, fen } = payload;
       const instance = new Chess(state.game.state.fen);
@@ -182,6 +191,16 @@ function reducer<A extends GameRdcrActn>(
         state.game.captured[turn][movement.captured as PromotionSymbol]++;
       }
 
+      const moves = [
+        ...state.game.moves,
+        {
+          initiator: initiator,
+          fen: fen,
+          move: move,
+          time: time,
+        },
+      ];
+
       return {
         ...state,
         game: {
@@ -195,23 +214,73 @@ function reducer<A extends GameRdcrActn>(
             lastUpdated: time.timestamp,
             remaining: time.remaining,
           },
-          moves: [
-            ...state.game.moves,
-            {
-              initiator: initiator,
-              fen: fen,
-              move: move,
-              time: time,
-            },
-          ],
+          moves: moves,
+          viewing: {
+            isLatest: true,
+            index: moves.length - 1,
+            move: moves[moves.length - 1],
+          }, // Jump to latest move
         },
       };
     }
     case "END": {
       return {
-        present: false,
-        game: undefined,
+        game: state.game,
+        live: false,
         conclusion: payload.conclusion,
+      };
+    }
+    case "VIEW": {
+      if (!state.game) return { ...state };
+
+      // View latest
+      if (payload.latest) {
+        if (state.game.moves.length > 0)
+          return {
+            ...state,
+            game: {
+              ...state.game,
+              viewing: {
+                index: state.game.moves.length - 1,
+                move: state.game.moves[state.game.moves.length - 1],
+                isLatest: true,
+              },
+            },
+          };
+        else return { ...state };
+      }
+
+      // View specified
+      if (payload.index === undefined) return { ...state };
+
+      const targetIndex = Math.max(
+        Math.min(
+          state.game.moves.length - 1,
+          (payload.index.value ?? state.game.viewing?.index ?? -1) +
+            (payload.index.relative ?? 0),
+        ),
+        -1,
+      );
+
+      if (targetIndex <= -1)
+        return {
+          ...state,
+          game: {
+            ...state.game,
+            viewing: undefined,
+          },
+        };
+
+      return {
+        ...state,
+        game: {
+          ...state.game,
+          viewing: {
+            index: targetIndex,
+            move: state.game.moves[targetIndex],
+            isLatest: targetIndex === state.game.moves.length - 1,
+          },
+        },
       };
     }
     default:
@@ -234,10 +303,16 @@ export function useDispatchGame(): Dispatch<GameRdcrActn> {
   return useContext(GameContext).dispatchGame;
 }
 
-export const GameProvider = ({ children }: { children: ReactNode }) => {
+export const GameProvider = ({
+  children,
+  initial,
+}: {
+  children: ReactNode;
+  initial?: GAMECONTEXT;
+}) => {
   const ws = useWebSocket();
 
-  const [game, dispatchGame] = useReducer(reducer, defaultContext);
+  const [game, dispatchGame] = useReducer(reducer, initial ?? defaultContext);
   const query = trpc.game.status.useQuery();
 
   /**
@@ -245,8 +320,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
    */
   const onWSMovementEvent = useCallback(
     (data: GameMoveEvent["data"]) => {
-      console.log("ws movement event", data);
-
       //TODO: zod validation
       dispatchGame({
         type: "MOVE",
@@ -280,7 +353,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       dispatchGame({
         type: "LOAD",
         payload: {
-          present: true,
+          live: true,
           game: {
             id: data.id,
             players: data.players,
@@ -309,8 +382,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         type: "END",
         payload: {
           conclusion: {
-            conclusion: data.conclusion,
-            players: data.players,
+            victor: data.conclusion.victor ?? undefined,
+            reason: data.conclusion.termination,
           },
         },
       });
@@ -359,7 +432,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       dispatchGame({
         type: "LOAD",
         payload: {
-          present: data.present,
           game: data.present
             ? {
                 id: data.game.id,
@@ -374,6 +446,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                 moves: data.game.moves,
               }
             : undefined,
+          live: data.present,
         },
       });
     }

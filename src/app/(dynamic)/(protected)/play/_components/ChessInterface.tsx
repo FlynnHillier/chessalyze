@@ -129,6 +129,7 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
 export default function ChessInterface() {
   const game = useGame().game;
   const conclusion = useGame().conclusion;
+  const live = useGame().live;
   const { user } = useSession();
   const trpcMoveMutation = trpc.game.play.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
@@ -218,22 +219,26 @@ export default function ChessInterface() {
         <ChessBoard
           turn={game?.state.turn}
           FEN={
-            game?.state.fen ??
-            conclusion?.conclusion.boardState ??
+            game?.viewing?.move.fen ??
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           }
           getValidMoves={game?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
-          disabled={!game || game.state.turn !== orientation}
+          disabled={
+            !game ||
+            !live ||
+            (game.viewing && !game.viewing.isLatest) ||
+            game.state.turn !== orientation
+          }
         />
         <GameEndOverlay
           isShown={showGameEndOverlay}
           hideSelf={() => {
             setShowGameEndOverlay(false);
           }}
-          reason={conclusion?.conclusion.termination}
-          victor={conclusion?.conclusion.victor}
+          reason={conclusion?.reason}
+          victor={conclusion?.victor}
         />
       </div>
       <div className="w-full overflow-hidden rounded-b-md">
