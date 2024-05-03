@@ -55,6 +55,7 @@
     "react-chessboard": "^4.4.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
+    "react-live-relative-time": "^1.0.0",
     "superjson": "^2.2.1",
     "tailwind-scrollbar-hide": "^1.1.7",
     "usehooks-ts": "^3.0.2",
@@ -63,6 +64,7 @@
     "zod": "^3.22.4"
   },
   "resolutions": {
-    "strip-ansi": "6.0.0"
+    "strip-ansi": "6.0.0",
+    "string-width": "4.2.3"
   }
 }

@@ -2,7 +2,7 @@ import { GameSummary, Player } from "~/types/game.types";
 import Image from "next/image";
 import { FaCrown } from "react-icons/fa";
 import { MdTimerOff, MdTimer } from "react-icons/md";
-import LiveRelativeTime from "../../common/time/LiveRelativeTime";
+import { LiveRelativeTime } from "react-live-relative-time";
 
 function PlayerBanner({
   player,
