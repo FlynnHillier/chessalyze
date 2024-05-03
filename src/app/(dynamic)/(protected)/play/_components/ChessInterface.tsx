@@ -229,6 +229,7 @@ export default function ChessInterface() {
             !game ||
             !live ||
             (game.viewing && !game.viewing.isLatest) ||
+            (!game.viewing && game.moves.length > 0) ||
             game.state.turn !== orientation
           }
         />
