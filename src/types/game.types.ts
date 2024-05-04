@@ -36,6 +36,8 @@ export type BW<T> = {
   b: T;
 };
 
+export type CapturedMapping = BW<{ [key in CapturableSymbol]: number }>;
+
 export type Color = chessJSColor;
 
 export type Movement = {
@@ -58,6 +60,7 @@ export type VerboseMovement = {
     player?: Player;
     color: Color;
   };
+  captured: CapturedMapping;
 };
 
 /**
@@ -73,7 +76,7 @@ export interface GameSnapshot {
   id: UUID;
   players: BW<Player>;
   FEN: FEN;
-  captured: BW<{ [key in CapturableSymbol]: number }>;
+  captured: CapturedMapping;
   time: {
     start: number;
     now: number;

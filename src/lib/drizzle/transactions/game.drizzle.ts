@@ -1,6 +1,12 @@
 import { GameSummary, Player } from "~/types/game.types";
 import { db } from "~/lib/drizzle/db";
-import { conclusions, games, moves, timings } from "~/lib/drizzle/games.schema";
+import {
+  captured,
+  conclusions,
+  games,
+  moves,
+  timings,
+} from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel, or } from "drizzle-orm";
@@ -18,6 +24,7 @@ const GameSummaryWithQuery = {
   moves: {
     with: {
       initiator: true,
+      captured: true,
     },
   },
   player_black: true,
@@ -120,6 +127,22 @@ function pgGameSummaryQueryResultToGameSummary(
         timestamp: pgMove.t_timestamp,
         sinceStart: pgMove.t_timestamp - pgGameSummary.timings.start,
       },
+      captured: {
+        w: {
+          b: pgMove.captured.w_b,
+          n: pgMove.captured.w_n,
+          p: pgMove.captured.w_p,
+          q: pgMove.captured.w_q,
+          r: pgMove.captured.w_r,
+        },
+        b: {
+          b: pgMove.captured.b_b,
+          n: pgMove.captured.b_n,
+          p: pgMove.captured.b_p,
+          q: pgMove.captured.b_q,
+          r: pgMove.captured.b_r,
+        },
+      },
     })),
   };
 }
@@ -153,6 +176,23 @@ export async function saveGameSummary(summary: GameSummary) {
           t_duration: move.time.moveDuration,
           t_w_remaining: move.time.remaining?.w,
           t_b_remaining: move.time.remaining?.b,
+        })),
+      );
+
+      await tx.insert(captured).values(
+        summary.moves.map((move, i) => ({
+          gameID: summary.id,
+          turnIndex: i,
+          b_b: move.captured.b.b,
+          b_n: move.captured.b.n,
+          b_p: move.captured.b.p,
+          b_q: move.captured.b.q,
+          b_r: move.captured.b.r,
+          w_b: move.captured.w.b,
+          w_n: move.captured.w.n,
+          w_p: move.captured.w.p,
+          w_q: move.captured.w.q,
+          w_r: move.captured.w.r,
         })),
       );
 

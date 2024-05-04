@@ -111,6 +111,30 @@ export const conclusions = pgTable("game_conclusions", {
   }),
 });
 
+export const captured = pgTable(
+  "game_captured",
+  {
+    gameID: varchar("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    turnIndex: integer("turn").notNull(),
+    w_p: integer("w_p").notNull().default(0),
+    w_r: integer("w_r").notNull().default(0),
+    w_n: integer("w_n").notNull().default(0),
+    w_q: integer("w_q").notNull().default(0),
+    w_b: integer("w_b").notNull().default(0),
+    b_p: integer("b_p").notNull().default(0),
+    b_r: integer("b_r").notNull().default(0),
+    b_n: integer("b_n").notNull().default(0),
+    b_q: integer("b_q").notNull().default(0),
+    b_b: integer("b_b").notNull().default(0),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.gameID, t.turnIndex] }),
+    unq: unique().on(t.gameID, t.turnIndex),
+  }),
+);
+
 // RELATIONS
 export const gameRelations = relations(games, ({ many, one }) => ({
   moves: many(moves),
@@ -138,6 +162,10 @@ export const movesRelations = relations(moves, ({ one }) => ({
     fields: [moves.initiator_pid],
     references: [users.id],
   }),
+  captured: one(captured, {
+    fields: [moves.gameID, moves.turn],
+    references: [captured.gameID, captured.turnIndex],
+  }),
 }));
 
 export const conclusionRelations = relations(conclusions, ({ one }) => ({
@@ -149,4 +177,11 @@ export const conclusionRelations = relations(conclusions, ({ one }) => ({
 
 export const timingsRelations = relations(timings, ({ one }) => ({
   game: one(games, { fields: [timings.gameID], references: [games.id] }),
+}));
+
+export const capturedRelations = relations(captured, ({ one }) => ({
+  move: one(moves, {
+    fields: [captured.gameID, captured.turnIndex],
+    references: [moves.gameID, moves.turn],
+  }),
 }));

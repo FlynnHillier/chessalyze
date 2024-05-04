@@ -321,6 +321,7 @@ export class GameInstance {
         remaining: this.time.clock?.instance.getDurations(),
         moveDuration: now - this.time.lastMove,
       },
+      captured: this.getCaptured(),
     };
 
     this.moveHistory.push(verboseMovement);
