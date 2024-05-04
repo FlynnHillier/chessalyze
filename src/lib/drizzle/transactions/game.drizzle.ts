@@ -298,8 +298,9 @@ export async function getRecentGameSummarys({
   const results = await db.query.games.findMany({
     with: GameSummaryWithQuery,
     limit: count === true ? undefined : count,
-    // orderBy: (timings, { desc }) => [desc(timings.)], //TODO: fix this to order by child table timings.end
   });
 
-  return results.map((r) => pgGameSummaryQueryResultToGameSummary(r));
+  return results
+    .sort((a, b) => b.timings.end - a.timings.end)
+    .map((r) => pgGameSummaryQueryResultToGameSummary(r));
 }
