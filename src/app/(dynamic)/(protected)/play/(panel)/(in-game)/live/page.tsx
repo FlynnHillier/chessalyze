@@ -9,8 +9,14 @@ import { trpc } from "~/app/_trpc/client";
 import MultiButton from "~/app/_components/common/buttons/MultiButton";
 import { TRPCClientError } from "@trpc/client";
 import { useMutatePanelErrorMessage } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
-import ActiveGamePanel from "../../_components/panels/ActiveGamePanel";
+import Panel from "../../_components/Panel";
+import { PieceIcon } from "../../../_components/PieceIcon";
+import TraverseGameMovements from "../../_components/interfaces/TraverseGameMovements";
 
+/**
+ * Button that gives the user the ability to voulantarily resign from the match at hand
+ *
+ */
 function ResignationButton() {
   const [isShowingConfirmation, setIsShowingConfirmation] =
     useState<boolean>(false);
@@ -79,9 +85,20 @@ function ResignationButton() {
 }
 
 export default function LivePanel() {
+  const game = useGame();
+
   return (
-    <ActiveGamePanel>
+    <Panel>
+      {game.game?.live && (
+        <div className="flex flex-row items-center justify-center gap-2">
+          {PieceIcon("k", game.game.live.current.turn)}
+          <span className="text-lg font-bold">
+            {game.game.live.current.turn === "w" ? "white" : "black"} to move
+          </span>
+        </div>
+      )}
+      <TraverseGameMovements />
       <ResignationButton />
-    </ActiveGamePanel>
+    </Panel>
   );
 }
