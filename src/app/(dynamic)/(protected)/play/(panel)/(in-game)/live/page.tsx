@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useGame } from "~/app/_components/providers/game.provider";
-import AsyncButton from "~/app/_components/common/AsyncButton";
+import AsyncButton from "~/app/_components/common/buttons/AsyncButton";
 import { FiFlag } from "react-icons/fi";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import { trpc } from "~/app/_trpc/client";
-import MultiButton from "~/app/_components/common/MultiButton";
+import MultiButton from "~/app/_components/common/buttons/MultiButton";
 import { TRPCClientError } from "@trpc/client";
 import { useMutatePanelErrorMessage } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
 import ActiveGamePanel from "../../_components/panels/ActiveGamePanel";

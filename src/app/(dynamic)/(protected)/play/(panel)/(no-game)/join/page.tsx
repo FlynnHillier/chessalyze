@@ -15,7 +15,7 @@ import Panel from "~/app/(dynamic)/(protected)/play/(panel)/_components/Panel";
 import { useMutatePanelErrorMessage } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/error.provider";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import LobbyConfigurationInterface from "~/app/(dynamic)/(protected)/play/(panel)/_components/LobbyConfiguration";
-import AsyncButton from "~/app/_components/common/AsyncButton";
+import AsyncButton from "~/app/_components/common/buttons/AsyncButton";
 
 /**
  * Allow user to view & accept challenge

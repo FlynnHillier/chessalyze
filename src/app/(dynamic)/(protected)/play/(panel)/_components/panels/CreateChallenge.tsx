@@ -7,7 +7,7 @@ import { FaRegCopy } from "react-icons/fa";
 
 import { trpc } from "~/app/_trpc/client";
 import { useLobby } from "~/app/_components/providers/lobby.provider";
-import AsyncButton from "~/app/_components/common/AsyncButton";
+import AsyncButton from "~/app/_components/common/buttons/AsyncButton";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import { TRPCClientError } from "@trpc/client";
 

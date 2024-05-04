@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SideNavBar } from "./_components/common/SideNavBar";
+import { SideNavBar } from "./_components/layout/SideNavBar";
 
 export const metadata: Metadata = {
   title: "next Chessalyze",

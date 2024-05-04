@@ -1,4 +1,4 @@
-import MultiButton from "~/app/_components/common/MultiButton";
+import MultiButton from "~/app/_components/common/buttons/MultiButton";
 import { GameTimePreset, Color } from "~/types/game.types";
 import { FaRegChessKing } from "react-icons/fa6";
 import { FaChess } from "react-icons/fa";
