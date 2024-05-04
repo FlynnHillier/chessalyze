@@ -124,15 +124,19 @@ export default function JoinPanel() {
       dispatchGame({
         type: "LOAD",
         payload: {
-          game: {
-            id: game.id,
-            captured: game.captured,
-            players: game.players,
-            FEN: game.FEN,
-            time: game.time,
-            moves: game.moves,
+          id: game.id,
+          moves: game.moves,
+          players: game.players,
+          time: {
+            start: game.time.start,
           },
-          live: true,
+          live: {
+            FEN: game.FEN,
+            time: {
+              now: game.time.now,
+              remaining: game.time.remaining,
+            },
+          },
         },
       });
     } catch (e) {

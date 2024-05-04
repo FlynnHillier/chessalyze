@@ -104,8 +104,19 @@ type GameRdcrActn =
   | ReducerAction<
       "LOAD",
       {
-        live: boolean;
-        game?: GameSnapshot;
+        live?: {
+          FEN: string;
+          time: {
+            now: number;
+            remaining?: BW<number>;
+          };
+        };
+        id: string;
+        moves: VerboseMovement[];
+        players: Partial<BW<Player>>;
+        time: {
+          start: number;
+        };
       }
     >
   | ReducerAction<
@@ -134,31 +145,33 @@ function reducer<A extends GameRdcrActn>(
 
   switch (type) {
     case "LOAD": {
-      const { game, live } = payload;
+      const { id, moves, players, time, live } = payload;
 
-      if (!game) {
-        return {
-          game: undefined,
-        };
-      }
-
-      const instance = game ? new Chess(game.FEN) : new Chess();
+      const instance = live ? new Chess(live.FEN) : new Chess();
 
       return {
         game: {
-          id: game.id,
-          players: game.players,
-          moves: game.moves,
+          viewing:
+            moves.length > 0
+              ? {
+                  index: moves.length - 1,
+                  isLatest: true,
+                  move: moves[moves.length - 1],
+                }
+              : undefined,
+          id: id,
+          players: players,
+          moves: moves,
           time: {
-            start: game.time.start,
+            start: time.start,
           },
           live: live
             ? {
                 current: extractInstanceState(instance),
                 engine: { getValidMoves: instance.moves.bind(instance) },
                 time: {
-                  lastUpdated: game.time.now,
-                  remaining: game.time.remaining,
+                  lastUpdated: live.time.now,
+                  remaining: live.time.remaining,
                 },
               }
             : undefined,
@@ -353,18 +366,18 @@ export const GameProvider = ({
       dispatchGame({
         type: "LOAD",
         payload: {
-          live: true,
-          game: {
-            id: data.id,
-            players: data.players,
+          live: {
             FEN: data.FEN,
             time: {
-              start: data.time.start,
               now: data.time.now,
               remaining: data.time.remaining,
             },
-            captured: data.captured,
-            moves: data.moves,
+          },
+          id: data.id,
+          moves: data.moves,
+          players: data.players,
+          time: {
+            start: data.time.start,
           },
         },
       });
@@ -426,29 +439,29 @@ export const GameProvider = ({
   }, [ws, onWSMessageEvent]);
 
   useEffect(() => {
-    //fetch initial context value from server
+    //fetch initial LIVE context value from server
     if (query.isFetched && query.data) {
       const { data } = query;
-      dispatchGame({
-        type: "LOAD",
-        payload: {
-          game: data.present
-            ? {
-                id: data.game.id,
-                FEN: data.game.FEN,
-                players: data.game.players,
-                captured: data.game.captured,
-                time: {
-                  start: data.game.time.start,
-                  now: data.game.time.now,
-                  remaining: data.game.time.remaining,
-                },
-                moves: data.game.moves,
-              }
-            : undefined,
-          live: data.present,
-        },
-      });
+
+      if (data.present)
+        dispatchGame({
+          type: "LOAD",
+          payload: {
+            id: data.game.id,
+            moves: data.game.moves,
+            players: data.game.players,
+            time: {
+              start: data.game.time.start,
+            },
+            live: {
+              FEN: data.game.FEN,
+              time: {
+                now: data.game.time.now,
+                remaining: data.game.time.remaining,
+              },
+            },
+          },
+        });
     }
 
     return;
