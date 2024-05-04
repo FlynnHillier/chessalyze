@@ -54,11 +54,11 @@ export default function ActiveGamePanel({ children }: { children: ReactNode }) {
 
   return (
     <Panel>
-      {game.game && (
+      {game.game?.live && (
         <div className="flex flex-row items-center justify-center gap-2">
-          {PieceIcon("k", game.game.state.turn)}
+          {PieceIcon("k", game.game.live.current.turn)}
           <span className="text-lg font-bold">
-            {game.game?.state.turn === "w" ? "white" : "black"} to move
+            {game.game.live.current.turn === "w" ? "white" : "black"} to move
           </span>
         </div>
       )}
@@ -77,7 +77,7 @@ export default function ActiveGamePanel({ children }: { children: ReactNode }) {
                   onClick={() => {
                     if (w)
                       dispatchGame({
-                        type: "VIEW",
+                        type: "STEP",
                         payload: {
                           index: { value: i * 2 },
                         },
@@ -92,7 +92,7 @@ export default function ActiveGamePanel({ children }: { children: ReactNode }) {
                   onClick={() => {
                     if (b)
                       dispatchGame({
-                        type: "VIEW",
+                        type: "STEP",
                         payload: {
                           index: { value: i * 2 + 1 },
                         },
@@ -147,7 +147,7 @@ export default function ActiveGamePanel({ children }: { children: ReactNode }) {
           <button
             onClick={() => {
               dispatchGame({
-                type: "VIEW",
+                type: "STEP",
                 payload: {
                   index: {
                     relative: -1,
@@ -169,7 +169,7 @@ export default function ActiveGamePanel({ children }: { children: ReactNode }) {
           <button
             onClick={() => {
               dispatchGame({
-                type: "VIEW",
+                type: "STEP",
                 payload: {
                   index: {
                     relative: 1,

@@ -129,7 +129,6 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
 export default function ChessInterface() {
   const game = useGame().game;
   const conclusion = useGame().conclusion;
-  const live = useGame().live;
   const { user } = useSession();
   const trpcMoveMutation = trpc.game.play.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
@@ -144,8 +143,8 @@ export default function ChessInterface() {
    * When game context time is updated, push update to state also.
    */
   useEffect(() => {
-    setTime(game?.time.remaining);
-  }, [game?.time.lastUpdated]);
+    if (game?.live) setTime(game?.live.time.remaining);
+  }, [game?.live?.time.lastUpdated]);
 
   /**
    * Dictate the interval at which the currently active clock is updated at.
@@ -157,9 +156,9 @@ export default function ChessInterface() {
    */
   useEffect(() => {
     setClockUpdateInterval(() => {
-      if (!time || !game) return null;
+      if (!time || !game?.live) return null;
 
-      if (time[game.state.turn] < 10000) return 100;
+      if (time[game.live.current.turn] < 10000) return 100;
 
       return 250;
     });
@@ -172,14 +171,14 @@ export default function ChessInterface() {
    */
   useInterval(() => {
     setTime((prev) => {
-      if (!game?.time.remaining) return undefined;
+      if (!game?.live?.time.remaining) return undefined;
 
       return {
-        w: prev?.w ?? game.time.remaining.w,
-        b: prev?.b ?? game.time.remaining.b,
-        [game.state.turn]:
-          game.time.remaining[game.state.turn] -
-          (Date.now() - game.time.lastUpdated),
+        w: prev?.w ?? game.live.time.remaining.w,
+        b: prev?.b ?? game.live.time.remaining.b,
+        [game.live.current.turn]:
+          game.live.time.remaining[game.live.current.turn] -
+          (Date.now() - game.live.time.lastUpdated),
       };
     });
   }, clockUpdateInterval);
@@ -192,8 +191,8 @@ export default function ChessInterface() {
    *  Decide and set board orientation based on the current match's players.
    */
   useEffect(() => {
-    setOrientation(user?.id === game?.players.b.pid ? "b" : "w");
-  }, [user, game?.players.b.pid, game?.players.w.pid]);
+    setOrientation(user?.id === game?.players.b?.pid ? "b" : "w");
+  }, [user, game?.players.b?.pid, game?.players.w?.pid]);
 
   /**
    *
@@ -217,20 +216,19 @@ export default function ChessInterface() {
       </div>
       <div className="grid w-full grid-cols-1 grid-rows-1 [&>div]:col-start-1 [&>div]:row-start-1 ">
         <ChessBoard
-          turn={game?.state.turn}
+          turn={game?.live?.current.turn}
           FEN={
             game?.viewing?.move.fen ??
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           }
-          getValidMoves={game?.engine.getValidMoves}
+          getValidMoves={game?.live?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
           disabled={
-            !game ||
-            !live ||
+            !game?.live ||
+            game.live.current.turn !== orientation ||
             (game.viewing && !game.viewing.isLatest) ||
-            (!game.viewing && game.moves.length > 0) ||
-            game.state.turn !== orientation
+            (!game.viewing && game.moves.length > 0)
           }
         />
         <GameEndOverlay

@@ -13,13 +13,10 @@ import { Chess } from "chess.js";
 import { UUID } from "~/types/common.types";
 import {
   BW,
-  CapturableSymbol,
   Player,
-  PromotionSymbol,
   GameSnapshot,
   Color,
   Movement,
-  GameSummary,
   VerboseMovement,
   GameTermination,
 } from "~/types/game.types";
@@ -35,28 +32,30 @@ import { ExactlyOneKey } from "~/types/util/util.types";
 export type GAMECONTEXT = {
   game?: {
     id: UUID;
-    players: BW<Player>;
-    captured: BW<{ [key in CapturableSymbol]: number }>;
-    state: {
-      fen: string;
-      turn: Color;
-    };
-    engine: {
-      getValidMoves: Chess["moves"];
-    };
-    time: {
-      start: number;
-      lastUpdated: number;
-      remaining?: BW<number>;
-    };
+    players: Partial<BW<Player>>;
     moves: VerboseMovement[];
     viewing?: {
-      move: VerboseMovement; // This should be the move that allows retrospective viewing
+      move: VerboseMovement;
       index: number;
       isLatest: boolean;
     };
+    time: {
+      start: number;
+    };
+    live?: {
+      time: {
+        lastUpdated: number;
+        remaining?: BW<number>;
+      };
+      current: {
+        fen: string;
+        turn: Color;
+      };
+      engine: {
+        getValidMoves: Chess["moves"];
+      };
+    };
   };
-  live: boolean;
   conclusion?: {
     victor?: Color;
     reason: GameTermination;
@@ -65,10 +64,8 @@ export type GAMECONTEXT = {
 
 const defaultContext: GAMECONTEXT = {
   game: undefined,
-  live: false,
+  conclusion: undefined,
 };
-
-type RdcrActnMove = ReducerAction<"MOVE", VerboseMovement>;
 
 /**
  * Convert instance method exposed state into static object suitable for context.
@@ -78,7 +75,7 @@ type RdcrActnMove = ReducerAction<"MOVE", VerboseMovement>;
  */
 function extractInstanceState(
   instance: Chess,
-): NonNullable<GAMECONTEXT["game"]>["state"] {
+): NonNullable<NonNullable<GAMECONTEXT["game"]>["live"]>["current"] {
   return {
     fen: instance.fen(),
     turn: instance.turn(),
@@ -119,7 +116,7 @@ type GameRdcrActn =
     >
   | ReducerAction<"MOVE", VerboseMovement>
   | ReducerAction<
-      "VIEW",
+      "STEP",
       ExactlyOneKey<{
         latest: true;
         index: ExactlyOneKey<{
@@ -142,36 +139,37 @@ function reducer<A extends GameRdcrActn>(
       if (!game) {
         return {
           game: undefined,
-          live: false,
         };
       }
 
       const instance = game ? new Chess(game.FEN) : new Chess();
 
       return {
-        game: game && {
+        game: {
           id: game.id,
           players: game.players,
-          captured: game.captured,
-          state: extractInstanceState(instance),
-          engine: {
-            getValidMoves: instance.moves.bind(instance),
-          },
+          moves: game.moves,
           time: {
             start: game.time.start,
-            lastUpdated: game.time.now,
-            remaining: game.time.remaining,
           },
-          moves: game.moves,
+          live: live
+            ? {
+                current: extractInstanceState(instance),
+                engine: { getValidMoves: instance.moves.bind(instance) },
+                time: {
+                  lastUpdated: game.time.now,
+                  remaining: game.time.remaining,
+                },
+              }
+            : undefined,
         },
-        live: live,
       };
     }
     case "MOVE": {
-      if (!state.game || !state.live) return { ...state };
+      if (!state.game?.live) return { ...state };
 
-      const { move, time, initiator, fen } = payload;
-      const instance = new Chess(state.game.state.fen);
+      const { move, time, initiator, fen, captured } = payload;
+      const instance = new Chess(state.game.live.current.fen);
       const turn = instance.turn();
 
       if (!moveIsValid(instance, move)) {
@@ -186,11 +184,6 @@ function reducer<A extends GameRdcrActn>(
         promotion: payload.move.promotion,
       });
 
-      if (movement?.captured) {
-        // Update captured pieces
-        state.game.captured[turn][movement.captured as PromotionSymbol]++;
-      }
-
       const moves = [
         ...state.game.moves,
         {
@@ -198,6 +191,7 @@ function reducer<A extends GameRdcrActn>(
           fen: fen,
           move: move,
           time: time,
+          captured: captured,
         },
       ];
 
@@ -205,16 +199,17 @@ function reducer<A extends GameRdcrActn>(
         ...state,
         game: {
           ...state.game,
-          state: extractInstanceState(instance),
-          engine: {
-            getValidMoves: instance.moves.bind(instance),
-          },
-          time: {
-            start: state.game.time.start,
-            lastUpdated: time.timestamp,
-            remaining: time.remaining,
-          },
           moves: moves,
+          live: {
+            current: extractInstanceState(instance),
+            engine: {
+              getValidMoves: instance.moves.bind(instance),
+            },
+            time: {
+              lastUpdated: time.timestamp,
+              remaining: time.remaining,
+            },
+          },
           viewing: {
             isLatest: true,
             index: moves.length - 1,
@@ -225,12 +220,16 @@ function reducer<A extends GameRdcrActn>(
     }
     case "END": {
       return {
-        game: state.game,
-        live: false,
+        game: state.game
+          ? {
+              ...state.game,
+              live: undefined,
+            }
+          : undefined,
         conclusion: payload.conclusion,
       };
     }
-    case "VIEW": {
+    case "STEP": {
       if (!state.game) return { ...state };
 
       // View latest
@@ -338,6 +337,7 @@ export const GameProvider = ({
             moveDuration: data.time.moveDuration,
           },
           initiator: data.initiator,
+          captured: data.captured,
         },
       });
     },
