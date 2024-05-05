@@ -14,7 +14,6 @@ import { UUID } from "~/types/common.types";
 import {
   BW,
   Player,
-  GameSnapshot,
   Color,
   Movement,
   VerboseMovement,
@@ -24,7 +23,7 @@ import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
 import { useWebSocket } from "next-ws/client";
 import { GameMoveEvent } from "~/lib/ws/events/game/game.move.event.ws";
-import { validateWSMessage } from "~/app/_components/providers/ws.provider";
+import { validateWSMessage } from "~/app/_components/providers/client/ws.provider";
 import { GameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
 import { GameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
 import { ExactlyOneKey } from "~/types/util/util.types";
@@ -62,6 +61,75 @@ export type GAMECONTEXT = {
   };
 };
 
+//TODO: use ts-deep omit (after gh issue response) type to omit getValidMoves. This way if GAMECONTEXT changes, SERVERGAMECONTEXT will not 'break'
+/**
+ * Initial game context provided by server rendering
+ *
+ * (Contains exclusively serializable values)
+ */
+export type SERVERGAMECONTEXT = {
+  game?: {
+    id: UUID;
+    players: Partial<BW<Player>>;
+    moves: VerboseMovement[];
+    viewing?: {
+      move: VerboseMovement;
+      index: number;
+      isLatest: boolean;
+    };
+    time: {
+      start: number;
+    };
+    live?: {
+      time: {
+        lastUpdated: number;
+        remaining?: BW<number>;
+      };
+      current: {
+        fen: string;
+        turn: Color;
+      };
+      engine: {
+        // getValidMoves: Chess["moves"];
+      };
+    };
+  };
+  conclusion?: {
+    victor?: Color;
+    reason: GameTermination;
+  };
+};
+
+/**
+ * Convert passed server game context to client game context
+ *
+ * (necessary because server can only pass serializable values, hence functions must be serialzed on client side)
+ */
+function serverGameContextToClientGameContext(
+  serverGameContext: SERVERGAMECONTEXT,
+): GAMECONTEXT {
+  const instance = serverGameContext.game?.live
+    ? new Chess(serverGameContext.game.live.current.fen)
+    : new Chess();
+
+  return {
+    game: serverGameContext.game && {
+      ...serverGameContext.game,
+      live: serverGameContext.game.live && {
+        ...serverGameContext.game.live,
+        engine: {
+          ...serverGameContext.game.live.engine,
+          getValidMoves: instance.moves.bind(instance),
+        },
+      },
+    },
+    conclusion: undefined,
+  };
+}
+
+/**
+ * Default game context to be used if no initial value is passed
+ */
 const defaultContext: GAMECONTEXT = {
   game: undefined,
   conclusion: undefined,
@@ -320,11 +388,14 @@ export const GameProvider = ({
   initial,
 }: {
   children: ReactNode;
-  initial?: GAMECONTEXT;
+  initial?: SERVERGAMECONTEXT;
 }) => {
   const ws = useWebSocket();
 
-  const [game, dispatchGame] = useReducer(reducer, initial ?? defaultContext);
+  const [game, dispatchGame] = useReducer(
+    reducer,
+    !initial ? defaultContext : serverGameContextToClientGameContext(initial),
+  );
   const query = trpc.game.status.useQuery();
 
   /**
@@ -438,34 +509,36 @@ export const GameProvider = ({
     };
   }, [ws, onWSMessageEvent]);
 
-  useEffect(() => {
-    //fetch initial LIVE context value from server
-    if (query.isFetched && query.data) {
-      const { data } = query;
+  // useEffect(() => {
+  //   //fetch LIVE context value from server
+  //   if (query.isFetched && query.data) {
+  //     const { data } = query;
 
-      if (data.present)
-        dispatchGame({
-          type: "LOAD",
-          payload: {
-            id: data.game.id,
-            moves: data.game.moves,
-            players: data.game.players,
-            time: {
-              start: data.game.time.start,
-            },
-            live: {
-              FEN: data.game.FEN,
-              time: {
-                now: data.game.time.now,
-                remaining: data.game.time.remaining,
-              },
-            },
-          },
-        });
-    }
+  //     console.log("fetched", data.game);
 
-    return;
-  }, [query.isLoading]);
+  //     if (data.present)
+  //       dispatchGame({
+  //         type: "LOAD",
+  //         payload: {
+  //           id: data.game.id,
+  //           moves: data.game.moves,
+  //           players: data.game.players,
+  //           time: {
+  //             start: data.game.time.start,
+  //           },
+  //           live: {
+  //             FEN: data.game.FEN,
+  //             time: {
+  //               now: data.game.time.now,
+  //               remaining: data.game.time.remaining,
+  //             },
+  //           },
+  //         },
+  //       });
+  //   }
+
+  //   return;
+  // }, [query.isLoading]);
 
   return (
     <GameContext.Provider value={{ game, dispatchGame }}>

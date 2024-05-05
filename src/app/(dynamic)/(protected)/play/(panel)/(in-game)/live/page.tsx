@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGame } from "~/app/_components/providers/game.provider";
+import { useGame } from "~/app/_components/providers/client/game.provider";
 import AsyncButton from "~/app/_components/common/buttons/AsyncButton";
 import { FiFlag } from "react-icons/fi";
 import SyncLoader from "~/app/_components/loading/SyncLoader";

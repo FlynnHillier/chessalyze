@@ -11,7 +11,7 @@ import {
 import { ReducerAction } from "~/types/util/context.types";
 
 import { GameTimePreset, Color } from "~/types/game.types";
-import { useLobby } from "~/app/_components/providers/lobby.provider";
+import { useLobby } from "~/app/_components/providers/client/lobby.provider";
 
 type ChallengeConfiguration = {
   time: {

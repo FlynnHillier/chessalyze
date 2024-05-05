@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
-import SessionProvider from "~/app/_components/providers/session.provider";
-import { TRPCProvider } from "~/app/_components/providers/trpc.provider";
+import SessionProvider from "~/app/_components/providers/client/session.provider";
+import { TRPCProvider } from "~/app/_components/providers/client/trpc.provider";
 import { getServerSession } from "~/lib/lucia/util.lucia";
 
 /**

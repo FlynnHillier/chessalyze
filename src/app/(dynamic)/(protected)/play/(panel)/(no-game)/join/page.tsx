@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import {
   useDispatchGame,
   useGame,
-} from "~/app/_components/providers/game.provider";
+} from "~/app/_components/providers/client/game.provider";
 import { trpc } from "~/app/_trpc/client";
 import { LobbyConfig } from "~/lib/game/LobbyInstance";
 import Panel from "~/app/(dynamic)/(protected)/play/(panel)/_components/Panel";
@@ -147,14 +147,10 @@ export default function JoinPanel() {
 
   useEffect(() => {
     const target = searchParams.get("challenge");
-    if (!target || game.game) return router.push("/play");
+    if (!target || game.game) return;
 
     queryLobby(target);
   }, []);
-
-  useEffect(() => {
-    if (game.game) router.push("/play/live");
-  }, [game.game]);
 
   //TODO: add actual UI here
   // - once friends are added, option to invite friends appears here.

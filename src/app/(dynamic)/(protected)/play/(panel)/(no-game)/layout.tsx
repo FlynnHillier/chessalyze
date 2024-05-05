@@ -4,6 +4,7 @@ import { GameMaster } from "~/lib/game/GameMaster";
 import { getServerSession } from "~/lib/lucia/util.lucia";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
+import { RedirectIfGameContextLive } from "~/app/_components/controllers/client/RedirectIfGameContext";
 
 export default async function NotInGamePanelLayout({
   children,
@@ -16,5 +17,10 @@ export default async function NotInGamePanelLayout({
     redirect("/play/live");
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <RedirectIfGameContextLive />
+      {children}
+    </>
+  );
 }

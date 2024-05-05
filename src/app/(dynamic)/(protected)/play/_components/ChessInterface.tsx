@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useInterval } from "usehooks-ts";
 
 import { ChessBoard } from "./ChessBoard";
-import { useGame } from "~/app/_components/providers/game.provider";
+import { useGame } from "~/app/_components/providers/client/game.provider";
 import { Movement, Player, BW, Color } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
-import { useSession } from "~/app/_components/providers/session.provider";
+import { useSession } from "~/app/_components/providers/client/session.provider";
 import { FaChessKing, FaChess } from "react-icons/fa";
 import { FaRegChessKing } from "react-icons/fa6";
 import Image from "next/image";

@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 
-import { useGame } from "~/app/_components/providers/game.provider";
+import { useGame } from "~/app/_components/providers/client/game.provider";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 

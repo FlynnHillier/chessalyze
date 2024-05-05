@@ -4,7 +4,7 @@ import { useRef, useEffect, useMemo } from "react";
 import {
   useGame,
   useDispatchGame,
-} from "~/app/_components/providers/game.provider";
+} from "~/app/_components/providers/client/game.provider";
 import { VerboseMovement } from "~/types/game.types";
 import { WhitePieceIcon, BlackPieceIcon } from "../../../_components/PieceIcon";
 import { LuArrowBigLeftDash, LuArrowBigRightDash } from "react-icons/lu";

@@ -348,7 +348,11 @@ export class GameInstance {
     return this.time.isTimed;
   }
 
-  public getTimes() {
+  public getTimeData() {
+    return this.time;
+  }
+
+  public getRemainingTimes() {
     return this.time.clock?.instance.getDurations();
   }
 
@@ -358,6 +362,14 @@ export class GameInstance {
 
   public getTurn(): Color {
     return this.game.turn();
+  }
+
+  /**
+   *
+   * @returns game move history
+   */
+  public getMoveHistory(): VerboseMovement[] {
+    return this.moveHistory;
   }
 
   /**
