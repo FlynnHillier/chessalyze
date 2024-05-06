@@ -18,12 +18,12 @@ export default function TraverseGameMovements() {
   const game = useGame();
   const dispatchGame = useDispatchGame();
 
-  const movesScrollEndRef = useRef<null | HTMLSpanElement>(null);
+  const viewingMoveRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    //When a new move happens bring it into view.
-    movesScrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [game.game?.moves]);
+    //When the 'viewed' move changes, bring it into view.
+    viewingMoveRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [game.game?.moves, game.game?.viewing]);
 
   /**
    * Paired move history, [white move, black move][]
@@ -45,7 +45,7 @@ export default function TraverseGameMovements() {
         [] as [VerboseMovement?, VerboseMovement?][],
       );
 
-      if (game.game.moves.length % 2 === 0) {
+      if (game.game.live && game.game.moves.length % 2 === 0) {
         moves.push([undefined, undefined]);
       }
 
@@ -63,6 +63,11 @@ export default function TraverseGameMovements() {
             >
               <span className="py-0.5 font-medium ">{i + 1}.</span>
               <div
+                ref={
+                  game.game?.viewing && game.game.viewing.index === i * 2
+                    ? viewingMoveRef
+                    : null
+                }
                 className={`flex h-full w-1/4 flex-row items-center justify-center gap-0.5 rounded-sm text-center font-bold ${w ? "hover:cursor-pointer" : ""} ${w && w === game.game?.viewing?.move ? "bg-stone-500" : ""}`}
                 onClick={() => {
                   if (w)
@@ -78,6 +83,11 @@ export default function TraverseGameMovements() {
                 {w && w.move.promotion ? "+" : ""}
               </div>
               <div
+                ref={
+                  game.game?.viewing && game.game.viewing.index === i * 2 + 1
+                    ? viewingMoveRef
+                    : null
+                }
                 className={`flex h-full w-1/4 flex-row items-center justify-center gap-0.5 rounded-sm text-center font-bold ${b ? "hover:cursor-pointer" : ""} ${b && b === game.game?.viewing?.move ? "bg-stone-500" : ""}`}
                 onClick={() => {
                   if (b)
@@ -131,7 +141,7 @@ export default function TraverseGameMovements() {
             </div>
           );
         })}
-        <span ref={movesScrollEndRef} />
+        <div ref={game.game?.viewing?.isLatest ? viewingMoveRef : null} />
       </div>
       <div className="flex h-fit w-full flex-row items-center justify-start gap-0.5 py-1">
         <button
