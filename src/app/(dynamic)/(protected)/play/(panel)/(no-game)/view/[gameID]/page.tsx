@@ -1,4 +1,4 @@
-import DispatchServerGameContext from "~/app/_components/controllers/client/DispatchGameContext";
+import DispatchServerGameContext from "~/app/_components/providers/client/dispatchers/DispatchServerGameContext";
 import Panel from "../../../_components/Panel";
 import TraverseGameMovements from "../../../_components/interfaces/TraverseGameMovements";
 import { redirect } from "next/navigation";

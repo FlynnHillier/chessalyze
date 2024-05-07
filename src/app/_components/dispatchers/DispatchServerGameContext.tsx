@@ -4,7 +4,7 @@ import { ReactNode, useEffect } from "react";
 import {
   SERVERGAMECONTEXT,
   useDispatchGame,
-} from "../../providers/client/game.provider";
+} from "../providers/client/game.provider";
 
 //TODO: can minimise / refine type of serverGame (not as much info as is current is required.)
 
