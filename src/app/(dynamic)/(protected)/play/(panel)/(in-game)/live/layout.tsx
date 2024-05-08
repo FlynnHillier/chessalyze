@@ -14,8 +14,10 @@ export default function LiveLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!game.game) router.push("/play");
-  }, [game.game]);
+    if (game.game?.live) return;
+    if (game.game && !game.game.live) router.push(`/play/view/${game.game.id}`);
+    else router.push("/play");
+  }, [game.game, game.game?.live]);
 
   return <>{children}</>;
 }
