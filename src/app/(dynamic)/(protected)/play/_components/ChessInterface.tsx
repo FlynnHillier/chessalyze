@@ -211,7 +211,15 @@ export default function ChessInterface() {
       <div className=" w-full overflow-hidden rounded-t-md">
         <GameBanner
           player={orientation === "b" ? game?.players.w : game?.players.b}
-          time={time?.[orientation === "b" ? "w" : "b"]}
+          time={
+            game?.live
+              ? time?.[orientation === "b" ? "w" : "b"]
+              : game?.viewing
+                ? game?.viewing?.move.time.remaining?.[
+                    orientation === "b" ? "w" : "b"
+                  ]
+                : undefined //TODO: replace undefined here with intial time
+          }
         />
       </div>
       <div className="grid w-full grid-cols-1 grid-rows-1 [&>div]:col-start-1 [&>div]:row-start-1 ">
@@ -242,7 +250,6 @@ export default function ChessInterface() {
       </div>
       <div className="w-full overflow-hidden rounded-b-md">
         <GameBanner
-          time={time?.[orientation === "b" ? "b" : "w"]}
           player={
             game
               ? orientation === "b"
@@ -251,6 +258,15 @@ export default function ChessInterface() {
               : user
                 ? { pid: user?.id, username: user?.name, image: user?.image }
                 : undefined
+          }
+          time={
+            game?.live
+              ? time?.[orientation === "b" ? "b" : "w"]
+              : game?.viewing
+                ? game?.viewing?.move.time.remaining?.[
+                    orientation === "b" ? "b" : "w"
+                  ]
+                : undefined //TODO: replace undefined here with intial time
           }
         />
       </div>
