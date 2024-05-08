@@ -126,6 +126,13 @@ function pgGameSummaryQueryResultToGameSummary(
         moveDuration: pgMove.t_duration,
         timestamp: pgMove.t_timestamp,
         sinceStart: pgMove.t_timestamp - pgGameSummary.timings.start,
+        remaining:
+          pgMove.t_w_remaining && pgMove.t_b_remaining
+            ? {
+                w: pgMove.t_w_remaining,
+                b: pgMove.t_b_remaining,
+              }
+            : undefined,
       },
       captured: {
         w: {
