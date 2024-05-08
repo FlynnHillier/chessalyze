@@ -1,9 +1,15 @@
-import DispatchServerGameContext from "~/app/_components/providers/client/dispatchers/DispatchServerGameContext";
+"use server";
+
+import DispatchServerGameContext from "~/app/_components/dispatchers/DispatchServerGameContext";
 import Panel from "../../../_components/Panel";
 import TraverseGameMovements from "../../../_components/interfaces/TraverseGameMovements";
 import { redirect } from "next/navigation";
 import { getGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
 
+/**
+ * This page will load a retrospective game into game context based on the dynamic url. It will then allow the user to traverse the game but not interact / make changes to it
+ *
+ */
 export default async function ViewRetrospectiveGamePage({
   params,
 }: {
@@ -15,7 +21,7 @@ export default async function ViewRetrospectiveGamePage({
 
   return (
     <DispatchServerGameContext
-      serverGame={{
+      payload={{
         id: GAME.id,
         moves: GAME.moves,
         players: GAME.players,
