@@ -168,25 +168,34 @@ function moveIsValid(instance: Chess, move: Movement): boolean {
     );
 }
 
-type GameRdcrActn =
-  | ReducerAction<
-      "LOAD",
-      {
-        live?: {
-          FEN: string;
-          time: {
-            now: number;
-            remaining?: BW<number>;
-          };
-        };
-        id: string;
-        moves: VerboseMovement[];
-        players: Partial<BW<Player>>;
+export type GameRdcrActnLOAD = ReducerAction<
+  "LOAD",
+  {
+    game: {
+      live?: {
+        FEN: string;
         time: {
-          start: number;
+          now: number;
+          remaining?: BW<number>;
         };
-      }
-    >
+      };
+      id: string;
+      moves: VerboseMovement[];
+      players: Partial<BW<Player>>;
+      time: {
+        start: number;
+      };
+    };
+    config?: {
+      conclusion?: {
+        maintain: boolean;
+      };
+    };
+  }
+>;
+
+type GameRdcrActn =
+  | GameRdcrActnLOAD
   | ReducerAction<
       "END",
       {
@@ -203,7 +212,8 @@ type GameRdcrActn =
           value: number;
         }>;
       }>
-    >;
+    >
+  | ReducerAction<"HIDE_CONCLUSION", {}>;
 
 function reducer<A extends GameRdcrActn>(
   state: GAMECONTEXT,
@@ -213,7 +223,7 @@ function reducer<A extends GameRdcrActn>(
 
   switch (type) {
     case "LOAD": {
-      const { id, moves, players, time, live } = payload;
+      const { id, moves, players, time, live } = payload.game;
 
       const instance = live ? new Chess(live.FEN) : new Chess();
 
@@ -244,6 +254,9 @@ function reducer<A extends GameRdcrActn>(
               }
             : undefined,
         },
+        conclusion: payload.config?.conclusion?.maintain
+          ? state.conclusion
+          : undefined,
       };
     }
     case "MOVE": {
@@ -363,6 +376,12 @@ function reducer<A extends GameRdcrActn>(
         },
       };
     }
+    case "HIDE_CONCLUSION": {
+      return {
+        ...state,
+        conclusion: undefined,
+      };
+    }
     default:
       return { ...state };
   }
@@ -437,18 +456,25 @@ export const GameProvider = ({
       dispatchGame({
         type: "LOAD",
         payload: {
-          live: {
-            FEN: data.FEN,
+          game: {
+            live: {
+              FEN: data.FEN,
+              time: {
+                now: data.time.now,
+                remaining: data.time.remaining,
+              },
+            },
+            id: data.id,
+            moves: data.moves,
+            players: data.players,
             time: {
-              now: data.time.now,
-              remaining: data.time.remaining,
+              start: data.time.start,
             },
           },
-          id: data.id,
-          moves: data.moves,
-          players: data.players,
-          time: {
-            start: data.time.start,
+          config: {
+            conclusion: {
+              maintain: false,
+            },
           },
         },
       });

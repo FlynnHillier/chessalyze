@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useInterval } from "usehooks-ts";
 
 import { ChessBoard } from "./ChessBoard";
-import { useGame } from "~/app/_components/providers/client/game.provider";
+import {
+  useDispatchGame,
+  useGame,
+} from "~/app/_components/providers/client/game.provider";
 import { Movement, Player, BW, Color } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { useSession } from "~/app/_components/providers/client/session.provider";
@@ -127,13 +130,13 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
  *
  */
 export default function ChessInterface() {
+  const dispatchGame = useDispatchGame();
+
   const game = useGame().game;
   const conclusion = useGame().conclusion;
   const { user } = useSession();
   const trpcMoveMutation = trpc.game.play.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
-  const [showGameEndOverlay, setShowGameEndOverlay] =
-    useState<boolean>(!!conclusion);
   const [time, setTime] = useState<BW<number>>();
   const [clockUpdateInterval, setClockUpdateInterval] = useState<number | null>(
     null,
@@ -182,10 +185,6 @@ export default function ChessInterface() {
       };
     });
   }, clockUpdateInterval);
-
-  useEffect(() => {
-    setShowGameEndOverlay(!!conclusion);
-  }, [conclusion]);
 
   /**
    *  Decide and set board orientation based on the current match's players.
@@ -240,9 +239,12 @@ export default function ChessInterface() {
           }
         />
         <GameEndOverlay
-          isShown={showGameEndOverlay}
+          isShown={!!conclusion}
           hideSelf={() => {
-            setShowGameEndOverlay(false);
+            dispatchGame({
+              type: "HIDE_CONCLUSION",
+              payload: {},
+            });
           }}
           reason={conclusion?.reason}
           victor={conclusion?.victor}

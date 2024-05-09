@@ -22,11 +22,18 @@ export default async function ViewRetrospectiveGamePage({
   return (
     <DispatchServerGameContext
       payload={{
-        id: GAME.id,
-        moves: GAME.moves,
-        players: GAME.players,
-        time: {
-          start: GAME.time.start,
+        game: {
+          id: GAME.id,
+          moves: GAME.moves,
+          players: GAME.players,
+          time: {
+            start: GAME.time.start,
+          },
+        },
+        config: {
+          conclusion: {
+            maintain: true, //TODO: change this so url hash is used. e.g if /play/view/[gameID]#conclusion
+          },
         },
       }}
     >
