@@ -3,6 +3,7 @@ import Image from "next/image";
 import { FaCrown } from "react-icons/fa";
 import { MdTimerOff, MdTimer } from "react-icons/md";
 import { LiveRelativeTime } from "react-live-relative-time";
+import ImageWithFallback from "../../common/image/ImageWithFallback";
 
 function PlayerBanner({
   player,
@@ -44,8 +45,10 @@ function PlayerBanner({
 function GameSummaryPill({ summary }: { summary: GameSummary }) {
   return (
     <div className="flex h-32 w-full flex-row items-center gap-2 rounded bg-stone-900 p-2">
-      <img
+      <ImageWithFallback
         src={`/chess/games/${summary.id}.png`}
+        fallbackSrc={"/chess/games/_default.png"}
+        alt={`game: ${summary.id}`}
         className="col-span-1 aspect-square h-full rounded object-fill"
       />
       <div className="flex h-full w-full flex-col gap-1 ">
