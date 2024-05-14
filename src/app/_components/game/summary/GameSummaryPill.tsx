@@ -1,9 +1,12 @@
+"use client";
+
 import { GameSummary, Player } from "~/types/game.types";
 import Image from "next/image";
 import { FaCrown } from "react-icons/fa";
 import { MdTimerOff, MdTimer } from "react-icons/md";
 import { LiveRelativeTime } from "react-live-relative-time";
 import ImageWithFallback from "../../common/image/ImageWithFallback";
+import { useRouter } from "next/navigation";
 
 function PlayerBanner({
   player,
@@ -43,8 +46,15 @@ function PlayerBanner({
  *
  */
 function GameSummaryPill({ summary }: { summary: GameSummary }) {
+  const router = useRouter();
+
   return (
-    <div className="flex h-32 w-full flex-row items-center gap-2 rounded bg-stone-900 p-2">
+    <div
+      className="flex h-32 w-full flex-row items-center gap-2 rounded bg-stone-900 p-2 hover:cursor-pointer"
+      onClick={() => {
+        router.push(`/play/view/${summary.id}`);
+      }}
+    >
       <ImageWithFallback
         src={`/chess/games/${summary.id}.png`}
         fallbackSrc={"/chess/games/_default.png"}
