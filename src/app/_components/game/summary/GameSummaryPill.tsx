@@ -90,10 +90,12 @@ export default function GameSummarysOverview({
   summarys: GameSummary[];
 }) {
   return (
-    <div className="flex w-fit flex-col gap-2 rounded bg-stone-800 p-3">
-      {summarys.map((summary) => (
-        <GameSummaryPill summary={summary} key={summary.id} />
-      ))}
+    <div className="min-w-f flex max-h-full w-fit flex-col gap-3 rounded bg-stone-800 p-3">
+      <div className="flex flex-col gap-3 overflow-scroll scrollbar-hide">
+        {summarys.map((summary) => (
+          <GameSummaryPill summary={summary} key={summary.id} />
+        ))}
+      </div>
     </div>
   );
 }

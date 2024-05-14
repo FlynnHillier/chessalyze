@@ -5,10 +5,6 @@ import { serverClient } from "~/app/_trpc/serverClient";
 
 export default async function Home() {
   return (
-    <main>
-      <GameSummarysOverview
-        summarys={await serverClient.game.summary.recent()}
-      />
-    </main>
+    <GameSummarysOverview summarys={await serverClient.game.summary.recent()} />
   );
 }
