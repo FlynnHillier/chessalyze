@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
+type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "onError"> & {
   src: string;
   fallbackSrc?: string;
 };
@@ -10,22 +10,45 @@ type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
 export default function ImageWithFallback({
   fallbackSrc,
   src,
-  ...props
+  ...restProps
 }: Props) {
-  const [hasErrored, setHasErrored] = useState<boolean>(false);
-  const [activeSrc, setActiveSrc] = useState<string>(src);
+  const [activeSrc, setActiveSrc] = useState<string | undefined>(src);
+  const [hasLoaded, setHasLoaded] = useState<boolean>(false);
 
   useEffect(() => {
-    const img = new Image();
-    img.onerror = () => {
-      setHasErrored(true);
+    const dummy = new Image();
+
+    dummy.onerror = () => {
+      if (fallbackSrc) setActiveSrc(fallbackSrc);
     };
-    img.src = activeSrc;
-  }, []);
+
+    dummy.onload = () => {
+      setHasLoaded(true);
+    };
+
+    dummy.src = src;
+  }, [src]);
 
   useEffect(() => {
-    if (hasErrored && fallbackSrc !== undefined) setActiveSrc(fallbackSrc);
-  }, [hasErrored]);
+    if (activeSrc && activeSrc === src) return;
 
-  return <img {...props} src={activeSrc} />;
+    setActiveSrc(fallbackSrc);
+  }, [fallbackSrc]);
+
+  return (
+    <img
+      {...restProps}
+      style={{
+        visibility:
+          !hasLoaded && activeSrc !== fallbackSrc
+            ? "hidden"
+            : restProps.style?.visibility,
+        ...restProps.style,
+      }}
+      src={activeSrc}
+      onLoad={() => {
+        setHasLoaded(true);
+      }}
+    />
+  );
 }
