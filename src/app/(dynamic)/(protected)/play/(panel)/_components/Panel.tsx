@@ -88,7 +88,7 @@ export default function Panel<
             </div>
           )}
 
-        <div className="flex h-fit flex-col gap-2 bg-stone-900 p-3 text-center font-semibold">
+        <div className="flex h-fit flex-col items-center gap-2 bg-stone-900 p-3 text-center font-semibold">
           {error && (
             <div className="w-full text-wrap rounded bg-red-800 p-2 text-center">
               {error}

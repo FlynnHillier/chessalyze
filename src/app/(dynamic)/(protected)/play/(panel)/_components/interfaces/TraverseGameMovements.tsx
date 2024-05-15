@@ -53,7 +53,7 @@ export default function TraverseGameMovements() {
     }, [game.game?.moves]);
 
   return (
-    <div className=" flex h-52 flex-col rounded-sm bg-stone-950 p-3 ">
+    <div className=" flex h-52 w-full flex-col rounded-sm bg-stone-950 p-3">
       <div className="h-full w-full select-none overflow-scroll rounded-sm scrollbar-hide [&>div:nth-child(odd)]:bg-stone-900">
         {pairedMoveHistory.map(([w, b], i) => {
           return (
