@@ -130,6 +130,12 @@ export default function JoinPanel() {
             players: game.players,
             time: {
               start: game.time.start,
+              initial: {
+                remaining: game.time.initial.remaining && {
+                  w: game.time.initial.remaining.w,
+                  b: game.time.initial.remaining.b,
+                },
+              },
             },
             live: {
               FEN: game.FEN,

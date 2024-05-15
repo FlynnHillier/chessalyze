@@ -40,6 +40,9 @@ export type GAMECONTEXT = {
     };
     time: {
       start: number;
+      initial: {
+        remaining?: BW<number>;
+      };
     };
     live?: {
       time: {
@@ -79,6 +82,9 @@ export type SERVERGAMECONTEXT = {
     };
     time: {
       start: number;
+      initial: {
+        remaining?: BW<number>;
+      };
     };
     live?: {
       time: {
@@ -182,9 +188,7 @@ export type GameRdcrActnLOAD = ReducerAction<
       id: string;
       moves: VerboseMovement[];
       players: Partial<BW<Player>>;
-      time: {
-        start: number;
-      };
+      time: NonNullable<GAMECONTEXT["game"]>["time"];
     };
     config?: {
       conclusion?: {
@@ -242,6 +246,12 @@ function reducer<A extends GameRdcrActn>(
           moves: moves,
           time: {
             start: time.start,
+            initial: {
+              remaining: time.initial.remaining && {
+                w: time.initial.remaining.w,
+                b: time.initial.remaining.b,
+              },
+            },
           },
           live: live
             ? {
@@ -468,6 +478,12 @@ export const GameProvider = ({
             moves: data.moves,
             players: data.players,
             time: {
+              initial: {
+                remaining: data.time.remaining && {
+                  w: data.time.remaining.w,
+                  b: data.time.remaining.b,
+                },
+              },
               start: data.time.start,
             },
           },

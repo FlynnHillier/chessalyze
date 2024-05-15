@@ -28,6 +28,12 @@ export default async function ViewRetrospectiveGamePage({
           players: GAME.players,
           time: {
             start: GAME.time.start,
+            initial: {
+              remaining: GAME.time.clock && {
+                w: GAME.time.clock.initial.absolute.w,
+                b: GAME.time.clock.initial.absolute.b,
+              },
+            },
           },
         },
         config: {

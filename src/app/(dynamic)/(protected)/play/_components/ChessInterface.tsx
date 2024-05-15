@@ -217,7 +217,9 @@ export default function ChessInterface() {
                 ? game?.viewing?.move.time.remaining?.[
                     orientation === "b" ? "w" : "b"
                   ]
-                : undefined //TODO: replace undefined here with intial time
+                : game?.time.initial.remaining?.[
+                    orientation === "b" ? "w" : "b"
+                  ]
           }
         />
       </div>
@@ -268,7 +270,9 @@ export default function ChessInterface() {
                 ? game?.viewing?.move.time.remaining?.[
                     orientation === "b" ? "b" : "w"
                   ]
-                : undefined //TODO: replace undefined here with intial time
+                : game?.time.initial.remaining?.[
+                    orientation === "b" ? "b" : "w"
+                  ]
           }
         />
       </div>

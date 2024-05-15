@@ -22,6 +22,9 @@ const gameInstanceToServerGameContext = (
     players: instance.players,
     time: {
       start: instance.getTimeData().start,
+      initial: {
+        remaining: instance.getTimeData().clock?.initial.absolute,
+      },
     },
     live: {
       current: {

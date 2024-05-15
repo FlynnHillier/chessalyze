@@ -203,6 +203,12 @@ export class GameInstance {
         start: this.time.start,
         now: Date.now(),
         remaining: this.time.clock?.instance.getDurations(),
+        initial: {
+          remaining: this.time.clock && {
+            w: this.time.clock?.initial.absolute.w,
+            b: this.time.clock?.initial.absolute.b,
+          },
+        },
       },
       moves: this.moveHistory,
     };

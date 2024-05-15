@@ -81,6 +81,9 @@ export interface GameSnapshot {
     start: number;
     now: number;
     remaining?: BW<number>;
+    initial: {
+      remaining?: BW<number>;
+    };
   };
   moves: VerboseMovement[];
 }
