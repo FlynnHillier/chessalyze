@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FaChessKing, FaHome } from "react-icons/fa";
+import { BiSolidBinoculars } from "react-icons/bi";
 
 type NavOption = {
   url: string;
@@ -14,6 +15,11 @@ const navOptions: NavOption[] = [
     url: "/play",
     text: "play",
     icon: <FaChessKing />,
+  },
+  {
+    url: "/play/view",
+    text: "view",
+    icon: <BiSolidBinoculars />,
   },
   {
     url: "/",
