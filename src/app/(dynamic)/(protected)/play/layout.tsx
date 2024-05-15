@@ -9,11 +9,11 @@ import ChessInterface from "~/app/(dynamic)/(protected)/play/_components/ChessIn
  */
 export default function PlayLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-row justify-center gap-10">
+    <div className="box-border flex h-full max-h-full flex-row justify-center gap-10">
       <div className="h-fit w-2/5">
         <ChessInterface />
       </div>
-      <div className="h-fit w-fit overflow-hidden">{children}</div>
+      <div className="h-full w-fit overflow-hidden">{children}</div>
     </div>
   );
 }

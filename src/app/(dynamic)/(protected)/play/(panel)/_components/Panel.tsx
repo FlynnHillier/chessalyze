@@ -38,7 +38,7 @@ export default function Panel<
 
   return (
     <div
-      className="container h-fit w-full min-w-96 overflow-hidden rounded bg-stone-800 pt-2 text-center"
+      className="w-full min-w-96 overflow-hidden rounded bg-stone-800 pt-2 text-center"
       onClick={() => {
         if (error) hide();
       }}
@@ -88,7 +88,7 @@ export default function Panel<
             </div>
           )}
 
-        <div className="flex h-fit flex-col items-center gap-2 bg-stone-900 p-3 text-center font-semibold">
+        <div className="box-border flex max-h-96 flex-col items-center gap-2 overflow-y-scroll bg-stone-900  p-3 text-center font-semibold scrollbar-hide ">
           {error && (
             <div className="w-full text-wrap rounded bg-red-800 p-2 text-center">
               {error}
