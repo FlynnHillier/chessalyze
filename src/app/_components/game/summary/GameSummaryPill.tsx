@@ -16,24 +16,21 @@ function PlayerBanner({
   victor: boolean;
 }) {
   return (
-    <div className="flex flex-row items-center gap-2 text-lg font-bold">
-      <div className="relative aspect-square h-full w-9 overflow-hidden rounded">
-        <Image
+    <div className="relative flex h-full flex-row items-center justify-start gap-1 text-xs  font-bold @sm:text-lg">
+      <div className="flex w-full max-w-fit flex-row items-center gap-1 overflow-hidden text-ellipsis text-nowrap @sm:gap-2">
+        <img
           src={player?.image ?? "/blankuser.png"}
           alt={
             player
               ? `${player.username}'s profile picture`
               : "blank profile picture"
           }
-          width={0}
-          height={0}
-          sizes="100vw"
-          fill={true}
+          className="aspect-square w-6 rounded object-fill @sm:w-10"
         />
+        {player?.username ?? "unknown player"}
       </div>
-      {player?.username ?? "unknown player"}
       {victor && (
-        <span className="text-yellow-500">
+        <span className="min-w-fit text-yellow-500">
           <FaCrown />
         </span>
       )}
@@ -50,7 +47,7 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
 
   return (
     <div
-      className="flex h-32 w-full flex-row items-center gap-2 rounded bg-stone-900 p-2 hover:cursor-pointer"
+      className="flex h-20 w-52 flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal hover:cursor-pointer @sm:h-32 @sm:w-80"
       onClick={() => {
         router.push(`/play/view/${summary.id}`);
       }}
@@ -61,8 +58,8 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
         alt={`game: ${summary.id}`}
         className="col-span-1 aspect-square h-full rounded object-fill"
       />
-      <div className="flex h-full w-full flex-col gap-1 ">
-        <div className="col-span-1 flex w-full flex-col gap-3">
+      <div className="flex h-full w-full flex-col @sm:gap-1 ">
+        <div className="col-span-1 flex h-full w-full flex-col gap-1 @sm:gap-3">
           <PlayerBanner
             player={summary.players.w}
             victor={summary.conclusion.victor === "w"}
@@ -72,7 +69,7 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
             victor={summary.conclusion.victor === "b"}
           />
         </div>
-        <div className="flex h-full w-full flex-row items-center justify-between  gap-1  font-semibold">
+        <div className="flex h-full w-full flex-row items-center justify-between  gap-1  text-sm font-semibold @sm:text-base">
           <div className="flex flex-row items-center gap-x-0.5">
             {summary.time.clock ? (
               <>
@@ -92,20 +89,20 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
 }
 
 /**
- * Display brief information regarding a collection of Game Summarys
+ * A scrollable view of given game summarys.
+ *
+ * Styling should be provided, aswell as dimensions. The element will fill its parent.
  */
-export default function GameSummarysOverview({
+export function GameSummarysScroller({
   summarys,
 }: {
   summarys: GameSummary[];
 }) {
   return (
-    <div className="min-w-f flex max-h-full w-fit flex-col gap-3 rounded bg-stone-800 p-3">
-      <div className="flex flex-col gap-3 overflow-scroll scrollbar-hide">
-        {summarys.map((summary) => (
-          <GameSummaryPill summary={summary} key={summary.id} />
-        ))}
-      </div>
+    <div className="flex h-full w-full flex-row flex-wrap justify-start gap-x-2 gap-y-2 overflow-y-scroll @container-normal scrollbar-hide">
+      {summarys.map((summary) => (
+        <GameSummaryPill summary={summary} key={summary.id} />
+      ))}
     </div>
   );
 }
