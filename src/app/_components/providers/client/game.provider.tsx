@@ -27,6 +27,7 @@ import { validateWSMessage } from "~/app/_components/providers/client/ws.provide
 import { GameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
 import { GameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
 import { ExactlyOneKey } from "~/types/util/util.types";
+import { DeepOmit } from "deep-utility-types";
 
 export type GAMECONTEXT = {
   game?: {
@@ -70,41 +71,10 @@ export type GAMECONTEXT = {
  *
  * (Contains exclusively serializable values)
  */
-export type SERVERGAMECONTEXT = {
-  game?: {
-    id: UUID;
-    players: Partial<BW<Player>>;
-    moves: VerboseMovement[];
-    viewing?: {
-      move: VerboseMovement;
-      index: number;
-      isLatest: boolean;
-    };
-    time: {
-      start: number;
-      initial: {
-        remaining?: BW<number>;
-      };
-    };
-    live?: {
-      time: {
-        lastUpdated: number;
-        remaining?: BW<number>;
-      };
-      current: {
-        fen: string;
-        turn: Color;
-      };
-      engine: {
-        // getValidMoves: Chess["moves"];
-      };
-    };
-  };
-  conclusion?: {
-    victor?: Color;
-    reason: GameTermination;
-  };
-};
+export type SERVERGAMECONTEXT = DeepOmit<
+  GAMECONTEXT,
+  "game.live.engine.getValidMoves"
+>;
 
 /**
  * Convert passed server game context to client game context
