@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, ImgHTMLAttributes } from "react";
 
-type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "onError"> & {
-  src: string;
+type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "onError" | "onLoad"> & {
   fallbackSrc?: string;
 };
 
@@ -12,42 +11,36 @@ export default function ImageWithFallback({
   src,
   ...restProps
 }: Props) {
-  const [activeSrc, setActiveSrc] = useState<string | undefined>(src);
-  const [hasLoaded, setHasLoaded] = useState<boolean>(false);
+  const ref = useRef<HTMLImageElement>(null);
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
 
   useEffect(() => {
-    const dummy = new Image();
+    const img = ref.current;
+    if (!img) return;
 
-    dummy.onerror = () => {
-      if (fallbackSrc) setActiveSrc(fallbackSrc);
+    img.onload = () => {
+      setStatus("success");
     };
 
-    dummy.onload = () => {
-      setHasLoaded(true);
+    img.onerror = (event) => {
+      setStatus("error");
+      if (fallbackSrc) img.src = fallbackSrc;
     };
 
-    dummy.src = src;
-  }, [src]);
-
-  useEffect(() => {
-    if (activeSrc && activeSrc === src) return;
-
-    setActiveSrc(fallbackSrc);
-  }, [fallbackSrc]);
+    setStatus("loading");
+    if (src) img.src = src;
+  }, [ref, src, fallbackSrc]);
 
   return (
     <img
+      ref={ref}
       {...restProps}
       style={{
-        visibility:
-          !hasLoaded && activeSrc !== fallbackSrc
-            ? "hidden"
-            : restProps.style?.visibility,
         ...restProps.style,
-      }}
-      src={activeSrc}
-      onLoad={() => {
-        setHasLoaded(true);
+        visibility:
+          status === "loading" ? "hidden" : restProps.style?.visibility,
       }}
     />
   );
