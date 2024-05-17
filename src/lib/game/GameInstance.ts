@@ -107,7 +107,7 @@ export class GameInstance {
      */
     onEnd: ((summary: GameSummary) => {
       logDev({
-        message: [`ending game '${this.id}'`, summary],
+        message: [`ending game '${this.id}'`],
         color: loggingColourCode.FgGreen,
         category: loggingCategories.game,
       });
