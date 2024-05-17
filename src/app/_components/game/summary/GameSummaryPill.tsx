@@ -42,14 +42,23 @@ function PlayerBanner({
  * Display game summary in a pill format
  *
  */
-function GameSummaryPill({ summary }: { summary: GameSummary }) {
+function GameSummaryPill({
+  summary,
+  redirect,
+}: {
+  summary: GameSummary;
+  redirect?: boolean;
+}) {
   const router = useRouter();
 
   return (
     <div
-      className="flex h-20 w-52 flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal hover:cursor-pointer @sm:h-32 @sm:w-80"
+      className={
+        "flex h-24 w-60 min-w-fit flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal @sm:h-32 @sm:w-80" +
+        (redirect && "hover:cursor-pointer")
+      }
       onClick={() => {
-        router.push(`/play/view/${summary.id}`);
+        if (redirect) router.push(`/play/view/${summary.id}`);
       }}
     >
       <ImageWithFallback
@@ -58,8 +67,8 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
         alt={`game: ${summary.id}`}
         className="col-span-1 aspect-square h-full rounded object-fill"
       />
-      <div className="flex h-full w-full flex-col @sm:gap-1 ">
-        <div className="col-span-1 flex h-full w-full flex-col gap-1 @sm:gap-3">
+      <div className="flex h-full w-full flex-col gap-2 @sm:gap-1.5 ">
+        <div className="col-span-1 flex h-full w-full flex-col gap-1.5 @sm:gap-2">
           <PlayerBanner
             player={summary.players.w}
             victor={summary.conclusion.victor === "w"}
@@ -69,8 +78,8 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
             victor={summary.conclusion.victor === "b"}
           />
         </div>
-        <div className="flex h-full w-full flex-row items-center justify-between  gap-1  text-sm font-semibold @sm:text-base">
-          <div className="flex flex-row items-center gap-x-0.5">
+        <div className="flex h-full w-full flex-row items-center justify-between gap-3 text-sm font-semibold @sm:text-base">
+          <div className="flex flex-row items-center">
             {summary.time.clock ? (
               <>
                 <MdTimer /> {summary.time.clock.initial.template}
@@ -79,7 +88,7 @@ function GameSummaryPill({ summary }: { summary: GameSummary }) {
               <MdTimerOff />
             )}
           </div>
-          <div className="items-baseline text-xs font-semibold">
+          <div className="text-nowrap text-xs font-semibold">
             <LiveRelativeTime timestamp={summary.time.end} />
           </div>
         </div>
