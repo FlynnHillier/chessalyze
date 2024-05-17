@@ -13,7 +13,9 @@ export default async function NotInGamePanelLayout({
 }) {
   const { user } = await getServerSession();
 
-  if (GameMaster.instance().getByPlayer(user!.id)) {
+  if (!user) return <></>;
+
+  if (GameMaster.instance().getByPlayer(user.id)) {
     redirect("/play/live");
   }
 
