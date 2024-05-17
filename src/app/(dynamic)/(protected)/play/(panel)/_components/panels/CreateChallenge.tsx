@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
@@ -25,6 +25,8 @@ export function CreateChallenge() {
   const leaveLobbyMutation = trpc.lobby.leave.useMutation();
   const { show: showError } = useMutatePanelErrorMessage();
 
+  const elementBottomRef = useRef<HTMLSpanElement>(null);
+
   const [disableConfigurationChanges, setDisabledConfigurationChanges] =
     useState<boolean>(false);
 
@@ -33,6 +35,14 @@ export function CreateChallenge() {
 
   const { challengeConfiguration, dispatchChallengeConfiguration } =
     useChallengeConfiguration();
+
+  /**
+   * For vertical view, scroll bottom of element into view if element height changes due to challenge creation / link copy
+   *
+   */
+  useEffect(() => {
+    elementBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [hasCopiedChallengeLink, lobby.present]);
 
   /**
    * Disallow further changes to lobby configuration
@@ -272,6 +282,7 @@ export function CreateChallenge() {
           </AsyncButton>
         </>
       )}
+      <span ref={elementBottomRef} />
     </div>
   );
 }
