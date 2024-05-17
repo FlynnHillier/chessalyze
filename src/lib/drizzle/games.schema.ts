@@ -9,6 +9,7 @@ import {
   pgEnum,
   unique,
   boolean,
+  serial,
 } from "drizzle-orm/pg-core";
 
 import { users } from "@lib/drizzle/auth.schema";
@@ -51,6 +52,7 @@ export const games = pgTable("games", {
     onDelete: "set null",
   }),
   id: varchar("id").notNull().primaryKey(),
+  serial: serial("serial").notNull(),
 });
 
 export const timings = pgTable("game_time", {
