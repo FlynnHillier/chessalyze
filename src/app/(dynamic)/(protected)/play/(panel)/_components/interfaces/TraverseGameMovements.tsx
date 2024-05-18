@@ -19,10 +19,14 @@ export default function TraverseGameMovements() {
   const dispatchGame = useDispatchGame();
 
   const viewingMoveRef = useRef<HTMLDivElement>(null);
+  const scrollableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    //When the 'viewed' move changes, bring it into view.
-    viewingMoveRef.current?.scrollIntoView({ behavior: "smooth" });
+    //When the 'viewed' move changes, bring it into view in element.
+    scrollableRef.current?.scrollTo({
+      top: viewingMoveRef.current?.offsetTop,
+      behavior: "smooth",
+    });
   }, [game.game?.moves, game.game?.viewing]);
 
   /**
@@ -54,7 +58,10 @@ export default function TraverseGameMovements() {
 
   return (
     <div className=" flex h-52 w-full flex-col rounded-sm bg-stone-950 p-3">
-      <div className="h-full w-full select-none overflow-scroll rounded-sm scrollbar-hide [&>div:nth-child(odd)]:bg-stone-900">
+      <div
+        ref={scrollableRef}
+        className="relative h-full w-full select-none overflow-scroll rounded-sm scrollbar-hide [&>div:nth-child(odd)]:bg-stone-900"
+      >
         {pairedMoveHistory.map(([w, b], i) => {
           return (
             <div
