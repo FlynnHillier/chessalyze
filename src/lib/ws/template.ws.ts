@@ -86,3 +86,17 @@ export class WSMessagesTemplate<T extends Record<string, any>> {
     };
   }
 }
+
+type ExtractGeneric<T> = T extends WSMessagesTemplate<infer E> ? E : never;
+
+/**
+ * Extract the data type for a given event from a WSMessageTemplate class
+ *
+ * T - the template with the desired specified message event typings
+ *
+ * E - the event we want to extract the type for
+ */
+export type WSMessageData<
+  T extends WSMessagesTemplate<any>,
+  E extends keyof ExtractGeneric<T>,
+> = ExtractGeneric<T>[E];
