@@ -1,6 +1,5 @@
 import { Chess, Square, Move, Color, PieceSymbol } from "chess.js";
 import { v1 as uuidv1 } from "uuid";
-import { emitGameMoveEvent } from "../ws/events/client/game/game.move.event.ws";
 
 import {
   GameSnapshot,
@@ -17,9 +16,7 @@ import {
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
 import { GameMaster } from "~/lib/game/GameMaster";
-import { emitGameJoinEvent } from "~/lib/ws/events/client/game/game.join.event.ws";
 import { getOrCreateGameSocketRoom } from "~/lib/ws/rooms/categories/game.room.ws";
-import { emitGameEndEvent } from "~/lib/ws/events/client/game/game.end.event.ws";
 import {
   logDev,
   loggingCategories,
@@ -28,6 +25,7 @@ import {
 import { AtleastOneKey, ExactlyOneKey } from "~/types/util/util.types";
 import { saveGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
 import { TIMED_PRESET_MAPPINGS } from "~/constants/game";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -89,17 +87,23 @@ export class GameInstance {
       });
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
       socketRoom.joinUser(this.players.w.pid, this.players.b.pid);
-      emitGameJoinEvent({ room: socketRoom }, this.snapshot());
+
+      wsServerToClientMessage
+        .send("GAME_JOIN")
+        .data(this.snapshot())
+        .to({ room: socketRoom })
+        .emit();
     }).bind(this),
 
     /**
      * Runs on movement
      */
     onMove: ((move: VerboseMovement) => {
-      emitGameMoveEvent(
-        { room: getOrCreateGameSocketRoom({ id: this.id }) },
-        move,
-      );
+      wsServerToClientMessage
+        .send("GAME_MOVE")
+        .data(move)
+        .to({ room: getOrCreateGameSocketRoom({ id: this.id }) })
+        .emit();
     }).bind(this),
 
     /**
@@ -113,7 +117,12 @@ export class GameInstance {
       });
 
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
-      emitGameEndEvent({ room: socketRoom }, summary);
+
+      wsServerToClientMessage
+        .send("GAME_END")
+        .data(summary)
+        .to({ room: socketRoom })
+        .emit();
 
       socketRoom.deregister();
 

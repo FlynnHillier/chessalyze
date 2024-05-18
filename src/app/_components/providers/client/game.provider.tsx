@@ -22,10 +22,10 @@ import {
 import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
 import { useWebSocket } from "next-ws/client";
-import { GameMoveEvent } from "~/lib/ws/events/game/game.move.event.ws";
 import { validateWSMessage } from "~/app/_components/providers/client/ws.provider";
-import { GameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
-import { GameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
+
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+
 import { ExactlyOneKey } from "~/types/util/util.types";
 import { DeepOmit } from "deep-utility-types";
 
@@ -397,129 +397,82 @@ export const GameProvider = ({
   );
   const query = trpc.game.status.useQuery();
 
-  /**
-   * Handle incoming ws game movement event
-   */
-  const onWSMovementEvent = useCallback(
-    (data: GameMoveEvent["data"]) => {
-      //TODO: zod validation
-      dispatchGame({
-        type: "MOVE",
-        payload: {
-          fen: data.fen,
-          move: {
-            piece: data.move.piece,
-            source: data.move.source,
-            target: data.move.target,
-            promotion: data.move.promotion,
-          },
-          time: {
-            timestamp: data.time.timestamp,
-            remaining: data.time.remaining,
-            sinceStart: data.time.sinceStart,
-            moveDuration: data.time.moveDuration,
-          },
-          initiator: data.initiator,
-          captured: data.captured,
-        },
-      });
-    },
-    [dispatchGame],
-  );
-
-  /**
-   * Handle incoming ws game join event
-   */
-  const onWSGameJoinEvent = useCallback(
-    (data: GameJoinEvent["data"]) => {
-      //TODO: zod validation
-      dispatchGame({
-        type: "LOAD",
-        payload: {
-          game: {
-            live: {
-              FEN: data.FEN,
-              time: {
-                now: data.time.now,
-                remaining: data.time.remaining,
-              },
+  useEffect(() => {
+    const onWSMessageEvent = wsServerToClientMessage.receiver({
+      GAME_MOVE: (data) => {
+        dispatchGame({
+          type: "MOVE",
+          payload: {
+            fen: data.fen,
+            move: {
+              piece: data.move.piece,
+              source: data.move.source,
+              target: data.move.target,
+              promotion: data.move.promotion,
             },
-            id: data.id,
-            moves: data.moves,
-            players: data.players,
             time: {
-              initial: {
-                remaining: data.time.remaining && {
-                  w: data.time.remaining.w,
-                  b: data.time.remaining.b,
+              timestamp: data.time.timestamp,
+              remaining: data.time.remaining,
+              sinceStart: data.time.sinceStart,
+              moveDuration: data.time.moveDuration,
+            },
+            initiator: data.initiator,
+            captured: data.captured,
+          },
+        });
+      },
+      GAME_JOIN: (data) => {
+        dispatchGame({
+          type: "LOAD",
+          payload: {
+            game: {
+              live: {
+                FEN: data.FEN,
+                time: {
+                  now: data.time.now,
+                  remaining: data.time.remaining,
                 },
               },
-              start: data.time.start,
+              id: data.id,
+              moves: data.moves,
+              players: data.players,
+              time: {
+                initial: {
+                  remaining: data.time.remaining && {
+                    w: data.time.remaining.w,
+                    b: data.time.remaining.b,
+                  },
+                },
+                start: data.time.start,
+              },
+            },
+            config: {
+              conclusion: {
+                maintain: false,
+              },
             },
           },
-          config: {
+        });
+      },
+      GAME_END: (data) => {
+        dispatchGame({
+          type: "END",
+          payload: {
             conclusion: {
-              maintain: false,
+              victor: data.conclusion.victor ?? undefined,
+              reason: data.conclusion.termination,
             },
           },
-        },
-      });
-    },
-    [dispatchGame],
-  );
-
-  /**
-   * Handle incoming ws game end event
-   */
-  const onWSGameEndEvent = useCallback(
-    (data: GameEndEvent["data"]) => {
-      //TODO: zod validation
-      dispatchGame({
-        type: "END",
-        payload: {
-          conclusion: {
-            victor: data.conclusion.victor ?? undefined,
-            reason: data.conclusion.termination,
-          },
-        },
-      });
-    },
-    [dispatchGame],
-  );
-
-  /**
-   * Handle different incoming ws message events
-   */
-  const onWSMessageEvent = useCallback(
-    (e: MessageEvent<string>) => {
-      const valid = validateWSMessage(e);
-      if (!valid) return;
-      const { event, data } = valid;
-
-      switch (event) {
-        case "GAME_MOVE":
-          onWSMovementEvent(data);
-          return;
-        case "GAME_JOIN":
-          onWSGameJoinEvent(data);
-          return;
-        case "GAME_END":
-          onWSGameEndEvent(data);
-          return;
-      }
-    },
-    [dispatchGame],
-  );
-
-  useEffect(() => {
-    console.log("registering listeners", ws);
+        });
+      },
+    });
 
     ws?.addEventListener("message", onWSMessageEvent);
 
     return () => {
       ws?.removeEventListener("message", onWSMessageEvent);
     };
-  }, [ws, onWSMessageEvent]);
+  }, [ws]);
 
   // useEffect(() => {
   //   //fetch LIVE context value from server
