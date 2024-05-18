@@ -95,15 +95,15 @@ export class WSMessagesTemplate<T extends Record<string, ZodType>> {
        * Broadcast the constructed message
        */
       emit: () => {
-        emit(event, to, data);
+        emit(event, data, to);
       },
     };
   }
 
   public receiver(on: BuildReceiver<T>) {
-    return (incomingMessage: string) => {
+    return (incomingMessage: MessageEvent) => {
       try {
-        const json = JSON.parse(incomingMessage);
+        const json = JSON.parse(incomingMessage.data);
 
         if (
           !json.event ||
@@ -117,7 +117,13 @@ export class WSMessagesTemplate<T extends Record<string, ZodType>> {
 
         on[json.event]?.(json.data);
       } catch (e) {
-        console.error(e); //TODO: change this
+        if (typeof window !== "undefined") {
+          console.error(
+            "received malform event payload on ws event",
+            incomingMessage,
+          );
+        }
+        return; //TODO: change this
       }
     };
   }
