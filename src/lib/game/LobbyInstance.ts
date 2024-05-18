@@ -3,8 +3,8 @@ import { v1 as uuidv1 } from "uuid";
 import { Player, GameTimePreset, BW } from "~/types/game.types";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 import { GameInstance } from "~/lib/game/GameInstance";
-import { getOrCreateLobbySocketRoom } from "~/lib/ws/rooms/lobby.room.ws";
-import { emitLobbyEndEvent } from "~/lib/ws/events/lobby/lobby.end.event.ws";
+import { getOrCreateLobbySocketRoom } from "~/lib/ws/rooms/categories/lobby.room.ws";
+import { emitLobbyEndEvent } from "~/lib/ws/events/client/lobby/lobby.end.event.ws";
 import {
   logDev,
   loggingCategories,
@@ -64,7 +64,7 @@ export class LobbyInstance {
      */
     onCreate: (() => {
       const room = getOrCreateLobbySocketRoom({ id: this.id });
-      room.join(this.player.pid);
+      room.joinUser(this.player.pid);
 
       //TODO: maybe emit lobby join event here?
 

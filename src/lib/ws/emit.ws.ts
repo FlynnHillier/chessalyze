@@ -1,6 +1,5 @@
 import { WebSocket } from "ws";
-import { env } from "~/env";
-import { EmitEvent } from "~/lib/ws/events.ws";
+import { IncomingClientWSMessage } from "~/lib/ws/events/client/client.events.ws";
 import { AtleastOneKey } from "~/types/util/util.types";
 import {
   logDev,
@@ -18,7 +17,7 @@ export type EmitSocketOptions = AtleastOneKey<{
  * Standardise transfer of event data
  * @returns number of socket instances emitted to
  */
-export function emit<E extends EmitEvent>(
+export function emit<E extends IncomingClientWSMessage>(
   { room, socket }: EmitSocketOptions,
   event: E,
 ): number {

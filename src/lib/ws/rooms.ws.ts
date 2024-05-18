@@ -18,27 +18,50 @@ class SocketRoomExistsError extends SocketRoomError {
 }
 
 /**
- * Create and manage a privatised collection of users to receive socket events
+ * Create and manage a privatised collection of users / specified sockets to receive socket events
  */
 export class SocketRoom {
-  private participants: Set<string> = new Set();
+  private registered: {
+    users: Set<string>;
+    sockets: Set<WebSocket>;
+  } = {
+    users: new Set(),
+    sockets: new Set(),
+  };
 
-  constructor(uids?: string[]) {
-    if (uids) this.join(...uids);
+  constructor({ uids, sockets }: { uids?: string[]; sockets?: [] } = {}) {
+    if (uids) this.joinUser(...uids);
+    if (sockets) this.joinSocket(...sockets);
   }
 
   /**
    * Join a user(s) to room
    */
-  public join(...uids: string[]) {
-    uids.forEach((uid) => this.participants.add(uid));
+  public joinUser(...uids: string[]) {
+    uids.forEach((uid) => this.registered.users.add(uid));
+  }
+
+  /**
+   * Register socket(s) to room
+   *
+   */
+  public joinSocket(...sockets: WebSocket[]) {
+    sockets.forEach((socket) => this.registered.sockets.add(socket));
   }
 
   /**
    * Disconnect user(s) from room
    */
-  public leave(...uids: string[]) {
-    uids.forEach((uid) => this.participants.delete(uid));
+  public leaveUser(...uids: string[]) {
+    uids.forEach((uid) => this.registered.users.delete(uid));
+  }
+
+  /**
+   * Disconnet socket(s) from room
+   *
+   */
+  public leaveSocket(...sockets: WebSocket[]) {
+    sockets.forEach((socket) => this.registered.sockets.delete(socket));
   }
 
   /**
@@ -47,24 +70,18 @@ export class SocketRoom {
    * @returns WebSocket[]
    */
   public sockets(): WebSocket[] {
-    const socketInstances: WebSocket[] = Array.from(this.participants).reduce(
+    const userSockets: WebSocket[] = Array.from(this.registered.users).reduce(
       (sockets, uid) => {
-        const userSockets = wsSocketRegistry.get(uid);
-        return [...userSockets, ...sockets];
+        const newSockets = wsSocketRegistry.get(uid);
+        console.log(newSockets);
+        return [...newSockets, ...sockets];
       },
       [] as WebSocket[],
     );
 
-    return socketInstances;
-  }
-
-  /**
-   * get participants of room
-   *
-   * @returns uids of users registered to room
-   */
-  public getParticipants(): string[] {
-    return Array.from(this.participants);
+    return Array.from(
+      new Set([...userSockets, ...this.registered.sockets.values()]),
+    );
   }
 }
 
@@ -74,10 +91,13 @@ export class SocketRoom {
 export class RegisteredSocketRoom extends SocketRoom {
   protected readonly registry: WSRoomRegistry = WSRoomRegistry.instance();
   public readonly name: string;
-  public registered: boolean = true;
+  public registeredToRegistry: boolean = true;
 
-  public constructor(name: string, uids?: string[]) {
-    super(uids);
+  public constructor(
+    name: string,
+    { uids, sockets }: { uids?: string[]; sockets?: [] } = {},
+  ) {
+    super({ uids, sockets });
     this.name = name;
     this.registry._register(name, this);
   }
@@ -87,16 +107,16 @@ export class RegisteredSocketRoom extends SocketRoom {
    */
   public deregister() {
     this.registry._deregister(this);
-    this.registered = false;
+    this.registeredToRegistry = false;
   }
 
-  public join(...uids: string[]) {
+  public joinUser(...uids: string[]) {
     logDev({
       message: `joining users [${uids.join(", ")}] to registered socket room ${this.name}`,
       color: loggingColourCode.FgGreen,
       category: loggingCategories.socket,
     });
-    super.join(...uids);
+    super.joinUser(...uids);
   }
 }
 

@@ -14,6 +14,9 @@ import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
 import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
 import path from "path";
 import { PUBLIC_FOLDER_PATH } from "~/config/config";
+import fs from "fs";
+import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
+import { emitClientWS_NewSummary } from "~/lib/ws/events/client/summary/summary.new.event.ws";
 
 type PgUser = InferSelectModel<typeof users>;
 
@@ -226,22 +229,28 @@ export async function saveGameSummary(summary: GameSummary) {
         clock_end_b: summary.time.clock?.end.absolute.b,
       });
     });
+
+    try {
+      const FOLDER = path.join(PUBLIC_FOLDER_PATH, "chess", "games");
+
+      if (!fs.existsSync(FOLDER)) fs.mkdirSync(FOLDER, { recursive: true });
+
+      await ChessImageGenerator.fromFEN(
+        summary.conclusion.boardState,
+        path.join(FOLDER, `${summary.id}.png`),
+      );
+    } catch (e) {
+      logDev({
+        message: ["failed to store game image to public folder", e],
+        color: loggingColourCode.FgRed,
+      });
+    }
+
+    emitClientWS_NewSummary({ room: recentGameSummarysSocketRoom }, summary);
   } catch (e) {
     //TODO: add physical storage logging here.
     logDev({
-      message: ["failed to store game in datatbase", e],
-      color: loggingColourCode.FgRed,
-    });
-  }
-
-  try {
-    await ChessImageGenerator.fromFEN(
-      summary.conclusion.boardState,
-      path.join(PUBLIC_FOLDER_PATH, "chess", "games", `${summary.id}.png`),
-    );
-  } catch (e) {
-    logDev({
-      message: ["failed to store game image to public folder", e],
+      message: ["failed to store game in database", e],
       color: loggingColourCode.FgRed,
     });
   }

@@ -1,6 +1,6 @@
 import { Chess, Square, Move, Color, PieceSymbol } from "chess.js";
 import { v1 as uuidv1 } from "uuid";
-import { emitGameMoveEvent } from "../ws/events/game/game.move.event.ws";
+import { emitGameMoveEvent } from "../ws/events/client/game/game.move.event.ws";
 
 import {
   GameSnapshot,
@@ -17,9 +17,9 @@ import {
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
 import { GameMaster } from "~/lib/game/GameMaster";
-import { emitGameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
-import { getOrCreateGameSocketRoom } from "~/lib/ws/rooms/game.room.ws";
-import { emitGameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
+import { emitGameJoinEvent } from "~/lib/ws/events/client/game/game.join.event.ws";
+import { getOrCreateGameSocketRoom } from "~/lib/ws/rooms/categories/game.room.ws";
+import { emitGameEndEvent } from "~/lib/ws/events/client/game/game.end.event.ws";
 import {
   logDev,
   loggingCategories,
@@ -88,7 +88,7 @@ export class GameInstance {
         category: loggingCategories.game,
       });
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
-      socketRoom.join(this.players.w.pid, this.players.b.pid);
+      socketRoom.joinUser(this.players.w.pid, this.players.b.pid);
       emitGameJoinEvent({ room: socketRoom }, this.snapshot());
     }).bind(this),
 

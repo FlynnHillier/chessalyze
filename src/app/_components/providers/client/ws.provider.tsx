@@ -3,7 +3,7 @@
 import { WebSocketProvider } from "next-ws/client";
 import { ReactNode } from "react";
 import { env } from "~/env";
-import { EmitEvent } from "~/lib/ws/events.ws";
+import { IncomingClientWSMessage } from "~/lib/ws/events/client/client.events.ws";
 
 /**
  * Log to console when ws message validation fails
@@ -21,7 +21,9 @@ function onInvalidWSMessage(payload: string, message?: string): null {
  *
  * @param e incoming message event
  */
-export function validateWSMessage(e: MessageEvent<string>): null | EmitEvent {
+export function validateWSMessage(
+  e: MessageEvent<string>,
+): null | IncomingClientWSMessage {
   try {
     const { event, data } = JSON.parse(e.data);
 

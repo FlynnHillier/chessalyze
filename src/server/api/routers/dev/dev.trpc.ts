@@ -1,4 +1,4 @@
-import { emitDevTestEvent } from "~/lib/ws/events/dev/dev.test.ws";
+import { emitDevTestEvent } from "~/lib/ws/events/client/dev/dev.test.ws";
 import { createTRPCRouter } from "~/server/api/trpc";
 import { WSRoomRegistry } from "~/lib/ws/rooms.ws";
 import { devProcedure } from "~/server/api/routers/dev/dev.proc";
@@ -12,14 +12,14 @@ import {
 export const trpcDevRouter = createTRPCRouter({
   testUserSockets: devProcedure.mutation(({ ctx }) => {
     const testRoom = WSRoomRegistry.instance().getOrCreate("testRoom");
-    testRoom.join(ctx.user.id);
+    testRoom.joinUser(ctx.user.id);
     emitDevTestEvent(
       { room: testRoom },
       {
         message: "dev test event",
       },
     );
-    testRoom.leave(ctx.user.id);
+    testRoom.leaveUser(ctx.user.id);
   }),
   getGameSummary: devProcedure
     .input(

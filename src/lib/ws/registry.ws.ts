@@ -5,7 +5,7 @@ import {
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
-import { emitDevIDEvent } from "~/lib/ws/events/dev/dev.id.event.ws";
+import { emitDevIDEvent } from "~/lib/ws/events/client/dev/dev.id.event.ws";
 
 //TODO: Add heartbeat so that
 
@@ -20,7 +20,7 @@ class WSSocketRegistry {
     return Array.from(this.sockets.get(uid) ?? []);
   }
 
-  public register(uid: string, socket: WebSocket): void {
+  public register(socket: WebSocket, uid: string): void {
     const sockets = this.sockets.get(uid) ?? new Set();
     sockets.add(socket);
 

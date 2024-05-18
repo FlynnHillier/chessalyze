@@ -1,6 +1,6 @@
 import { EmitSocketOptions, emit } from "~/lib/ws/emit.ws";
 import { EmitEventType } from "~/lib/ws/events.ws.types";
-import { DevEvent } from "~/lib/ws/events/dev/dev.events.ws";
+import { DevEvent } from "~/lib/ws/events/client/dev/dev.events.ws";
 
 export type DevIDEvent = EmitEventType<
   `${DevEvent.DEV_ID}`,
