@@ -73,7 +73,6 @@ export class SocketRoom {
     const userSockets: WebSocket[] = Array.from(this.registered.users).reduce(
       (sockets, uid) => {
         const newSockets = wsSocketRegistry.get(uid);
-        console.log(newSockets);
         return [...newSockets, ...sockets];
       },
       [] as WebSocket[],
