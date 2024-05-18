@@ -398,74 +398,76 @@ export const GameProvider = ({
   const query = trpc.game.status.useQuery();
 
   useEffect(() => {
-    const onWSMessageEvent = wsServerToClientMessage.receiver({
-      GAME_MOVE: (data) => {
-        dispatchGame({
-          type: "MOVE",
-          payload: {
-            fen: data.fen,
-            move: {
-              piece: data.move.piece,
-              source: data.move.source,
-              target: data.move.target,
-              promotion: data.move.promotion,
-            },
-            time: {
-              timestamp: data.time.timestamp,
-              remaining: data.time.remaining,
-              sinceStart: data.time.sinceStart,
-              moveDuration: data.time.moveDuration,
-            },
-            initiator: data.initiator,
-            captured: data.captured,
-          },
-        });
-      },
-      GAME_JOIN: (data) => {
-        dispatchGame({
-          type: "LOAD",
-          payload: {
-            game: {
-              live: {
-                FEN: data.FEN,
-                time: {
-                  now: data.time.now,
-                  remaining: data.time.remaining,
-                },
+    const onWSMessageEvent = (m: MessageEvent) => {
+      wsServerToClientMessage.receiver({
+        GAME_MOVE: (data) => {
+          dispatchGame({
+            type: "MOVE",
+            payload: {
+              fen: data.fen,
+              move: {
+                piece: data.move.piece,
+                source: data.move.source,
+                target: data.move.target,
+                promotion: data.move.promotion,
               },
-              id: data.id,
-              moves: data.moves,
-              players: data.players,
               time: {
-                initial: {
-                  remaining: data.time.remaining && {
-                    w: data.time.remaining.w,
-                    b: data.time.remaining.b,
+                timestamp: data.time.timestamp,
+                remaining: data.time.remaining,
+                sinceStart: data.time.sinceStart,
+                moveDuration: data.time.moveDuration,
+              },
+              initiator: data.initiator,
+              captured: data.captured,
+            },
+          });
+        },
+        GAME_JOIN: (data) => {
+          dispatchGame({
+            type: "LOAD",
+            payload: {
+              game: {
+                live: {
+                  FEN: data.FEN,
+                  time: {
+                    now: data.time.now,
+                    remaining: data.time.remaining,
                   },
                 },
-                start: data.time.start,
+                id: data.id,
+                moves: data.moves,
+                players: data.players,
+                time: {
+                  initial: {
+                    remaining: data.time.remaining && {
+                      w: data.time.remaining.w,
+                      b: data.time.remaining.b,
+                    },
+                  },
+                  start: data.time.start,
+                },
+              },
+              config: {
+                conclusion: {
+                  maintain: false,
+                },
               },
             },
-            config: {
+          });
+        },
+        GAME_END: (data) => {
+          dispatchGame({
+            type: "END",
+            payload: {
               conclusion: {
-                maintain: false,
+                victor: data.conclusion.victor ?? undefined,
+                reason: data.conclusion.termination,
               },
             },
-          },
-        });
-      },
-      GAME_END: (data) => {
-        dispatchGame({
-          type: "END",
-          payload: {
-            conclusion: {
-              victor: data.conclusion.victor ?? undefined,
-              reason: data.conclusion.termination,
-            },
-          },
-        });
-      },
-    });
+          });
+        },
+      })(m.data);
+    };
 
     ws?.addEventListener("message", onWSMessageEvent);
 

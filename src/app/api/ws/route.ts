@@ -1,11 +1,11 @@
-import { WebSocket } from "ws";
+import { WebSocket, MessageEvent } from "ws";
 import { IncomingMessage } from "http";
 import { WebSocketServer } from "ws";
 import { parse as parseCookie } from "cookie";
 import { env } from "~/env";
 import { lucia } from "~/lib/lucia/lucia";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
-import { onWSMessage } from "~/app/api/ws/listeners";
+import { onWsClientToServerMessage } from "~/app/api/ws/listeners";
 
 interface WebSocketClient {
   id: string;
@@ -48,9 +48,15 @@ export async function SOCKET(
     wsSocketRegistry.register(client, user.id);
   }
 
-  client.onmessage = (m) => {
-    onWSMessage(m, client);
+  const onWSMessage = (m: MessageEvent) => {
+    onWsClientToServerMessage(client)(m.data.toString());
   };
+
+  client.addEventListener("message", onWSMessage);
+
+  client.once("close", () => {
+    client.removeEventListener("message", onWSMessage);
+  });
 }
 
 export function GET() {}

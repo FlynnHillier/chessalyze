@@ -101,9 +101,9 @@ export class WSMessagesTemplate<T extends Record<string, ZodType>> {
   }
 
   public receiver(on: BuildReceiver<T>) {
-    return (incomingMessage: MessageEvent) => {
+    return (incomingMessageString: string) => {
       try {
-        const json = JSON.parse(incomingMessage.data);
+        const json = JSON.parse(incomingMessageString);
 
         if (
           !json.event ||
@@ -120,7 +120,7 @@ export class WSMessagesTemplate<T extends Record<string, ZodType>> {
         if (typeof window !== "undefined") {
           console.error(
             "received malform event payload on ws event",
-            incomingMessage,
+            incomingMessageString,
           );
         }
         return; //TODO: change this
