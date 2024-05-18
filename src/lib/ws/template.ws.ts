@@ -1,4 +1,5 @@
 import { WebSocket } from "ws";
+import { ZodType, z } from "zod";
 import { SocketRoom } from "~/lib/ws/rooms.ws";
 import { AtleastOneKey } from "~/types/util/util.types";
 
@@ -32,13 +33,23 @@ function emit<D extends any>( //TODO: make this type only serializable types
 }
 
 /**
- * Given the generic type Record<string, any> allow for construction of functions to emit type-safe data for given events.
+ * Given the generic type Record<string, ZodType> allow for construction of functions to emit type-safe data for given events.
  *
  * The keys within the provided Record type act as the 'eventIDs' in the emitted event.
  *
- * The associated types provided act as the type of the data payload for the given eventID
+ * The associated zod types provided act as the type of the data payload for the given eventID
  */
-export class WSMessagesTemplate<T extends Record<string, any>> {
+export class WSMessagesTemplate<T extends Record<string, ZodType>> {
+  private validators: T;
+
+  /**
+   *
+   * @param validators an object with key value pairs representing the event name (key) and the associated payload structure (value)
+   */
+  constructor(validators: T) {
+    this.validators = validators;
+  }
+
   /**
    *
    * @param event a given eventID
@@ -55,7 +66,10 @@ export class WSMessagesTemplate<T extends Record<string, any>> {
     };
   }
 
-  private sendData<E extends Extract<keyof T, string>>(event: E, data: T[E]) {
+  private sendData<E extends Extract<keyof T, string>>(
+    event: E,
+    data: z.infer<T[E]>,
+  ) {
     return {
       /**
        *
@@ -70,7 +84,7 @@ export class WSMessagesTemplate<T extends Record<string, any>> {
 
   private sendDataTo<E extends Extract<keyof T, string>>(
     event: E,
-    data: T[E],
+    data: z.infer<T[E]>,
     to: AtleastOneKey<{
       room: SocketRoom;
       socket: WebSocket;
@@ -85,9 +99,36 @@ export class WSMessagesTemplate<T extends Record<string, any>> {
       },
     };
   }
+
+  public receiver(on: BuildReceiver<T>) {
+    return (incomingMessage: string) => {
+      try {
+        const json = JSON.parse(incomingMessage);
+
+        if (
+          !json.event ||
+          !json.data ||
+          typeof json.event !== "string" ||
+          !Object.keys(on).includes(json.event)
+        )
+          return;
+
+        this.validators[json.event].parse(json.data);
+
+        on[json.event]?.(json.data);
+      } catch (e) {
+        console.error(e); //TODO: change this
+      }
+    };
+  }
 }
 
-type ExtractGeneric<T> = T extends WSMessagesTemplate<infer E> ? E : never;
+type BuildReceiver<T extends Record<string, any>> = Partial<{
+  [K in keyof T]: (arg: z.infer<T[K]>) => any;
+}>;
+
+export type ExtractWSMessageTemplateGeneric<T> =
+  T extends WSMessagesTemplate<infer E> ? E : never;
 
 /**
  * Extract the data type for a given event from a WSMessageTemplate class
@@ -98,5 +139,5 @@ type ExtractGeneric<T> = T extends WSMessagesTemplate<infer E> ? E : never;
  */
 export type WSMessageData<
   T extends WSMessagesTemplate<any>,
-  E extends keyof ExtractGeneric<T>,
-> = ExtractGeneric<T>[E];
+  E extends keyof ExtractWSMessageTemplateGeneric<T>,
+> = ExtractWSMessageTemplateGeneric<T>[E];
