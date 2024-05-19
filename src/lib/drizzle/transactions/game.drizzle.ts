@@ -8,7 +8,11 @@ import {
   timings,
 } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
-import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
+import {
+  logDev,
+  loggingCategories,
+  loggingColourCode,
+} from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
 import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
@@ -241,10 +245,17 @@ export async function saveGameSummary(summary: GameSummary) {
       );
     } catch (e) {
       logDev({
-        message: ["failed to store game image to public folder", e],
+        category: loggingCategories.misc,
+        message: ["failed to store game image to public folder"],
         color: loggingColourCode.FgRed,
       });
     }
+
+    logDev({
+      category: loggingCategories.db,
+      color: loggingColourCode.FgGreen,
+      message: [`successfully stored game summary '${summary.id}' to db`],
+    });
 
     wsServerToClientMessage
       .send("SUMMARY_NEW")
@@ -254,7 +265,8 @@ export async function saveGameSummary(summary: GameSummary) {
   } catch (e) {
     //TODO: add physical storage logging here.
     logDev({
-      message: ["failed to store game in database", e],
+      category: loggingCategories.db,
+      message: ["failed to store game in database"],
       color: loggingColourCode.FgRed,
     });
   }
