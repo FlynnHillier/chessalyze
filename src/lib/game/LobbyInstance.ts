@@ -4,7 +4,6 @@ import { Player, GameTimePreset, BW } from "~/types/game.types";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 import { GameInstance } from "~/lib/game/GameInstance";
 import { getOrCreateLobbySocketRoom } from "~/lib/ws/rooms/categories/lobby.room.ws";
-import { emitLobbyEndEvent } from "~/lib/ws/events/client/lobby/lobby.end.event.ws";
 import {
   logDev,
   loggingCategories,
@@ -12,6 +11,7 @@ import {
 } from "~/lib/logging/dev.logger";
 import { Color } from "chess.js";
 import { ExactlyOneKey } from "~/types/util/util.types";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 class LobbyError extends Error {
   constructor(code: string, message?: string) {
@@ -77,7 +77,7 @@ export class LobbyInstance {
     onEnd: (() => {
       const room = getOrCreateLobbySocketRoom({ id: this.id });
 
-      emitLobbyEndEvent({ room: room }, {});
+      wsServerToClientMessage.send("LOBBY_END").data({}).to({ room }).emit();
 
       room.deregister();
 

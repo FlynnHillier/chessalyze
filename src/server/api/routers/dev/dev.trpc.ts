@@ -1,4 +1,3 @@
-import { emitDevTestEvent } from "~/lib/ws/events/client/dev/dev.test.ws";
 import { createTRPCRouter } from "~/server/api/trpc";
 import { WSRoomRegistry } from "~/lib/ws/rooms.ws";
 import { devProcedure } from "~/server/api/routers/dev/dev.proc";
@@ -8,17 +7,20 @@ import {
   getPlayerGameSummarys,
   getRecentGameSummarys,
 } from "~/lib/drizzle/transactions/game.drizzle";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 export const trpcDevRouter = createTRPCRouter({
+  /**
+   * Send a dummy socket event to any sockets registered to the user sending the request.
+   */
   testUserSockets: devProcedure.mutation(({ ctx }) => {
     const testRoom = WSRoomRegistry.instance().getOrCreate("testRoom");
     testRoom.joinUser(ctx.user.id);
-    emitDevTestEvent(
-      { room: testRoom },
-      {
-        message: "dev test event",
-      },
-    );
+    wsServerToClientMessage
+      .send("DEV_TEST")
+      .data({ message: "dev test event" })
+      .to({ room: testRoom })
+      .emit();
     testRoom.leaveUser(ctx.user.id);
   }),
   getGameSummary: devProcedure

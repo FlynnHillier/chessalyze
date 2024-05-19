@@ -22,7 +22,6 @@ import {
 import { ReducerAction } from "~/types/util/context.types";
 import { trpc } from "~/app/_trpc/client";
 import { useWebSocket } from "next-ws/client";
-import { validateWSMessage } from "~/app/_components/providers/client/ws.provider";
 
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
