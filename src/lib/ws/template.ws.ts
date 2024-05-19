@@ -79,6 +79,21 @@ export class WSMessagesTemplate<T extends Record<string, ZodType>> {
       to: (to: Parameters<typeof this.sendDataTo<E>>[2]) => {
         return this.sendDataTo(event, data, to);
       },
+      /**
+       *
+       * @returns an object represesentation of the constructed ws event
+       */
+      object: () => ({
+        event: event,
+        data: data,
+      }),
+      /**
+       *
+       * @returns a stringified version of the object representation of the constructed ws event
+       */
+      stringify: () => {
+        return JSON.stringify({ event: event, data: data });
+      },
     };
   }
 
