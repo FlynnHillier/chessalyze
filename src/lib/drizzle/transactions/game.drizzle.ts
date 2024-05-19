@@ -16,7 +16,7 @@ import path from "path";
 import { PUBLIC_FOLDER_PATH } from "~/config/config";
 import fs from "fs";
 import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
-import { emitClientWS_NewSummary } from "~/lib/ws/events/client/summary/summary.new.event.ws";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 type PgUser = InferSelectModel<typeof users>;
 
@@ -246,7 +246,11 @@ export async function saveGameSummary(summary: GameSummary) {
       });
     }
 
-    emitClientWS_NewSummary({ room: recentGameSummarysSocketRoom }, summary);
+    wsServerToClientMessage
+      .send("SUMMARY_NEW")
+      .data(summary)
+      .to({ room: recentGameSummarysSocketRoom })
+      .emit();
   } catch (e) {
     //TODO: add physical storage logging here.
     logDev({
