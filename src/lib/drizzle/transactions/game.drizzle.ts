@@ -27,7 +27,7 @@ type PgUser = InferSelectModel<typeof users>;
 /**
  * Generic query which selects fields necessary for constructing GameSummary from database.
  */
-const GameSummaryWithQuery = {
+export const drizzleGameSummaryWithQuery = {
   moves: {
     with: {
       initiator: true,
@@ -50,7 +50,7 @@ const GameSummaryWithQuery = {
 type PgGameSummaryQueryType = InferQueryResultType<
   "games",
   {
-    with: typeof GameSummaryWithQuery;
+    with: typeof drizzleGameSummaryWithQuery;
   }
 >;
 
@@ -74,7 +74,7 @@ function pgUserToPlayer(pgUser: PgUser): Player {
  * @param pgGameSummary pg game summary to be converted to native game summary
  * @returns GameSummary
  */
-function pgGameSummaryQueryResultToGameSummary(
+export function pgGameSummaryQueryResultToGameSummary(
   pgGameSummary: PgGameSummaryQueryType,
 ): GameSummary {
   return {
@@ -283,7 +283,7 @@ export async function getGameSummary(
 ): Promise<GameSummary | null> {
   const result: PgGameSummaryQueryType | null =
     (await db.query.games.findFirst({
-      with: GameSummaryWithQuery,
+      with: drizzleGameSummaryWithQuery,
       where: eq(games.id, gameID),
     })) ?? null;
 
@@ -306,7 +306,7 @@ export async function getPlayerGameSummarys(
   count = count ?? 20;
 
   const results = await db.query.games.findMany({
-    with: GameSummaryWithQuery,
+    with: drizzleGameSummaryWithQuery,
     where: or(eq(games.p_black_id, playerID), eq(games.p_white_id, playerID)),
     limit: count === true ? undefined : count,
   });
@@ -322,15 +322,19 @@ export async function getPlayerGameSummarys(
  */
 export async function getRecentGameSummarys({
   count,
+  start,
 }: {
+  start?: number;
   count?: number | true;
 } = {}) {
+  start = start ?? 0;
   count = count ?? 20;
 
   const results = await db.query.games.findMany({
-    with: GameSummaryWithQuery,
+    with: drizzleGameSummaryWithQuery,
     limit: count === true ? undefined : count,
     orderBy: (games, { desc }) => [desc(games.serial)],
+    offset: start,
   });
 
   return results.map(pgGameSummaryQueryResultToGameSummary);
