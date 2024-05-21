@@ -4,10 +4,9 @@ type Props = {
   children: ReactNode;
   loadNext: (onLoaded: () => any) => any;
   isMore: boolean;
-  isLoading: boolean;
+  onLoading?: ReactNode;
+  onNoMore?: ReactNode;
 };
-
-//TODO: do not load first elements twice.
 
 /**
  * Support 'infinite scroll' effect.
@@ -17,6 +16,8 @@ export default function InfiniteScroller({
   children,
   loadNext,
   isMore,
+  onLoading,
+  onNoMore,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -53,20 +54,20 @@ export default function InfiniteScroller({
   };
 
   useEffect(() => {
-    loadNextIfNecessary();
-  }, []);
+    if (!locked.current) loadNextIfNecessary();
+  }, [locked.current]);
 
   return (
     <div
-      className="relative h-full w-full overflow-scroll "
+      className="relative flex h-full w-full flex-col overflow-y-scroll scrollbar-hide"
       onScroll={loadNextIfNecessary}
       ref={containerRef}
     >
-      <div className="flex h-fit w-full flex-col flex-wrap gap-2">
+      <div className="flex h-fit w-full flex-row flex-wrap justify-center gap-2">
         {children}
         <span ref={triggerRef} />
-        {isMore ? "loading more stuff..." : "youve reached the end!"}
       </div>
+      {isMore ? onLoading : onNoMore}
     </div>
   );
 }
