@@ -52,10 +52,7 @@ export function GameSummaryPill({
 
   return (
     <div
-      className={
-        "flex h-24 w-60 min-w-fit flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal @sm:h-32 @sm:w-80" +
-        (redirect && "hover:cursor-pointer")
-      }
+      className={`flex h-24 w-60 min-w-fit flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal @sm:h-32 @sm:w-80 ${redirect && "hover:cursor-pointer hover:bg-stone-800"}`}
       onClick={() => {
         if (redirect) router.push(`/play/view/${summary.id}`);
       }}
