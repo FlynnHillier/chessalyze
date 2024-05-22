@@ -15,7 +15,7 @@ import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
  *
  */
 export default function SummaryInfiniteScroll({
-  countPerScroll = 5,
+  countPerScroll = 10,
 }: {
   countPerScroll?: number;
 }) {
@@ -77,7 +77,7 @@ export default function SummaryInfiniteScroll({
       <InfiniteScroller
         isMore={isMore}
         loadNext={fetchNext}
-        onLoading={<SyncLoader dotCount={4} customTailwind="bg-stone-900" />}
+        onLoading={<SyncLoader dotCount={4} customTailwind="bg-stone-800" />}
         onNoMore={
           <span className="text-balance text-center text-lg font-semibold">
             You've reached the end. Nothing more to see here!
