@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
 import InfiniteScroller from "../../common/scroll/InfiniteScroll";
 import { trpc } from "~/app/_trpc/client";
@@ -74,10 +76,7 @@ export default function SummaryInfiniteScroll({
     <div className="h-full w-full">
       <InfiniteScroller
         isMore={isMore}
-        loadNext={async (loaded) => {
-          await fetchNext();
-          loaded();
-        }}
+        loadNext={fetchNext}
         onLoading={<SyncLoader dotCount={4} customTailwind="bg-stone-900" />}
         onNoMore={
           <span className="text-balance text-center text-lg font-semibold">

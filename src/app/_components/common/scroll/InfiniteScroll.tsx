@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useRef } from "react";
 
 type Props = {
   children: ReactNode;
-  loadNext: (onLoaded: () => any) => any;
+  loadNext: () => any;
   isMore: boolean;
   onLoading?: ReactNode;
   onNoMore?: ReactNode;
@@ -44,12 +44,11 @@ export default function InfiniteScroller({
    *
    * call the loadNext prop if the bottom of the scrollable container is in view and there are still more elements to be loaded
    */
-  const loadNextIfNecessary = () => {
+  const loadNextIfNecessary = async () => {
     if (isMore && locked.current === false && isBoundaryInView()) {
       locked.current = true;
-      loadNext(() => {
-        locked.current = false;
-      });
+      await loadNext();
+      locked.current = false;
     }
   };
 
@@ -59,7 +58,7 @@ export default function InfiniteScroller({
 
   return (
     <div
-      className="relative flex h-full w-full flex-col overflow-y-scroll scrollbar-hide"
+      className="relative flex h-full w-full flex-col overflow-y-scroll"
       onScroll={loadNextIfNecessary}
       ref={containerRef}
     >
