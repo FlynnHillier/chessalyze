@@ -8,6 +8,8 @@ import {
   bigint,
   pgEnum,
   unique,
+  boolean,
+  serial,
 } from "drizzle-orm/pg-core";
 
 import { users } from "@lib/drizzle/auth.schema";
@@ -17,6 +19,7 @@ import {
   TERMINATIONS,
   COLOR,
   PIECE,
+  TIME_PRESET,
 } from "~/constants/game";
 import { relations } from "drizzle-orm";
 
@@ -37,6 +40,7 @@ export const drizzleEnumTerminationType = pgEnum("termination_type", [
   "draw",
 ]);
 export const drizzleEnumColor = pgEnum("color", COLOR);
+export const drizzleEnumTimePreset = pgEnum("time_preset", TIME_PRESET);
 
 // TABLES
 
@@ -48,9 +52,23 @@ export const games = pgTable("games", {
     onDelete: "set null",
   }),
   id: varchar("id").notNull().primaryKey(),
-  t_start: bigint("t_start", { mode: "number" }).notNull(),
-  t_end: bigint("t_end", { mode: "number" }).notNull(),
-  t_duration: bigint("t_duration", { mode: "number" }).notNull(),
+  serial: serial("serial").notNull(),
+});
+
+export const timings = pgTable("game_time", {
+  gameID: varchar("game_id")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" })
+    .primaryKey(),
+  start: bigint("t_start", { mode: "number" }).notNull(),
+  end: bigint("t_end", { mode: "number" }).notNull(),
+  duration: bigint("t_duration", { mode: "number" }).notNull(),
+  clock: boolean("clock").notNull(),
+  clock_template: drizzleEnumTimePreset("clock_template"),
+  clock_start_w: integer("clock_start_w"),
+  clock_start_b: integer("clock_start_b"),
+  clock_end_w: integer("clock_end_w"),
+  clock_end_b: integer("clock_end_b"),
 });
 
 export const moves = pgTable(
@@ -95,6 +113,30 @@ export const conclusions = pgTable("game_conclusions", {
   }),
 });
 
+export const captured = pgTable(
+  "game_captured",
+  {
+    gameID: varchar("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    turnIndex: integer("turn").notNull(),
+    w_p: integer("w_p").notNull().default(0),
+    w_r: integer("w_r").notNull().default(0),
+    w_n: integer("w_n").notNull().default(0),
+    w_q: integer("w_q").notNull().default(0),
+    w_b: integer("w_b").notNull().default(0),
+    b_p: integer("b_p").notNull().default(0),
+    b_r: integer("b_r").notNull().default(0),
+    b_n: integer("b_n").notNull().default(0),
+    b_q: integer("b_q").notNull().default(0),
+    b_b: integer("b_b").notNull().default(0),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.gameID, t.turnIndex] }),
+    unq: unique().on(t.gameID, t.turnIndex),
+  }),
+);
+
 // RELATIONS
 export const gameRelations = relations(games, ({ many, one }) => ({
   moves: many(moves),
@@ -110,6 +152,10 @@ export const gameRelations = relations(games, ({ many, one }) => ({
     fields: [games.id],
     references: [conclusions.gameID],
   }),
+  timings: one(timings, {
+    fields: [games.id],
+    references: [timings.gameID],
+  }),
 }));
 
 export const movesRelations = relations(moves, ({ one }) => ({
@@ -118,11 +164,26 @@ export const movesRelations = relations(moves, ({ one }) => ({
     fields: [moves.initiator_pid],
     references: [users.id],
   }),
+  captured: one(captured, {
+    fields: [moves.gameID, moves.turn],
+    references: [captured.gameID, captured.turnIndex],
+  }),
 }));
 
 export const conclusionRelations = relations(conclusions, ({ one }) => ({
   victor: one(users, {
     fields: [conclusions.victor_pid],
     references: [users.id],
+  }),
+}));
+
+export const timingsRelations = relations(timings, ({ one }) => ({
+  game: one(games, { fields: [timings.gameID], references: [games.id] }),
+}));
+
+export const capturedRelations = relations(captured, ({ one }) => ({
+  move: one(moves, {
+    fields: [captured.gameID, captured.turnIndex],
+    references: [moves.gameID, moves.turn],
   }),
 }));

@@ -12,6 +12,7 @@ import {
   DRAW_TERMINATIONS,
   PROMOTIONPIECE,
   TILEIDS,
+  TIME_PRESET,
 } from "~/constants/game";
 
 export type FEN = string;
@@ -26,7 +27,7 @@ export type PromotionSymbol = (typeof PROMOTIONPIECE)[number];
 
 export type CapturableSymbol = (typeof CAPTURABLEPIECE)[number];
 
-export type GameTimePreset = z.infer<typeof zodGameTimePreset>;
+export type GameTimePreset = (typeof TIME_PRESET)[number];
 
 export type Square = (typeof TILEIDS)[number];
 
@@ -34,6 +35,8 @@ export type BW<T> = {
   w: T;
   b: T;
 };
+
+export type CapturedMapping = BW<{ [key in CapturableSymbol]: number }>;
 
 export type Color = chessJSColor;
 
@@ -57,6 +60,7 @@ export type VerboseMovement = {
     player?: Player;
     color: Color;
   };
+  captured: CapturedMapping;
 };
 
 /**
@@ -72,11 +76,14 @@ export interface GameSnapshot {
   id: UUID;
   players: BW<Player>;
   FEN: FEN;
-  captured: BW<{ [key in CapturableSymbol]: number }>;
+  captured: CapturedMapping;
   time: {
     start: number;
     now: number;
     remaining?: BW<number>;
+    initial: {
+      remaining?: BW<number>;
+    };
   };
   moves: VerboseMovement[];
 }
@@ -87,6 +94,15 @@ export type GameSummary = {
   conclusion: GameConclusion;
   moves: VerboseMovement[];
   time: {
+    clock?: {
+      initial: {
+        template?: GameTimePreset;
+        absolute: BW<number>;
+      };
+      end: {
+        absolute: BW<number>;
+      };
+    };
     start: number;
     end: number;
     duration: number;

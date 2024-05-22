@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AsyncButton from "~/app/_components/common/AsyncButton";
+import AsyncButton from "~/app/_components/common/buttons/AsyncButton";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import { trpc } from "~/app/_trpc/client";
 

@@ -1,6 +1,5 @@
 import { Chess, Square, Move, Color, PieceSymbol } from "chess.js";
 import { v1 as uuidv1 } from "uuid";
-import { emitGameMoveEvent } from "../ws/events/game/game.move.event.ws";
 
 import {
   GameSnapshot,
@@ -12,20 +11,21 @@ import {
   VerboseMovement,
   DecisiveGameTermination,
   DrawGameTermination,
+  GameTimePreset,
 } from "~/types/game.types";
 import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
 import { GameMaster } from "~/lib/game/GameMaster";
-import { emitGameJoinEvent } from "~/lib/ws/events/game/game.join.event.ws";
-import { getOrCreateGameSocketRoom } from "~/lib/ws/rooms/game.room.ws";
-import { emitGameEndEvent } from "~/lib/ws/events/game/game.end.event.ws";
+import { getOrCreateGameSocketRoom } from "~/lib/ws/rooms/categories/game.room.ws";
 import {
   logDev,
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
-import { AtleastOneKey } from "~/types/util/util.types";
+import { AtleastOneKey, ExactlyOneKey } from "~/types/util/util.types";
 import { saveGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
+import { TIMED_PRESET_MAPPINGS } from "~/constants/game";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -63,7 +63,13 @@ export class GameInstance {
   private time: {
     isTimed: boolean;
     start: number;
-    clock: ChessClock;
+    clock?: {
+      initial: {
+        template?: GameTimePreset;
+        absolute: BW<number>;
+      };
+      instance: ChessClock;
+    };
     lastMove: number;
   };
   private moveHistory: VerboseMovement[] = [];
@@ -80,18 +86,24 @@ export class GameInstance {
         category: loggingCategories.game,
       });
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
-      socketRoom.join(this.players.w.pid, this.players.b.pid);
-      emitGameJoinEvent({ room: socketRoom }, this.snapshot());
+      socketRoom.joinUser(this.players.w.pid, this.players.b.pid);
+
+      wsServerToClientMessage
+        .send("GAME_JOIN")
+        .data(this.snapshot())
+        .to({ room: socketRoom })
+        .emit();
     }).bind(this),
 
     /**
      * Runs on movement
      */
     onMove: ((move: VerboseMovement) => {
-      emitGameMoveEvent(
-        { room: getOrCreateGameSocketRoom({ id: this.id }) },
-        move,
-      );
+      wsServerToClientMessage
+        .send("GAME_MOVE")
+        .data(move)
+        .to({ room: getOrCreateGameSocketRoom({ id: this.id }) })
+        .emit();
     }).bind(this),
 
     /**
@@ -99,13 +111,18 @@ export class GameInstance {
      */
     onEnd: ((summary: GameSummary) => {
       logDev({
-        message: [`ending game '${this.id}'`, summary],
+        message: [`ending game '${this.id}'`],
         color: loggingColourCode.FgGreen,
         category: loggingCategories.game,
       });
 
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
-      emitGameEndEvent({ room: socketRoom }, summary);
+
+      wsServerToClientMessage
+        .send("GAME_END")
+        .data(summary)
+        .to({ room: socketRoom })
+        .emit();
 
       socketRoom.deregister();
 
@@ -123,8 +140,20 @@ export class GameInstance {
    */
   public constructor(
     players: { p1: JoiningPlayer; p2: JoiningPlayer },
-    times: BW<number> | null = null,
+    times?: ExactlyOneKey<{
+      template: GameTimePreset;
+      absolute: BW<number>;
+    }>,
   ) {
+    const TIME_TEMPLATE: GameTimePreset | null = times?.template ?? null;
+    const TIME_ABSOLUTE: BW<number> | null =
+      times?.absolute ??
+      ((TIME_TEMPLATE && {
+        w: TIMED_PRESET_MAPPINGS[TIME_TEMPLATE],
+        b: TIMED_PRESET_MAPPINGS[TIME_TEMPLATE],
+      }) ||
+        null);
+
     if (
       this._master.getByPlayer(players.p1.player.pid) ||
       this._master.getByPlayer(players.p2.player.pid)
@@ -146,19 +175,30 @@ export class GameInstance {
 
     const now = Date.now();
     this.time = {
-      clock: new ChessClock(times ?? { w: 1, b: 1 }, (timedOutPerspective) => {
-        this.end("timeout", this.getOppositePerspective(timedOutPerspective));
-      }),
       isTimed: times !== null,
       start: now,
       lastMove: now,
+      clock: TIME_ABSOLUTE
+        ? {
+            instance: new ChessClock(TIME_ABSOLUTE, (timedOutPerspective) => {
+              this.end(
+                "timeout",
+                this.getOppositePerspective(timedOutPerspective),
+              );
+            }),
+            initial: {
+              absolute: TIME_ABSOLUTE,
+              template: TIME_TEMPLATE ?? undefined,
+            },
+          }
+        : undefined,
     };
 
     this._master._events.onCreate(this);
 
     //TODO: only start clock after both player's first moves or ~10 seconds to prevent disadvantage for slow loading times
 
-    if (this.time.isTimed) this.time.clock.start();
+    this.time.clock?.instance.start();
     this.events.onStart();
   }
 
@@ -171,9 +211,13 @@ export class GameInstance {
       time: {
         start: this.time.start,
         now: Date.now(),
-        remaining: this.time.isTimed
-          ? this.time.clock.getDurations()
-          : undefined,
+        remaining: this.time.clock?.instance.getDurations(),
+        initial: {
+          remaining: this.time.clock && {
+            w: this.time.clock?.initial.absolute.w,
+            b: this.time.clock?.initial.absolute.b,
+          },
+        },
       },
       moves: this.moveHistory,
     };
@@ -215,9 +259,18 @@ export class GameInstance {
         start: this.time.start,
         end: now,
         duration: now - this.time.start,
+        clock: this.time.clock && {
+          initial: {
+            absolute: this.time.clock.initial.absolute,
+            template: this.time.clock.initial.template,
+          },
+          end: {
+            absolute: this.time.clock.instance.getDurations(),
+          },
+        },
       },
     };
-    this.time.clock.stop();
+    this.time.clock?.instance.stop();
     this.terminated = true;
     this.summary = summary;
 
@@ -280,11 +333,10 @@ export class GameInstance {
       time: {
         sinceStart: now - this.time.start,
         timestamp: now,
-        remaining: this.time.isTimed
-          ? this.time.clock.getDurations()
-          : undefined,
+        remaining: this.time.clock?.instance.getDurations(),
         moveDuration: now - this.time.lastMove,
       },
+      captured: this.getCaptured(),
     };
 
     this.moveHistory.push(verboseMovement);
@@ -302,7 +354,7 @@ export class GameInstance {
     }
 
     if (this.time.isTimed && !this.terminated) {
-      this.time.clock.switch();
+      this.time.clock?.instance.switch();
     }
     return true;
   }
@@ -311,8 +363,12 @@ export class GameInstance {
     return this.time.isTimed;
   }
 
-  public getTimes() {
-    return this.time.clock.getDurations();
+  public getTimeData() {
+    return this.time;
+  }
+
+  public getRemainingTimes() {
+    return this.time.clock?.instance.getDurations();
   }
 
   public getFEN(): string {
@@ -321,6 +377,14 @@ export class GameInstance {
 
   public getTurn(): Color {
     return this.game.turn();
+  }
+
+  /**
+   *
+   * @returns game move history
+   */
+  public getMoveHistory(): VerboseMovement[] {
+    return this.moveHistory;
   }
 
   /**

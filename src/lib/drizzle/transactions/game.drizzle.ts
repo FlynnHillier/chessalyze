@@ -1,20 +1,37 @@
 import { GameSummary, Player } from "~/types/game.types";
 import { db } from "~/lib/drizzle/db";
-import { conclusions, games, moves } from "~/lib/drizzle/games.schema";
+import {
+  captured,
+  conclusions,
+  games,
+  moves,
+  timings,
+} from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
-import { logDev, loggingColourCode } from "~/lib/logging/dev.logger";
+import {
+  logDev,
+  loggingCategories,
+  loggingColourCode,
+} from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
+import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
+import path from "path";
+import { PUBLIC_FOLDER_PATH } from "~/config/config";
+import fs from "fs";
+import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 type PgUser = InferSelectModel<typeof users>;
 
 /**
  * Generic query which selects fields necessary for constructing GameSummary from database.
  */
-const GameSummaryWithQuery = {
+export const drizzleGameSummaryWithQuery = {
   moves: {
     with: {
       initiator: true,
+      captured: true,
     },
   },
   player_black: true,
@@ -24,6 +41,7 @@ const GameSummaryWithQuery = {
       victor: true,
     },
   },
+  timings: true,
 } as const satisfies QueryConfig<"games">["with"];
 
 /**
@@ -32,7 +50,7 @@ const GameSummaryWithQuery = {
 type PgGameSummaryQueryType = InferQueryResultType<
   "games",
   {
-    with: typeof GameSummaryWithQuery;
+    with: typeof drizzleGameSummaryWithQuery;
   }
 >;
 
@@ -56,7 +74,7 @@ function pgUserToPlayer(pgUser: PgUser): Player {
  * @param pgGameSummary pg game summary to be converted to native game summary
  * @returns GameSummary
  */
-function pgGameSummaryQueryResultToGameSummary(
+export function pgGameSummaryQueryResultToGameSummary(
   pgGameSummary: PgGameSummaryQueryType,
 ): GameSummary {
   return {
@@ -78,9 +96,26 @@ function pgGameSummaryQueryResultToGameSummary(
         : undefined,
     },
     time: {
-      start: pgGameSummary.t_start,
-      end: pgGameSummary.t_end,
-      duration: pgGameSummary.t_duration,
+      start: pgGameSummary.timings.start,
+      end: pgGameSummary.timings.end,
+      duration: pgGameSummary.timings.duration,
+      clock: pgGameSummary.timings.clock
+        ? {
+            initial: {
+              absolute: {
+                w: pgGameSummary.timings.clock_start_w ?? -1,
+                b: pgGameSummary.timings.clock_start_b ?? -1,
+              },
+              template: pgGameSummary.timings.clock_template ?? undefined,
+            },
+            end: {
+              absolute: {
+                w: pgGameSummary.timings.clock_end_w ?? -1,
+                b: pgGameSummary.timings.clock_end_b ?? -1,
+              },
+            },
+          }
+        : undefined,
     },
     moves: pgGameSummary.moves.map((pgMove) => ({
       fen: pgMove.fen,
@@ -97,7 +132,30 @@ function pgGameSummaryQueryResultToGameSummary(
       time: {
         moveDuration: pgMove.t_duration,
         timestamp: pgMove.t_timestamp,
-        sinceStart: pgMove.t_timestamp - pgGameSummary.t_start,
+        sinceStart: pgMove.t_timestamp - pgGameSummary.timings.start,
+        remaining:
+          pgMove.t_w_remaining && pgMove.t_b_remaining
+            ? {
+                w: pgMove.t_w_remaining,
+                b: pgMove.t_b_remaining,
+              }
+            : undefined,
+      },
+      captured: {
+        w: {
+          b: pgMove.captured.w_b,
+          n: pgMove.captured.w_n,
+          p: pgMove.captured.w_p,
+          q: pgMove.captured.w_q,
+          r: pgMove.captured.w_r,
+        },
+        b: {
+          b: pgMove.captured.b_b,
+          n: pgMove.captured.b_n,
+          p: pgMove.captured.b_p,
+          q: pgMove.captured.b_q,
+          r: pgMove.captured.b_r,
+        },
       },
     })),
   };
@@ -115,9 +173,6 @@ export async function saveGameSummary(summary: GameSummary) {
         id: summary.id,
         p_black_id: summary.players.b?.pid,
         p_white_id: summary.players.w?.pid,
-        t_duration: summary.time.duration,
-        t_start: summary.time.start,
-        t_end: summary.time.end,
       });
 
       await tx.insert(moves).values(
@@ -138,6 +193,23 @@ export async function saveGameSummary(summary: GameSummary) {
         })),
       );
 
+      await tx.insert(captured).values(
+        summary.moves.map((move, i) => ({
+          gameID: summary.id,
+          turnIndex: i,
+          b_b: move.captured.b.b,
+          b_n: move.captured.b.n,
+          b_p: move.captured.b.p,
+          b_q: move.captured.b.q,
+          b_r: move.captured.b.r,
+          w_b: move.captured.w.b,
+          w_n: move.captured.w.n,
+          w_p: move.captured.w.p,
+          w_q: move.captured.w.q,
+          w_r: move.captured.w.r,
+        })),
+      );
+
       await tx.insert(conclusions).values({
         gameID: summary.id,
         fen: summary.conclusion.boardState,
@@ -147,11 +219,54 @@ export async function saveGameSummary(summary: GameSummary) {
           ? summary.players[summary.conclusion.victor]?.pid
           : null,
       });
+
+      await tx.insert(timings).values({
+        gameID: summary.id,
+        duration: summary.time.duration,
+        start: summary.time.start,
+        end: summary.time.end,
+        clock: !!summary.time.clock,
+        clock_template: summary.time.clock?.initial.template,
+        clock_start_w: summary.time.clock?.initial.absolute.w,
+        clock_start_b: summary.time.clock?.initial.absolute.b,
+        clock_end_w: summary.time.clock?.end.absolute.w,
+        clock_end_b: summary.time.clock?.end.absolute.b,
+      });
     });
+
+    try {
+      const FOLDER = path.join(PUBLIC_FOLDER_PATH, "chess", "games");
+
+      if (!fs.existsSync(FOLDER)) fs.mkdirSync(FOLDER, { recursive: true });
+
+      await ChessImageGenerator.fromFEN(
+        summary.conclusion.boardState,
+        path.join(FOLDER, `${summary.id}.png`),
+      );
+    } catch (e) {
+      logDev({
+        category: loggingCategories.misc,
+        message: ["failed to store game image to public folder"],
+        color: loggingColourCode.FgRed,
+      });
+    }
+
+    logDev({
+      category: loggingCategories.db,
+      color: loggingColourCode.FgGreen,
+      message: [`successfully stored game summary '${summary.id}' to db`],
+    });
+
+    wsServerToClientMessage
+      .send("SUMMARY_NEW")
+      .data(summary)
+      .to({ room: recentGameSummarysSocketRoom })
+      .emit();
   } catch (e) {
     //TODO: add physical storage logging here.
     logDev({
-      message: ["failed to store game in datatbase", e],
+      category: loggingCategories.db,
+      message: ["failed to store game in database"],
       color: loggingColourCode.FgRed,
     });
   }
@@ -168,7 +283,7 @@ export async function getGameSummary(
 ): Promise<GameSummary | null> {
   const result: PgGameSummaryQueryType | null =
     (await db.query.games.findFirst({
-      with: GameSummaryWithQuery,
+      with: drizzleGameSummaryWithQuery,
       where: eq(games.id, gameID),
     })) ?? null;
 
@@ -191,7 +306,7 @@ export async function getPlayerGameSummarys(
   count = count ?? 20;
 
   const results = await db.query.games.findMany({
-    with: GameSummaryWithQuery,
+    with: drizzleGameSummaryWithQuery,
     where: or(eq(games.p_black_id, playerID), eq(games.p_white_id, playerID)),
     limit: count === true ? undefined : count,
   });
@@ -207,16 +322,20 @@ export async function getPlayerGameSummarys(
  */
 export async function getRecentGameSummarys({
   count,
+  start,
 }: {
+  start?: number;
   count?: number | true;
 } = {}) {
+  start = start ?? 0;
   count = count ?? 20;
 
   const results = await db.query.games.findMany({
-    with: GameSummaryWithQuery,
+    with: drizzleGameSummaryWithQuery,
     limit: count === true ? undefined : count,
-    orderBy: (games, { desc }) => [desc(games.t_end)],
+    orderBy: (games, { desc }) => [desc(games.serial)],
+    offset: start,
   });
 
-  return results.map((r) => pgGameSummaryQueryResultToGameSummary(r));
+  return results.map(pgGameSummaryQueryResultToGameSummary);
 }

@@ -1,3 +1,5 @@
+import { GameTimePreset } from "~/types/game.types";
+
 /**
  * A collection of constants reffering to potential values of various components of the game.
  */
@@ -49,6 +51,28 @@ export const TERMINATIONS = [
   ...DRAW_TERMINATIONS,
   ...DECISIVE_TERMINATIONS,
 ] as const;
+
+export const TIME_PRESET = [
+  "30s",
+  "1m",
+  "5m",
+  "10m",
+  "15m",
+  "30m",
+  "1h",
+] as const satisfies string[];
+
+export const TIMED_PRESET_MAPPINGS = {
+  "30s": 30000,
+  "1m": 60000,
+  "5m": 300000,
+  "10m": 600000,
+  "15m": 900000,
+  "30m": 1800000,
+  "1h": 3600000,
+} as const satisfies {
+  [key in GameTimePreset]: number;
+};
 
 /**
  * Tile Id's e.g a1, h8 etc.

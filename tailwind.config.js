@@ -6,6 +6,16 @@ const config = {
   plugins: [containerQueries, scrollbarHide],
   theme: {
     extend: {
+      spacing: {
+        88: "22rem",
+        104: "26rem",
+        106: "27rem",
+        108: "28rem",
+        112: "29rem",
+        116: "30rem",
+        120: "31rem",
+        124: "32rem",
+      },
       keyframes: {
         fade: {
           "0%": { opacity: "0" },

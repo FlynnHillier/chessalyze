@@ -4,10 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useInterval } from "usehooks-ts";
 
 import { ChessBoard } from "./ChessBoard";
-import { useGame } from "~/app/_components/providers/game.provider";
+import {
+  useDispatchGame,
+  useGame,
+} from "~/app/_components/providers/client/game.provider";
 import { Movement, Player, BW, Color } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
-import { useSession } from "~/app/_components/providers/session.provider";
+import { useSession } from "~/app/_components/providers/client/session.provider";
 import { FaChessKing, FaChess } from "react-icons/fa";
 import { FaRegChessKing } from "react-icons/fa6";
 import Image from "next/image";
@@ -127,13 +130,13 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
  *
  */
 export default function ChessInterface() {
+  const dispatchGame = useDispatchGame();
+
   const game = useGame().game;
   const conclusion = useGame().conclusion;
   const { user } = useSession();
-  const trpcMoveMutation = trpc.game.move.useMutation();
+  const trpcMoveMutation = trpc.game.play.move.useMutation();
   const [orientation, setOrientation] = useState<Color>("w");
-  const [showGameEndOverlay, setShowGameEndOverlay] =
-    useState<boolean>(!!conclusion);
   const [time, setTime] = useState<BW<number>>();
   const [clockUpdateInterval, setClockUpdateInterval] = useState<number | null>(
     null,
@@ -143,8 +146,8 @@ export default function ChessInterface() {
    * When game context time is updated, push update to state also.
    */
   useEffect(() => {
-    setTime(game?.time.remaining);
-  }, [game?.time.lastUpdated]);
+    if (game?.live) setTime(game?.live.time.remaining);
+  }, [game?.live?.time.lastUpdated]);
 
   /**
    * Dictate the interval at which the currently active clock is updated at.
@@ -156,9 +159,9 @@ export default function ChessInterface() {
    */
   useEffect(() => {
     setClockUpdateInterval(() => {
-      if (!time || !game) return null;
+      if (!time || !game?.live) return null;
 
-      if (time[game.state.turn] < 10000) return 100;
+      if (time[game.live.current.turn] < 10000) return 100;
 
       return 250;
     });
@@ -171,28 +174,24 @@ export default function ChessInterface() {
    */
   useInterval(() => {
     setTime((prev) => {
-      if (!game?.time.remaining) return undefined;
+      if (!game?.live?.time.remaining) return undefined;
 
       return {
-        w: prev?.w ?? game.time.remaining.w,
-        b: prev?.b ?? game.time.remaining.b,
-        [game.state.turn]:
-          game.time.remaining[game.state.turn] -
-          (Date.now() - game.time.lastUpdated),
+        w: prev?.w ?? game.live.time.remaining.w,
+        b: prev?.b ?? game.live.time.remaining.b,
+        [game.live.current.turn]:
+          game.live.time.remaining[game.live.current.turn] -
+          (Date.now() - game.live.time.lastUpdated),
       };
     });
   }, clockUpdateInterval);
-
-  useEffect(() => {
-    setShowGameEndOverlay(!!conclusion);
-  }, [conclusion]);
 
   /**
    *  Decide and set board orientation based on the current match's players.
    */
   useEffect(() => {
-    setOrientation(user?.id === game?.players.b.pid ? "b" : "w");
-  }, [user, game?.players.b.pid, game?.players.w.pid]);
+    setOrientation(user?.id === game?.players.b?.pid ? "b" : "w");
+  }, [user, game?.players.b?.pid, game?.players.w?.pid]);
 
   /**
    *
@@ -211,34 +210,50 @@ export default function ChessInterface() {
       <div className=" w-full overflow-hidden rounded-t-md">
         <GameBanner
           player={orientation === "b" ? game?.players.w : game?.players.b}
-          time={time?.[orientation === "b" ? "w" : "b"]}
+          time={
+            game?.live
+              ? time?.[orientation === "b" ? "w" : "b"]
+              : game?.viewing
+                ? game?.viewing?.move.time.remaining?.[
+                    orientation === "b" ? "w" : "b"
+                  ]
+                : game?.time.initial.remaining?.[
+                    orientation === "b" ? "w" : "b"
+                  ]
+          }
         />
       </div>
       <div className="grid w-full grid-cols-1 grid-rows-1 [&>div]:col-start-1 [&>div]:row-start-1 ">
         <ChessBoard
-          turn={game?.state.turn}
+          turn={game?.live?.current.turn}
           FEN={
-            game?.state.fen ??
-            conclusion?.conclusion.boardState ??
+            game?.viewing?.move.fen ??
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           }
-          getValidMoves={game?.engine.getValidMoves}
+          getValidMoves={game?.live?.engine.getValidMoves}
           onMovement={onMovement}
           orientation={orientation}
-          disabled={!game || game.state.turn !== orientation}
+          disabled={
+            !game?.live ||
+            game.live.current.turn !== orientation ||
+            (game.viewing && !game.viewing.isLatest) ||
+            (!game.viewing && game.moves.length > 0)
+          }
         />
         <GameEndOverlay
-          isShown={showGameEndOverlay}
+          isShown={!!conclusion}
           hideSelf={() => {
-            setShowGameEndOverlay(false);
+            dispatchGame({
+              type: "HIDE_CONCLUSION",
+              payload: {},
+            });
           }}
-          reason={conclusion?.conclusion.termination}
-          victor={conclusion?.conclusion.victor}
+          reason={conclusion?.reason}
+          victor={conclusion?.victor}
         />
       </div>
       <div className="w-full overflow-hidden rounded-b-md">
         <GameBanner
-          time={time?.[orientation === "b" ? "b" : "w"]}
           player={
             game
               ? orientation === "b"
@@ -247,6 +262,17 @@ export default function ChessInterface() {
               : user
                 ? { pid: user?.id, username: user?.name, image: user?.image }
                 : undefined
+          }
+          time={
+            game?.live
+              ? time?.[orientation === "b" ? "b" : "w"]
+              : game?.viewing
+                ? game?.viewing?.move.time.remaining?.[
+                    orientation === "b" ? "b" : "w"
+                  ]
+                : game?.time.initial.remaining?.[
+                    orientation === "b" ? "b" : "w"
+                  ]
           }
         />
       </div>

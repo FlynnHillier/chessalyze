@@ -1,10 +1,11 @@
-import { WebSocket } from "ws";
+import { WebSocket, MessageEvent } from "ws";
 import { IncomingMessage } from "http";
 import { WebSocketServer } from "ws";
 import { parse as parseCookie } from "cookie";
 import { env } from "~/env";
 import { lucia } from "~/lib/lucia/lucia";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
+import { onWsClientToServerMessage } from "~/app/api/ws/listeners";
 
 interface WebSocketClient {
   id: string;
@@ -36,22 +37,26 @@ export async function SOCKET(
   request: IncomingMessage,
   server: WebSocketServer,
 ) {
-  const { auth_session } = parseCookie(request.headers.cookie ?? "");
-  if (!auth_session) {
-    return closeConnection(client, "no session cookie present");
-  }
-
-  const luciaResponse = await lucia.validateSession(auth_session); //TODO: this could call 'fresh' on lucia session, but we cannot set cookie
-  if (luciaResponse.user === null || luciaResponse.session === null) {
-    return closeConnection(client, "invalid session cookie");
-  }
-
   //Apply a basic id to socket for identification purposes during development
   client.id = String(count);
   count++;
 
-  const { user, session } = luciaResponse;
-  wsSocketRegistry.register(user.id, client);
+  const { auth_session } = parseCookie(request.headers.cookie ?? "");
+  const { user } = await lucia.validateSession(auth_session); //TODO: this could call 'fresh' on lucia session, but we cannot set cookie
+
+  if (user) {
+    wsSocketRegistry.register(client, user.id);
+  }
+
+  const onWSMessage = (m: MessageEvent) => {
+    onWsClientToServerMessage(client)(m.data.toString());
+  };
+
+  client.addEventListener("message", onWSMessage);
+
+  client.once("close", () => {
+    client.removeEventListener("message", onWSMessage);
+  });
 }
 
 export function GET() {}

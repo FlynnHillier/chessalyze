@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
 
 import { trpc } from "~/app/_trpc/client";
-import { useLobby } from "~/app/_components/providers/lobby.provider";
-import AsyncButton from "~/app/_components/common/AsyncButton";
+import { useLobby } from "~/app/_components/providers/client/lobby.provider";
+import AsyncButton from "~/app/_components/common/buttons/AsyncButton";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import { TRPCClientError } from "@trpc/client";
 
@@ -25,6 +25,8 @@ export function CreateChallenge() {
   const leaveLobbyMutation = trpc.lobby.leave.useMutation();
   const { show: showError } = useMutatePanelErrorMessage();
 
+  const elementBottomRef = useRef<HTMLSpanElement>(null);
+
   const [disableConfigurationChanges, setDisabledConfigurationChanges] =
     useState<boolean>(false);
 
@@ -33,6 +35,14 @@ export function CreateChallenge() {
 
   const { challengeConfiguration, dispatchChallengeConfiguration } =
     useChallengeConfiguration();
+
+  /**
+   * For vertical view, scroll bottom of element into view if element height changes due to challenge creation / link copy
+   *
+   */
+  useEffect(() => {
+    elementBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [hasCopiedChallengeLink, lobby.present]);
 
   /**
    * Disallow further changes to lobby configuration
@@ -107,12 +117,14 @@ export function CreateChallenge() {
           lobby: {
             id: r.lobby.id,
             config: {
-              time: r.lobby.config.time
-                ? {
-                    verbose: r.lobby.config.time.verbose,
-                    preset: r.lobby.config.time.preset,
-                  }
-                : undefined,
+              time:
+                r.lobby.config.time &&
+                ((r.lobby.config.time.preset && {
+                  template: r.lobby.config.time.preset,
+                }) ||
+                  (r.lobby.config.time.verbose && {
+                    absolute: r.lobby.config.time.verbose,
+                  })),
             },
           },
         },
@@ -270,6 +282,7 @@ export function CreateChallenge() {
           </AsyncButton>
         </>
       )}
+      <span ref={elementBottomRef} />
     </div>
   );
 }

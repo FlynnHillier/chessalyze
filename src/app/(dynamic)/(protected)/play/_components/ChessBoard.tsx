@@ -49,7 +49,12 @@ export function ChessBoard({
    * generated styles for chess board tiles based on selected tile
    */
   const customSquareStyles = useMemo(() => {
-    if (!selectedTile || !getValidMoves || (turn && turn !== orientation))
+    if (
+      disabled ||
+      !selectedTile ||
+      !getValidMoves ||
+      (turn && turn !== orientation)
+    )
       return {};
 
     const getTileCSS = (occupied: boolean) => {
@@ -89,6 +94,8 @@ export function ChessBoard({
     target,
     promotion,
   }: Movement): Promise<boolean> {
+    console.log("move");
+
     if (disabled) return false;
     if (!getValidMoves) return true;
 

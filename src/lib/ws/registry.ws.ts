@@ -1,11 +1,11 @@
 import { WebSocket } from "ws";
-import { env } from "~/env";
 import {
   logDev,
   loggingCategories,
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
-import { emitDevIDEvent } from "~/lib/ws/events/dev/dev.id.event.ws";
+import { env } from "~/env";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 //TODO: Add heartbeat so that
 
@@ -20,7 +20,7 @@ class WSSocketRegistry {
     return Array.from(this.sockets.get(uid) ?? []);
   }
 
-  public register(uid: string, socket: WebSocket): void {
+  public register(socket: WebSocket, uid: string): void {
     const sockets = this.sockets.get(uid) ?? new Set();
     sockets.add(socket);
 
@@ -40,12 +40,12 @@ class WSSocketRegistry {
       }).bind(this),
     );
 
-    emitDevIDEvent(
-      { socket },
-      {
-        id: socket.id,
-      },
-    );
+    if (env.NODE_ENV === "development")
+      wsServerToClientMessage
+        .send("DEV_ID")
+        .data({ id: socket.id })
+        .to({ socket })
+        .emit();
   }
 
   public deregister(uid: string, socket: WebSocket): boolean {

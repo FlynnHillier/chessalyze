@@ -37,6 +37,7 @@ export const loggingCategories = {
   socket: new LoggingCategory("socket", loggingColourCode.FgMagenta),
   lobby: new LoggingCategory("lobby", loggingColourCode.FgBlue),
   game: new LoggingCategory("game", loggingColourCode.FgCyan),
+  db: new LoggingCategory("db", loggingColourCode.FgWhite),
 } as const;
 
 /**
