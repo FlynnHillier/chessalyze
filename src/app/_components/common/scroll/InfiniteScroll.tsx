@@ -52,9 +52,25 @@ export default function InfiniteScroller({
     }
   };
 
+  /**
+   * Initial load, & load's more if a load does not fill element height
+   */
   useEffect(() => {
     if (!locked.current) loadNextIfNecessary();
   }, [locked.current]);
+
+  /**
+   * If container is resized check if we should now load more elements
+   */
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(loadNextIfNecessary);
+    resizeObserver.observe(containerRef.current);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [containerRef.current]);
 
   return (
     <div
