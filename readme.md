@@ -25,8 +25,8 @@ Once signed up, simply **create a challenge**:
 As of writing this updated readme (*09/04/24*) I am still actively working on the project and intend to add a multitude of extra features in the coming months.
 
 - More detailed home page & signup screen (soon)
-- Retrospective game viewing 
-  - view games you've played in the past & step back through the moves that occured
+- <del>Retrospective game viewing</del> *completed 22/05/24*
+  - <del>view games you've played in the past & step back through the moves that occured</del>
 - Directly add friends and in-site invitation's that don't require link sharing
 - 'Matchmaking' in which any user on the site can 'queue' for a game and receive a random opponent
 - Play against bots!
