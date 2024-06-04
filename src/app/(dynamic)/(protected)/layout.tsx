@@ -1,21 +1,14 @@
-import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 import { LobbyProvider } from "~/app/_components/providers/client/lobby.provider";
 import ServerGameProvider from "~/app/_components/providers/server/server.game.provider";
-
-import { getServerSession } from "~/lib/lucia/util.lucia";
+import { redirectIfNotAuthed } from "~/app/_controllers/auth/auth.controllers";
 
 export default async function RestrictedLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const { user } = await getServerSession();
-
-  if (!user) {
-    // User is not logged in
-    redirect("/auth/login");
-  }
+  await redirectIfNotAuthed("/login");
 
   return (
     <LobbyProvider>
