@@ -7,6 +7,9 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 
+import { relations } from "drizzle-orm";
+import { friends } from "~/lib/drizzle/social.schema";
+
 export const users = pgTable("user", {
   id: varchar("id", {
     length: 255,
@@ -49,3 +52,8 @@ export const accountConnections = pgTable(
     }),
   }),
 );
+
+// RELATIONS
+export const userRelations = relations(users, ({ many }) => ({
+  friends: many(friends),
+}));
