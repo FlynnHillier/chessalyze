@@ -61,6 +61,7 @@
     "tailwind-scrollbar-hide": "^1.1.7",
     "usehooks-ts": "^3.0.2",
     "uuid": "^9.0.1",
+    "winston": "^3.13.0",
     "ws": "^8.16.0",
     "zod": "^3.22.4"
   },
