@@ -10,7 +10,7 @@ const fp = (logID: string) => `logs/${logID}.log`;
 
 const minimisedFormat = winston.format.printf(
   ({ level, message, label, timestamp }) => {
-    return `${timestamp} [${label}] ${level}: ${message}`;
+    return `${timestamp} [${label}] ${level}: ${typeof message === "string" ? message : "See log-file for details"}`;
   },
 );
 
@@ -49,12 +49,8 @@ function labelledLoggerFactory(label: string) {
   });
 }
 
-/**
- * Server Disk & Console logging
- */
-export class Logger {
-  public static general = labelledLoggerFactory("general");
-  public static sockets = labelledLoggerFactory("sockets");
-  public static game = labelledLoggerFactory("game");
-  public static lobby = labelledLoggerFactory("lobby");
-}
+export const generalLog = labelledLoggerFactory("general");
+export const socialLog = labelledLoggerFactory("social");
+export const socketLog = labelledLoggerFactory("socket");
+export const gameLog = labelledLoggerFactory("game");
+export const lobbyLog = labelledLoggerFactory("lobby");
