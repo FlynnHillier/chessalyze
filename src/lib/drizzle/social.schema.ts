@@ -1,4 +1,3 @@
-import { games } from "~/lib/drizzle/games.schema";
 import {
   pgEnum,
   pgTable,
@@ -21,10 +20,10 @@ export const friends = pgTable(
   {
     user1_ID: varchar("user1") //user1 is the user who initiates the friendship (sends the friend request)
       .notNull()
-      .references(() => games.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "cascade" }),
     user2_ID: varchar("user2")
       .notNull()
-      .references(() => games.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "cascade" }),
     status: drizzleFriendStatusEnum("status"),
   },
   (t) => ({
