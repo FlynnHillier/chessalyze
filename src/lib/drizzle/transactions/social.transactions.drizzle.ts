@@ -1,17 +1,118 @@
+import { eq, or, and } from "drizzle-orm";
 import { db } from "~/lib/drizzle/db";
 import { friends } from "~/lib/drizzle/social.schema";
 
-//TODO: add logging on failure
-export async function sendUserFriendRequest(
-  senderID: string,
-  recipientID: string,
-): Promise<boolean> {
-  if (senderID === recipientID) return false;
+import { socialLog } from "~/lib/logging/logger.winston";
 
-  await db
-    .insert(friends)
-    .values({ user1_ID: senderID, user2_ID: recipientID, status: "pending" })
-    .onConflictDoNothing({ target: [friends.user1_ID, friends.user2_ID] });
+export default class DrizzleSocialTransaction {
+  /**
+   *
+   * @param userID the user initiating the transaction
+   */
+  constructor(private userID: string) {}
 
-  return true;
+  /**
+   *
+   * @param targetID  the ID of the user to receive the friend request
+   */
+  async sendUserFriendRequest(targetID: string): Promise<boolean> {
+    socialLog.debug(`${this.userID} sending friend request to ${targetID}`);
+
+    try {
+      await db
+        .insert(friends)
+        .values({
+          user1_ID: this.userID,
+          user2_ID: targetID,
+          status: "pending",
+        })
+        .onConflictDoNothing({ target: [friends.user1_ID, friends.user2_ID] });
+    } catch (e) {
+      socialLog.error(e);
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   *
+   * @param targetID the ID of the user that sent the initial friend request
+   */
+  async acceptUserFriendRequest(targetID: string) {
+    await db
+      .update(friends)
+      .set({ status: "confirmed" })
+      .where(
+        and(
+          eq(friends.status, "pending"),
+          and(
+            eq(friends.user1_ID, targetID),
+            eq(friends.user2_ID, this.userID),
+          ),
+        ),
+      );
+  }
+
+  /**
+   * @param targetID the ID of the user to remove as a friend
+   */
+  async removeConfirmedFriend(targetID: string): Promise<boolean> {
+    await db
+      .delete(friends)
+      .where(
+        and(
+          eq(friends.status, "confirmed"),
+          or(
+            and(
+              eq(friends.user1_ID, this.userID),
+              eq(friends.user2_ID, targetID),
+            ),
+            and(
+              eq(friends.user2_ID, this.userID),
+              eq(friends.user1_ID, targetID),
+            ),
+          ),
+        ),
+      );
+
+    return true;
+  }
+
+  /**
+   *
+   * @param targetID the ID of the user to cancel the existing outgoing request to
+   */
+  async cancelOutgoingFriendRequest(targetID: string): Promise<boolean> {
+    await db
+      .delete(friends)
+      .where(
+        and(
+          eq(friends.status, "pending"),
+          and(
+            eq(friends.user1_ID, this.userID),
+            eq(friends.user2_ID, targetID),
+          ),
+        ),
+      );
+
+    return true;
+  }
+
+  /**
+   *
+   * @param targetID the ID of the user to delete/reject the current incoming request from
+   */
+  async cancelIncomingFriendRequest(targetID: string): Promise<boolean> {
+    await db
+      .delete(friends)
+      .where(
+        and(
+          eq(friends.status, "pending"),
+          and(eq(friends.user1_ID, targetID), eq(friends.user2_ID, targetID)),
+        ),
+      );
+
+    return true;
+  }
 }
