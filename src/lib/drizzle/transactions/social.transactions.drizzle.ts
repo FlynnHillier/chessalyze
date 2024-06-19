@@ -44,7 +44,7 @@ export default class DrizzleSocialTransaction {
    *
    * @param targetID the ID of the user that sent the initial friend request
    */
-  async acceptUserFriendRequest(targetID: string) {
+  async acceptUserFriendRequest(targetID: string): Promise<boolean> {
     try {
       await db
         .update(friends)
@@ -64,33 +64,49 @@ export default class DrizzleSocialTransaction {
       );
     } catch (e) {
       log("social").error(
-        `user '${this.userID}' failed to accept friend request from user '${targetID}' %o`,
+        `user '${this.userID}' failed to accept friend request from user '${targetID}'`,
         e,
       );
+      return false;
     }
+
+    return true;
   }
 
   /**
    * @param targetID the ID of the user to remove as a friend
    */
   async removeConfirmedFriend(targetID: string): Promise<boolean> {
-    await db
-      .delete(friends)
-      .where(
-        and(
-          eq(friends.status, "confirmed"),
-          or(
-            and(
-              eq(friends.user1_ID, this.userID),
-              eq(friends.user2_ID, targetID),
-            ),
-            and(
-              eq(friends.user2_ID, this.userID),
-              eq(friends.user1_ID, targetID),
+    try {
+      await db
+        .delete(friends)
+        .where(
+          and(
+            eq(friends.status, "confirmed"),
+            or(
+              and(
+                eq(friends.user1_ID, this.userID),
+                eq(friends.user2_ID, targetID),
+              ),
+              and(
+                eq(friends.user2_ID, this.userID),
+                eq(friends.user1_ID, targetID),
+              ),
             ),
           ),
-        ),
+        );
+
+      log("social").debug(
+        `user '${this.userID}' removed user '${targetID}' as a friend`,
       );
+    } catch (e) {
+      log("social").error(
+        `failed attempting to remove user '${targetID}' from user '${this.userID}'s friend list`,
+        e,
+      );
+
+      return false;
+    }
 
     return true;
   }
@@ -100,18 +116,28 @@ export default class DrizzleSocialTransaction {
    * @param targetID the ID of the user to cancel the existing outgoing request to
    */
   async cancelOutgoingFriendRequest(targetID: string): Promise<boolean> {
-    await db
-      .delete(friends)
-      .where(
-        and(
-          eq(friends.status, "pending"),
+    try {
+      await db
+        .delete(friends)
+        .where(
           and(
-            eq(friends.user1_ID, this.userID),
-            eq(friends.user2_ID, targetID),
+            eq(friends.status, "pending"),
+            and(
+              eq(friends.user1_ID, this.userID),
+              eq(friends.user2_ID, targetID),
+            ),
           ),
-        ),
-      );
+        );
 
+      log("social").debug(
+        `user '${this.userID}' cancelled outgoing friend request to user '${targetID}'`,
+      );
+    } catch (e) {
+      log("social").debug(
+        `failed to cancel user '${this.userID}'s outgoing friend request to user '${targetID}'`,
+      );
+      return false;
+    }
     return true;
   }
 
@@ -120,14 +146,25 @@ export default class DrizzleSocialTransaction {
    * @param targetID the ID of the user to delete/reject the current incoming request from
    */
   async cancelIncomingFriendRequest(targetID: string): Promise<boolean> {
-    await db
-      .delete(friends)
-      .where(
-        and(
-          eq(friends.status, "pending"),
-          and(eq(friends.user1_ID, targetID), eq(friends.user2_ID, targetID)),
-        ),
+    try {
+      await db
+        .delete(friends)
+        .where(
+          and(
+            eq(friends.status, "pending"),
+            and(eq(friends.user1_ID, targetID), eq(friends.user2_ID, targetID)),
+          ),
+        );
+
+      log("social").debug(
+        `user '${this.userID}' cancelled incoming friend request from user '${targetID}'`,
       );
+    } catch (e) {
+      log("social").debug(
+        `failed to cancel user '${this.userID}'s incoming friend request from user '${targetID}'`,
+      );
+      return false;
+    }
 
     return true;
   }
