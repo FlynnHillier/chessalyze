@@ -1,8 +1,8 @@
-import { eq, or, and } from "drizzle-orm";
+import { eq, or, and, DrizzleError } from "drizzle-orm";
 import { db } from "~/lib/drizzle/db";
 import { friends } from "~/lib/drizzle/social.schema";
 
-import { socialLog } from "~/lib/logging/logger.winston";
+import { log } from "~/lib/logging/logger.winston";
 
 export default class DrizzleSocialTransaction {
   /**
@@ -16,8 +16,6 @@ export default class DrizzleSocialTransaction {
    * @param targetID  the ID of the user to receive the friend request
    */
   async sendUserFriendRequest(targetID: string): Promise<boolean> {
-    socialLog.debug(`${this.userID} sending friend request to ${targetID}`);
-
     try {
       await db
         .insert(friends)
@@ -27,8 +25,15 @@ export default class DrizzleSocialTransaction {
           status: "pending",
         })
         .onConflictDoNothing({ target: [friends.user1_ID, friends.user2_ID] });
+
+      log("social").debug(
+        `user ${this.userID} sent friend request to user ${targetID}`,
+      );
     } catch (e) {
-      socialLog.error(e);
+      log("social").error(
+        `user '${this.userID}' failed to send friend request to user '${targetID}'`,
+        e,
+      );
       return false;
     }
 
@@ -40,18 +45,29 @@ export default class DrizzleSocialTransaction {
    * @param targetID the ID of the user that sent the initial friend request
    */
   async acceptUserFriendRequest(targetID: string) {
-    await db
-      .update(friends)
-      .set({ status: "confirmed" })
-      .where(
-        and(
-          eq(friends.status, "pending"),
+    try {
+      await db
+        .update(friends)
+        .set({ status: "confirmed" })
+        .where(
           and(
-            eq(friends.user1_ID, targetID),
-            eq(friends.user2_ID, this.userID),
+            eq(friends.status, "pending"),
+            and(
+              eq(friends.user1_ID, targetID),
+              eq(friends.user2_ID, this.userID),
+            ),
           ),
-        ),
+        );
+
+      log("social").debug(
+        `user '${this.userID}' accepted friend request from user '${targetID}'`,
       );
+    } catch (e) {
+      log("social").error(
+        `user '${this.userID}' failed to accept friend request from user '${targetID}' %o`,
+        e,
+      );
+    }
   }
 
   /**
