@@ -1,4 +1,4 @@
-import { eq, or, and, DrizzleError } from "drizzle-orm";
+import { eq, or, and } from "drizzle-orm";
 import { db } from "~/lib/drizzle/db";
 import { friends } from "~/lib/drizzle/social.schema";
 import { DatabaseErrorCode } from "~/lib/drizzle/errors/errors.pg";
@@ -14,11 +14,41 @@ enum FRIEND_CONSTRAINT_CODES {
 }
 
 /**
+ * To Describe the result of a database transaction
+ */
+type TransactionResult<T extends any = undefined> = {
+  success: boolean;
+  message?: string;
+  meta?: T;
+};
+
+type SocialTransactionResult = TransactionResult<{
+  isNonExistentTargetUserError: boolean;
+}>;
+
+/**
+ *
+ * @param userID the target user ID
+ * @returns suitable object, for when target user did not exist
+ */
+const nonExistentUserError: (userID: string) => TransactionResult<{
+  isNonExistentTargetUserError: true;
+}> = (userID: string) => {
+  return {
+    success: false,
+    message: `user '${userID}' does not exist`,
+    meta: {
+      isNonExistentTargetUserError: true,
+    },
+  };
+};
+
+/**
  *
  * @param e an error
  * @returns true if the error is caused because user2 did not exist
  */
-function errorBecauseUser2DidNotExist(e: unknown): boolean {
+function isErrorBecauseUser2DidNotExist(e: unknown): boolean {
   return (
     e instanceof DatabaseError &&
     e.code === DatabaseErrorCode.ForeignKeyViolation &&
@@ -31,7 +61,7 @@ function errorBecauseUser2DidNotExist(e: unknown): boolean {
  * @param e an error
  * @returns true if the error is caused because user1 did not exist
  */
-function errorBecauseUser1DidNotExist(e: unknown): boolean {
+function isErrorBecauseUser1DidNotExist(e: unknown): boolean {
   return (
     e instanceof DatabaseError &&
     e.code === DatabaseErrorCode.ForeignKeyViolation &&
@@ -54,7 +84,9 @@ export default class DrizzleSocialTransaction {
    * @param targetID  the ID of the user to receive the friend request
    * @returns true if successful, false if not
    */
-  async sendUserFriendRequest(targetID: string): Promise<boolean> {
+  async sendUserFriendRequest(
+    targetID: string,
+  ): Promise<SocialTransactionResult> {
     try {
       await db
         .insert(friends)
@@ -69,23 +101,25 @@ export default class DrizzleSocialTransaction {
         `user '${this.userID}' sent friend request to user '${targetID}'.`,
       );
     } catch (e) {
-      if (errorBecauseUser2DidNotExist(e)) {
+      if (isErrorBecauseUser2DidNotExist(e)) {
         log("social").warn(
           `user '${this.userID}' tried to send friend request to user '${targetID}', but the user did not exist.`,
           e,
         );
 
-        return false;
+        return nonExistentUserError(targetID);
       }
 
       log("social").error(
         `failed sending friend request from user '${this.userID}' to user '${targetID}'.`,
         e,
       );
-      return false;
+      return {
+        success: false,
+      };
     }
 
-    return true;
+    return { success: true };
   }
 
   /**
@@ -93,7 +127,9 @@ export default class DrizzleSocialTransaction {
    * @param targetID the ID of the user that sent the initial friend request
    * @returns true if successful, false if not
    */
-  async acceptUserFriendRequest(targetID: string): Promise<boolean> {
+  async acceptUserFriendRequest(
+    targetID: string,
+  ): Promise<SocialTransactionResult> {
     try {
       await db
         .update(friends)
@@ -112,30 +148,36 @@ export default class DrizzleSocialTransaction {
         `user '${this.userID}' accepted friend request from user '${targetID}'.`,
       );
     } catch (e) {
-      if (errorBecauseUser1DidNotExist(e)) {
+      if (isErrorBecauseUser1DidNotExist(e)) {
         // Target user did not exist in users table
         log("social").warn(
           `user '${this.userID}' tried to accept friend request from user '${targetID}', but the user did not exist.`,
           e,
         );
-        return false;
+        return nonExistentUserError(targetID);
       }
 
       log("social").error(
         `user '${this.userID}' failed to accept friend request from user '${targetID}'.`,
         e,
       );
-      return false;
+      return {
+        success: false,
+      };
     }
 
-    return true;
+    return {
+      success: true,
+    };
   }
 
   /**
    * @param targetID the ID of the user to remove as a friend
    * @returns true if successful, false if not
    */
-  async removeConfirmedFriend(targetID: string): Promise<boolean> {
+  async removeConfirmedFriend(
+    targetID: string,
+  ): Promise<SocialTransactionResult> {
     try {
       await db
         .delete(friends)
@@ -159,23 +201,30 @@ export default class DrizzleSocialTransaction {
         `user '${this.userID}' removed user '${targetID}' as a friend.`,
       );
     } catch (e) {
-      if (errorBecauseUser1DidNotExist(e) || errorBecauseUser2DidNotExist(e)) {
+      if (
+        isErrorBecauseUser1DidNotExist(e) ||
+        isErrorBecauseUser2DidNotExist(e)
+      ) {
         // Target user did not exist in users table
         log("social").warn(
           `user '${this.userID}' tried to remove user '${targetID}' as a friend, but the user did not exist.`,
           e,
         );
-        return false;
+        return nonExistentUserError(targetID);
       }
       log("social").error(
         `failed attempting to remove user '${targetID}' from user '${this.userID}'s friend list.`,
         e,
       );
 
-      return false;
+      return {
+        success: false,
+      };
     }
 
-    return true;
+    return {
+      success: true,
+    };
   }
 
   /**
@@ -183,7 +232,9 @@ export default class DrizzleSocialTransaction {
    * @param targetID the ID of the user to cancel the existing outgoing request to
    * @returns true if successful, false if not
    */
-  async cancelOutgoingFriendRequest(targetID: string): Promise<boolean> {
+  async cancelOutgoingFriendRequest(
+    targetID: string,
+  ): Promise<SocialTransactionResult> {
     try {
       await db
         .delete(friends)
@@ -201,20 +252,24 @@ export default class DrizzleSocialTransaction {
         `user '${this.userID}' cancelled outgoing friend request to user '${targetID}'.`,
       );
     } catch (e) {
-      if (errorBecauseUser2DidNotExist(e)) {
+      if (isErrorBecauseUser2DidNotExist(e)) {
         log("social").warn(
           `user '${this.userID}' tried to cancel outgoing friend request to user '${targetID}', but the user did not exist.`,
           e,
         );
-        return false;
+        return nonExistentUserError(targetID);
       }
 
       log("social").debug(
         `failed to cancel user '${this.userID}'s outgoing friend request to user '${targetID}'.`,
       );
-      return false;
+      return {
+        success: false,
+      };
     }
-    return true;
+    return {
+      success: true,
+    };
   }
 
   /**
@@ -222,7 +277,9 @@ export default class DrizzleSocialTransaction {
    * @param targetID the ID of the user to delete/reject the current incoming request from
    * @returns true if successful, false if not
    */
-  async cancelIncomingFriendRequest(targetID: string): Promise<boolean> {
+  async cancelIncomingFriendRequest(
+    targetID: string,
+  ): Promise<SocialTransactionResult> {
     try {
       await db
         .delete(friends)
@@ -237,20 +294,24 @@ export default class DrizzleSocialTransaction {
         `user '${this.userID}' cancelled incoming friend request from user '${targetID}'.`,
       );
     } catch (e) {
-      if (errorBecauseUser1DidNotExist(e)) {
+      if (isErrorBecauseUser1DidNotExist(e)) {
         log("social").warn(
           `user '${this.userID}' tried to cancel incoming friend request from user '${targetID}', but the user did not exist.`,
           e,
         );
-        return false;
+        return nonExistentUserError(targetID);
       }
 
       log("social").debug(
         `failed to cancel user '${this.userID}'s incoming friend request from user '${targetID}'.`,
       );
-      return false;
+      return {
+        success: false,
+      };
     }
 
-    return true;
+    return {
+      success: true,
+    };
   }
 }
