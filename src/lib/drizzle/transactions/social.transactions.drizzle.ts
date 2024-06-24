@@ -5,12 +5,15 @@ import { DatabaseErrorCode } from "~/lib/drizzle/errors/errors.pg";
 import { log } from "~/lib/logging/logger.winston";
 import { DatabaseError } from "pg";
 
+//TODO: add return details for if friend cancel / accept / reject fails because the friend request could not be located
+
 /**
  * String provided in pg errors regarding constraint errors on the 'friends' table
  */
 enum FRIEND_CONSTRAINT_CODES {
   USER2_FK = "friends_user2_user_id_fk",
   USER1_FK = "friends_user1_user_id_fk",
+  USER1_USER2_PK = "friends_user1_user2_pk",
 }
 
 /**
@@ -22,23 +25,43 @@ type TransactionResult<T extends any = undefined> = {
   meta?: T;
 };
 
-type SocialTransactionResult = TransactionResult<{
-  isNonExistentTargetUserError: boolean;
-}>;
+type SocialTransactionResult = TransactionResult<
+  Partial<{
+    isNonExistentTargetUserError: boolean;
+    isAlreadyExistingFriendEntryError: boolean;
+  }>
+>;
 
 /**
  *
- * @param userID the target user ID
+ * @param targetUserID the target user ID
  * @returns suitable object, for when target user did not exist
  */
-const nonExistentUserError: (userID: string) => TransactionResult<{
-  isNonExistentTargetUserError: true;
-}> = (userID: string) => {
+const nonExistentUserError: (
+  targetUserID: string,
+) => SocialTransactionResult = (targetUserID: string) => {
   return {
     success: false,
-    message: `user '${userID}' does not exist`,
+    message: `user '${targetUserID}' does not exist`,
     meta: {
       isNonExistentTargetUserError: true,
+    },
+  };
+};
+
+/**
+ *
+ * @param targetUserID the target user ID
+ * @returns suitable object, for when a relation between the two users was already present
+ */
+const alreadyExistingFriendEntryError: (
+  targetUserID: string,
+) => SocialTransactionResult = (targetUserID: string) => {
+  return {
+    success: false,
+    message: `a request/friendship with user '${targetUserID}' already exists.`,
+    meta: {
+      isAlreadyExistingFriendEntryError: true,
     },
   };
 };
@@ -69,6 +92,14 @@ function isErrorBecauseUser1DidNotExist(e: unknown): boolean {
   );
 }
 
+function isErrorBecauseExistingEntry(e: unknown): boolean {
+  return (
+    e instanceof DatabaseError &&
+    e.code === DatabaseErrorCode.UniqueViolation &&
+    e.constraint === FRIEND_CONSTRAINT_CODES.USER1_USER2_PK
+  );
+}
+
 /**
  * Carry out database transactions regarding tables in the 'social context'
  */
@@ -88,14 +119,12 @@ export default class DrizzleSocialTransaction {
     targetID: string,
   ): Promise<SocialTransactionResult> {
     try {
-      await db
-        .insert(friends)
-        .values({
-          user1_ID: this.userID,
-          user2_ID: targetID,
-          status: "pending",
-        })
-        .onConflictDoNothing({ target: [friends.user1_ID, friends.user2_ID] });
+      await db.insert(friends).values({
+        user1_ID: this.userID,
+        user2_ID: targetID,
+        status: "pending",
+      });
+      // .onConflictDoNothing({ target: [friends.user1_ID, friends.user2_ID] }); // This line will stop error being thrown when an entry already exists
 
       log("social").debug(
         `user '${this.userID}' sent friend request to user '${targetID}'.`,
@@ -108,6 +137,15 @@ export default class DrizzleSocialTransaction {
         );
 
         return nonExistentUserError(targetID);
+      }
+
+      if (isErrorBecauseExistingEntry(e)) {
+        log("social").warn(
+          `user '${this.userID}' tried to send friend request to user '${targetID}', but a social entry between the two users already exists.`,
+          e,
+        );
+
+        return alreadyExistingFriendEntryError(targetID);
       }
 
       log("social").error(
@@ -212,6 +250,7 @@ export default class DrizzleSocialTransaction {
         );
         return nonExistentUserError(targetID);
       }
+
       log("social").error(
         `failed attempting to remove user '${targetID}' from user '${this.userID}'s friend list.`,
         e,
