@@ -1,3 +1,3 @@
-import { protectedProcedure } from "~/server/api/trpc";
+import { protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
-export const SOCIALPROCEDURE = protectedProcedure;
+export const SOCIALPROCEDURE = publicProcedure; //protectedProcedure;

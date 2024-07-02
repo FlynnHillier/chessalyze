@@ -3,6 +3,8 @@ import { db } from "~/lib/drizzle/db";
 import { friends } from "~/lib/drizzle/social.schema";
 import { users } from "~/lib/drizzle/auth.schema";
 
+import { log } from "~/lib/logging/logger.winston";
+
 type DBUser = typeof users.$inferSelect;
 
 /**
@@ -102,4 +104,33 @@ export async function getUserGeneralFriendInfo(userID: string): Promise<{
       outgoing,
     },
   };
+}
+
+export async function getUserProfile(userID: string) {
+  try {
+    const r = await db.query.users.findFirst({
+      where: eq(users.id, userID),
+      with: {
+        games_w: {
+          with: {
+            conclusion: true,
+          },
+        },
+        friends_user1: true,
+        friends_user2: true,
+        games_b: {
+          with: {
+            conclusion: true,
+          },
+        },
+      },
+    });
+    return r;
+  } catch (e) {
+    log("social").error(
+      `errored while fetching user profile for user '${userID}'`,
+      e,
+    );
+    return undefined;
+  }
 }
