@@ -120,6 +120,11 @@ export const trpcSocialRouter = createTRPCRouter({
                 asBlack: gStats.black.drawn,
                 total: gStats.black.drawn + gStats.white.drawn,
               },
+              all: {
+                total: allGames.length,
+                asWhite: games_w.length,
+                asBlack: games_b.length,
+              },
             },
           },
         };
