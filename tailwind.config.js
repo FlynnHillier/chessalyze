@@ -10,6 +10,7 @@ const config = {
         roboto: ["Roboto", "sans-serif"],
       },
       spacing: {
+        0.25: "1px",
         88: "22rem",
         104: "26rem",
         106: "27rem",
