@@ -28,3 +28,30 @@ export default function AsyncButton({
     </button>
   );
 }
+
+export function FixedSizeAsyncButton({
+  isLoading,
+  onLoading,
+  children,
+  ...otherProps
+}: {
+  isLoading: boolean;
+  onLoading: ReactNode;
+} & JSX.IntrinsicElements["button"]) {
+  return (
+    <button {...otherProps} disabled={otherProps.disabled || isLoading}>
+      <div className="relative">
+        <div
+          className={`inline-block h-fit w-fit ${isLoading ? " invisible" : ""}`}
+        >
+          {children}
+        </div>
+        <div
+          className={`absolute left-0 top-0 flex h-full w-full items-center justify-center ${!isLoading ? "invisible" : ""}`}
+        >
+          {onLoading}
+        </div>
+      </div>
+    </button>
+  );
+}
