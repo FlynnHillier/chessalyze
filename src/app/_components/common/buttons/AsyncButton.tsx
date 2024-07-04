@@ -55,3 +55,39 @@ export function FixedSizeAsyncButton({
     </button>
   );
 }
+
+export function FixedSizeAsyncButtonRight({
+  isLoading,
+  onLoading,
+  children,
+  buttonRight,
+  ...otherProps
+}: {
+  isLoading: boolean;
+  onLoading: ReactNode;
+  buttonRight: React.ReactElement<HTMLButtonElement>;
+} & JSX.IntrinsicElements["div"]) {
+  return (
+    <div {...otherProps}>
+      <div className="relative">
+        <div
+          className={`inline-block h-fit w-fit ${isLoading ? " invisible" : ""}`}
+        >
+          <div
+            className={
+              "flex h-fit w-fit flex-row flex-nowrap items-center gap-2"
+            }
+          >
+            {children}
+            {buttonRight}
+          </div>
+        </div>
+        <div
+          className={`absolute left-0 top-0 flex h-full w-full items-center justify-center ${!isLoading ? "invisible" : ""}`}
+        >
+          {onLoading}
+        </div>
+      </div>
+    </div>
+  );
+}
