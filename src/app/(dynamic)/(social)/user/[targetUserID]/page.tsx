@@ -9,6 +9,7 @@ import {
 } from "./_components/ProfileView.context";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { FriendInteractionButton } from "./_components/SocialButtons";
+import { useSession } from "~/app/_components/providers/client/session.provider";
 
 /**
  *
@@ -175,6 +176,7 @@ function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
  * Page view - side banner
  */
 function UserSideBanner() {
+  const { user } = useSession();
   const { profile, isLoading } = useProfileInformation();
 
   return (
@@ -194,7 +196,7 @@ function UserSideBanner() {
           <span className="mt-5 pb-3 text-4xl font-bold">
             {profile.user.username}
           </span>
-          <FriendInteractionButton target={{ id: profile.user.id }} />
+          {user && <FriendInteractionButton target={{ id: profile.user.id }} />}
           <div className="mt-3 flex h-fit w-full  flex-col items-center rounded bg-stone-950 px-2 pt-3 text-center">
             <ProfileStatsView />
           </div>
