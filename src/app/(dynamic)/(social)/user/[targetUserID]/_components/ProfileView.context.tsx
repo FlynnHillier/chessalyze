@@ -3,8 +3,10 @@ import {
   ReactNode,
   createContext,
   useContext,
+  useEffect,
   useState,
 } from "react";
+import { trpc } from "~/app/_trpc/client";
 
 type GameResultsStat = {
   asWhite: number;
@@ -15,8 +17,8 @@ type GameResultsStat = {
 /**
  * the structure of data included in the profile view context
  */
-type Data = Partial<{
-  profile: {
+type ProfileData = {
+  user: {
     id: string;
     imageURL: string | null;
     username: string;
@@ -27,55 +29,89 @@ type Data = Partial<{
     drawn: GameResultsStat;
     all: GameResultsStat;
   };
-}>;
-
-/**
- * A type that constructs an object of associated dispatchers for the data defined in the data type
- */
-type Dispatchers = {
-  [K in keyof Required<Data> as `set${Capitalize<K>}`]: Dispatch<Data[K]>;
 };
 
 const PROFILEVIEWCONTEXT = createContext<{
-  data: Data;
-  dispatch: Dispatchers;
-}>(
-  {} as {
-    data: Data;
-    dispatch: Dispatchers;
-  },
-);
+  isLoading: boolean;
+  profile?: ProfileData;
+}>({} as { profile?: ProfileData; isLoading: boolean });
 
 /**
  *
  * Provide details regarding a user profile to child components
  */
-export function ProfileViewProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<Data["profile"]>(undefined);
-  const [stats, setStats] = useState<Data["stats"]>(undefined);
+export function ProfileViewProvider({
+  children,
+  target,
+}: {
+  children: ReactNode;
+  target: { id: string };
+}) {
+  const loadProfileInformationQuery = trpc.social.profile.user.useQuery({
+    targetUserID: target.id,
+  });
+
+  const [profileInformation, setProfileInformation] = useState<{
+    profile?: ProfileData;
+    isLoading: boolean;
+  }>({
+    isLoading: true,
+    profile: undefined,
+  });
+
+  useEffect(() => {
+    setProfileInformation((p) => ({
+      ...p,
+      isLoading: loadProfileInformationQuery.isLoading,
+    }));
+  }, [loadProfileInformationQuery.isLoading]);
+
+  useEffect(() => {
+    if (loadProfileInformationQuery.data) {
+      const { profile, stats } = loadProfileInformationQuery.data;
+      const { won, lost, drawn, all } = stats.games;
+      setProfileInformation({
+        isLoading: false,
+        profile: {
+          user: {
+            id: profile.id,
+            imageURL: profile.imageURL,
+            username: profile.username,
+          },
+          stats: {
+            won: {
+              total: won.total,
+              asBlack: won.asBlack,
+              asWhite: won.asWhite,
+            },
+            lost: {
+              total: lost.total,
+              asBlack: lost.asBlack,
+              asWhite: lost.asWhite,
+            },
+            drawn: {
+              total: drawn.total,
+              asBlack: drawn.asBlack,
+              asWhite: drawn.asWhite,
+            },
+            all: {
+              total: all.total,
+              asBlack: all.asBlack,
+              asWhite: all.asWhite,
+            },
+          },
+        },
+      });
+    }
+  }, [loadProfileInformationQuery.data]);
 
   return (
-    <PROFILEVIEWCONTEXT.Provider
-      value={{
-        data: {
-          profile,
-          stats,
-        },
-        dispatch: {
-          setProfile: setProfile,
-          setStats: setStats,
-        },
-      }}
-    >
+    <PROFILEVIEWCONTEXT.Provider value={profileInformation}>
       {children}
     </PROFILEVIEWCONTEXT.Provider>
   );
 }
 
-export function useProfileView() {
-  return useContext(PROFILEVIEWCONTEXT).data;
-}
-
-export function useDispatchProfileView() {
-  return useContext(PROFILEVIEWCONTEXT).dispatch;
+export function useProfileInformation() {
+  return useContext(PROFILEVIEWCONTEXT);
 }

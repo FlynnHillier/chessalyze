@@ -32,6 +32,22 @@ export async function getUserConfirmedFriends(
 /**
  *
  * @param userID target user
+ * @returns users which are confirmed friends of the user specified
+ */
+export async function getFriendRelation(userID: string, anotherUserID: string) {
+  const r = db.query.friends.findFirst({
+    where: or(
+      and(eq(friends.user1_ID, userID), eq(friends.user2_ID, anotherUserID)),
+      and(eq(friends.user2_ID, userID), eq(friends.user1_ID, anotherUserID)),
+    ),
+  });
+
+  return r;
+}
+
+/**
+ *
+ * @param userID target user
  * @returns users which the target user has sent friend requests to
  */
 export async function getUserOutgoingFriendRequests(

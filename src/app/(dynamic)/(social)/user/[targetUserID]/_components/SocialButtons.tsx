@@ -1,6 +1,7 @@
 "use client";
 
-import { trpc } from "~/app/_trpc/client";
+import { useEffect, useState } from "react";
+import { trpc, TRPCAppClientError } from "~/app/_trpc/client";
 import {
   FixedSizeAsyncButton,
   FixedSizeAsyncButtonRight,
@@ -18,7 +19,101 @@ import { IconType } from "react-icons/lib";
 import { ReactNode } from "react";
 import { Tooltip } from "react-tooltip";
 
-//TODO: add some functionality to client side to know if user is / is not friends with user.
+type ButtonCallbacks<T extends `on${Capitalize<string>}`> = Partial<
+  Record<T, (success: boolean, error?: unknown) => any>
+>;
+
+/**
+ *
+ * Button that allows for social interaction with target user, displays the relevant button based on the user's current relation with
+ */
+export function FriendInteractionButton({
+  target,
+  onError,
+}: {
+  target: {
+    id: string;
+  };
+  onError?: (e: unknown) => any;
+}) {
+  const friendRelationQuery = trpc.social.profile.friendRelation.useQuery({
+    targetUserID: target.id,
+  });
+  const [currentFriendRelation, setCurrentFriendRelation] = useState<
+    "confirmed" | "requestOutgoing" | "requestIncoming" | "none"
+  >();
+
+  useEffect(() => {
+    if (friendRelationQuery.data)
+      setCurrentFriendRelation(friendRelationQuery.data.relation);
+  }, [friendRelationQuery.dataUpdatedAt]);
+
+  /**
+   * To be displayed while initial friend status is being loaded
+   */
+  function PlaceHolderLoadingButton() {
+    return (
+      <FixedSizeAsyncButton
+        isLoading={true}
+        onLoading={<ScaleLoader height={20} color="black" />}
+        className={"rounded bg-stone-600 p-2 font-semibold"}
+      />
+    );
+  }
+
+  function onSendFriendRequest(success: boolean, error?: unknown) {
+    if (success) setCurrentFriendRelation("requestOutgoing");
+    else onError?.(error ?? new Error("failed to send friend request"));
+  }
+
+  function onCancelOutgoingFriendRequest(success: boolean, error?: unknown) {
+    console.log(success);
+
+    if (success) setCurrentFriendRelation("none");
+    else onError?.(error ?? new Error("failed to cancel friend request"));
+  }
+
+  function onAcceptFriendRequest(success: boolean, error?: unknown) {
+    if (success) setCurrentFriendRelation("confirmed");
+    else onError?.(error ?? new Error("failed to accept friend request"));
+  }
+
+  function onRejectFriendRequest(success: boolean, error?: unknown) {
+    if (success) setCurrentFriendRelation("none");
+    else onError?.(error ?? new Error("failed to accept friend request"));
+  }
+
+  function onRemoveExistingFriend(success: boolean, error?: unknown) {
+    if (success) setCurrentFriendRelation("none");
+    else onError?.(error ?? new Error("failed to remove friend"));
+  }
+
+  return friendRelationQuery.isLoading ? (
+    <PlaceHolderLoadingButton />
+  ) : currentFriendRelation === "confirmed" ? (
+    <HandleExistingFriendButton
+      target={target}
+      callbacks={{ onRemoveExistingFriend }}
+    />
+  ) : currentFriendRelation === "requestOutgoing" ? (
+    <HandleOutgoingFriendRequestButton
+      target={target}
+      callbacks={{ onCancelOutgoingFriendRequest }}
+    />
+  ) : currentFriendRelation === "requestIncoming" ? (
+    <HandleIncomingFriendRequest
+      target={target}
+      callbacks={{ onAcceptFriendRequest, onRejectFriendRequest }}
+    />
+  ) : currentFriendRelation === "none" ? (
+    <SendFriendRequestButton
+      target={target}
+      callbacks={{ onSendFriendRequest }}
+    />
+  ) : (
+    <>something went wrong</>
+  );
+}
 
 function SocialButtonContent({
   Icon,
@@ -39,37 +134,35 @@ function SocialButtonContent({
 }
 
 /**
- * Button that allows for mutation of friendship status
+ * Button that sends friend request to target user
  */
-export function SendFriendRequestButton({
+function SendFriendRequestButton({
   target,
-  ...otherProps
+  callbacks,
 }: {
   target: {
     id: string;
   };
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  callbacks?: ButtonCallbacks<"onSendFriendRequest">;
+}) {
   const sendFriendRequestMutation =
     trpc.social.friend.request.send.useMutation();
 
-  async function sendFriendRequest(): Promise<boolean> {
-    const response = await sendFriendRequestMutation.mutateAsync({
-      targetUserID: target.id,
-    });
+  async function sendFriendRequest() {
+    try {
+      const response = await sendFriendRequestMutation.mutateAsync({
+        targetUserID: target.id,
+      });
 
-    if (response.success) {
+      callbacks?.onSendFriendRequest?.(response.success);
+    } catch (e) {
+      callbacks?.onSendFriendRequest?.(false, e);
     }
-
-    return false;
   }
 
   return (
     <FixedSizeAsyncButton
-      {...otherProps}
-      className={
-        "rounded bg-stone-600 p-2 font-semibold " +
-        ` ${otherProps.className ?? ""}`
-      }
+      className={"rounded bg-stone-600 p-2 font-semibold"}
       onClick={sendFriendRequest}
       isLoading={sendFriendRequestMutation.isLoading}
       onLoading={<ScaleLoader height={20} color="black" />}
@@ -79,47 +172,54 @@ export function SendFriendRequestButton({
   );
 }
 
-export function HandleIncomingFriendRequest({
+/**
+ * Button that allows user to accept / reject incoming friend request from target user
+ */
+function HandleIncomingFriendRequest({
   target,
-  ...otherProps
+  callbacks,
 }: {
   target: {
     id: string;
   };
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  callbacks?: ButtonCallbacks<
+    "onAcceptFriendRequest" | "onRejectFriendRequest"
+  >;
+}) {
   const acceptFriendRequestMutation =
-    trpc.social.friend.request.accept.useMutation();
+    trpc.social.friend.request.acceptIncoming.useMutation();
 
   const rejectFriendRequestMutation =
     trpc.social.friend.request.rejectIncoming.useMutation();
 
-  async function acceptFriendRequest(): Promise<boolean> {
-    const response = await acceptFriendRequestMutation.mutateAsync({
-      targetUserID: target.id,
-    });
+  async function acceptFriendRequest() {
+    try {
+      const response = await acceptFriendRequestMutation.mutateAsync({
+        targetUserID: target.id,
+      });
 
-    if (response.success) {
+      callbacks?.onAcceptFriendRequest?.(response.success);
+    } catch (e) {
+      callbacks?.onAcceptFriendRequest?.(false, e);
     }
-
-    return false;
   }
 
-  async function rejectFriendRequest(): Promise<boolean> {
-    const response = await rejectFriendRequestMutation.mutateAsync({
-      targetUserID: target.id,
-    });
+  async function rejectFriendRequest() {
+    try {
+      const response = await rejectFriendRequestMutation.mutateAsync({
+        targetUserID: target.id,
+      });
 
-    return true;
+      callbacks?.onRejectFriendRequest?.(response.success);
+    } catch (e) {
+      callbacks?.onRejectFriendRequest?.(false, e);
+    }
   }
 
   return (
     <div className="flex flex-row gap-1">
       <FixedSizeAsyncButton
-        {...otherProps}
-        className={
-          "rounded bg-green-600 p-2 font-semibold " +
-          ` ${otherProps.className ?? ""}`
-        }
+        className="rounded bg-green-600 p-2 font-semibold"
         onClick={acceptFriendRequest}
         isLoading={acceptFriendRequestMutation.isLoading}
         disabled={rejectFriendRequestMutation.isLoading}
@@ -128,15 +228,11 @@ export function HandleIncomingFriendRequest({
         <SocialButtonContent Icon={FaUserPlus} text={"accept"} />
       </FixedSizeAsyncButton>
       <FixedSizeAsyncButton
-        {...otherProps}
-        className={
-          "rounded bg-red-800 p-2 font-semibold " +
-          ` ${otherProps.className ?? ""}`
-        }
+        className="rounded bg-red-800 p-2 font-semibold"
         onClick={rejectFriendRequest}
         isLoading={rejectFriendRequestMutation.isLoading}
         disabled={acceptFriendRequestMutation.isLoading}
-        onLoading={<ScaleLoader height={20} color="black" />}
+        onLoading={<ScaleLoader height={20} color="red" />}
       >
         <SocialButtonContent Icon={FaUserTimes} text={"ignore"} />
       </FixedSizeAsyncButton>
@@ -144,27 +240,32 @@ export function HandleIncomingFriendRequest({
   );
 }
 
-export function HandleOutgoingFriendRequestButton({
+/**
+ * Button that allows user cancel outgoing friend request to target user
+ */
+function HandleOutgoingFriendRequestButton({
   target,
-  ...otherProps
+  callbacks,
 }: {
   target: {
     id: string;
   };
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  callbacks?: ButtonCallbacks<"onCancelOutgoingFriendRequest">;
+}) {
   const TOOLTIP_ID = "social-cancel-outgoing-request-button";
   const cancelOutgoingFriendRequestMutation =
-    trpc.social.friend.request.rejectIncoming.useMutation();
+    trpc.social.friend.request.cancelOutgoing.useMutation();
 
-  async function cancelOutgoingFriendRequest(): Promise<boolean> {
-    const response = await cancelOutgoingFriendRequestMutation.mutateAsync({
-      targetUserID: target.id,
-    });
+  async function cancelOutgoingFriendRequest() {
+    try {
+      const response = await cancelOutgoingFriendRequestMutation.mutateAsync({
+        targetUserID: target.id,
+      });
 
-    if (response.success) {
+      callbacks?.onCancelOutgoingFriendRequest?.(response.success);
+    } catch (e) {
+      callbacks?.onCancelOutgoingFriendRequest?.(false, e);
     }
-
-    return false;
   }
 
   return (
@@ -191,27 +292,32 @@ export function HandleOutgoingFriendRequestButton({
   );
 }
 
-export function HandleExistingFriendButton({
+/**
+ * Button that allows user to remove existing friendship with target user
+ */
+function HandleExistingFriendButton({
   target,
-  ...otherProps
+  callbacks,
 }: {
   target: {
     id: string;
   };
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  callbacks?: ButtonCallbacks<"onRemoveExistingFriend">;
+}) {
   const TOOLTIP_ID = "social-remove-existing-friend-button";
   const cancelOutgoingFriendRequestMutation =
-    trpc.social.friend.request.rejectIncoming.useMutation(); //TODO change
+    trpc.social.friend.existing.remove.useMutation();
 
-  async function removeExistingFriend(): Promise<boolean> {
-    const response = await cancelOutgoingFriendRequestMutation.mutateAsync({
-      targetUserID: target.id,
-    });
+  async function removeExistingFriend() {
+    try {
+      const response = await cancelOutgoingFriendRequestMutation.mutateAsync({
+        targetUserID: target.id,
+      });
 
-    if (response.success) {
+      callbacks?.onRemoveExistingFriend?.(response.success);
+    } catch (e) {
+      callbacks?.onRemoveExistingFriend?.(false, e);
     }
-
-    return false;
   }
 
   return (

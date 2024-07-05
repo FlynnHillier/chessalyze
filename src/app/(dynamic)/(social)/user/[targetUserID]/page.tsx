@@ -4,11 +4,11 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import { trpc } from "~/app/_trpc/client";
 import {
-  useProfileView,
-  useDispatchProfileView,
+  ProfileViewProvider,
+  useProfileInformation,
 } from "./_components/ProfileView.context";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
-import { AddFriendButton } from "./_components/SocialButtons";
+import { FriendInteractionButton } from "./_components/SocialButtons";
 
 /**
  *
@@ -16,7 +16,7 @@ import { AddFriendButton } from "./_components/SocialButtons";
  *
  */
 function ProfileStatsView() {
-  const { stats: sourceStats } = useProfileView();
+  const { profile } = useProfileInformation();
 
   const [selectedStatView, setSelectedStatView] = useState<
     "all" | "white" | "black"
@@ -33,7 +33,9 @@ function ProfileStatsView() {
       }
     | undefined
   >(() => {
-    if (!sourceStats) return undefined;
+    if (!profile?.stats) return undefined;
+
+    const sourceStats = profile.stats;
 
     const source =
       selectedStatView === "all"
@@ -69,7 +71,7 @@ function ProfileStatsView() {
       lost,
       drawn,
     };
-  }, [selectedStatView, statFormat, sourceStats]);
+  }, [selectedStatView, statFormat, profile?.stats]);
 
   /**
    * Switch between number / percentage view
@@ -173,25 +175,27 @@ function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
  * Page view - side banner
  */
 function UserSideBanner() {
-  const { profile, stats } = useProfileView();
+  const { profile, isLoading } = useProfileInformation();
 
   return (
     <div className="flex h-full min-h-80 w-120 flex-col items-center rounded bg-stone-900 p-3">
-      {!profile || !stats ? (
+      {isLoading ? (
         <SyncLoader />
+      ) : !profile ? (
+        "profile does not seem to exist"
       ) : (
         <>
           <UserProfilePicture
             imageURL={
-              profile.imageURL &&
-              resizeGoogleProfilePictureURL(profile.imageURL, 300)
+              profile.user.imageURL &&
+              resizeGoogleProfilePictureURL(profile.user.imageURL, 300)
             }
           />
           <span className="mt-5 pb-3 text-4xl font-bold">
-            {profile.username}
+            {profile.user.username}
           </span>
-          <AddFriendButton target={{ id: profile.id }} className="mb-3" />
-          <div className="flex h-fit w-full flex-col  items-center rounded bg-stone-950 px-2 pt-3 text-center">
+          <FriendInteractionButton target={{ id: profile.user.id }} />
+          <div className="mt-3 flex h-fit w-full  flex-col items-center rounded bg-stone-950 px-2 pt-3 text-center">
             <ProfileStatsView />
           </div>
         </>
@@ -210,50 +214,9 @@ export default function ViewUserProfilePage({
     targetUserID: string;
   };
 }) {
-  const { setProfile, setStats } = useDispatchProfileView();
-  const profileQuery = trpc.social.profile.user.useQuery({
-    targetUserID: params.targetUserID,
-  });
-
-  useEffect(() => {
-    // Move query result to context
-    if (profileQuery.data) {
-      const { profile, stats } = profileQuery.data;
-      setProfile({
-        username: profile.username,
-        imageURL: profile.imageURL,
-        id: profile.id,
-      });
-
-      const { won, lost, drawn, all } = stats.games;
-      setStats({
-        won: {
-          total: won.total,
-          asBlack: won.asBlack,
-          asWhite: won.asWhite,
-        },
-        lost: {
-          total: lost.total,
-          asBlack: lost.asBlack,
-          asWhite: lost.asWhite,
-        },
-        drawn: {
-          total: drawn.total,
-          asBlack: drawn.asBlack,
-          asWhite: drawn.asWhite,
-        },
-        all: {
-          total: all.total,
-          asBlack: all.asBlack,
-          asWhite: all.asWhite,
-        },
-      });
-    }
-  }, [profileQuery.dataUpdatedAt]);
-
   return (
-    <Suspense fallback={<SyncLoader />}>
+    <ProfileViewProvider target={{ id: params.targetUserID }}>
       <UserSideBanner />
-    </Suspense>
+    </ProfileViewProvider>
   );
 }

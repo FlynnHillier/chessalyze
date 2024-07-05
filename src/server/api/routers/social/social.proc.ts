@@ -8,7 +8,10 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import DrizzleSocialTransaction from "~/lib/drizzle/transactions/social.transactions.drizzle";
-import { getUserProfile } from "~/lib/drizzle/queries/social.queries.drizzle";
+import {
+  getFriendRelation,
+  getUserProfile,
+} from "~/lib/drizzle/queries/social.queries.drizzle";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -25,15 +28,24 @@ class FriendshipExistsError extends TRPCError {
   }
 }
 
+class FriendshipNotExistsError extends TRPCError {
+  constructor() {
+    super({
+      code: "CONFLICT",
+      message: "not currently friends.",
+    });
+  }
+}
+
 class FriendRequestExistsError extends TRPCError {
   constructor() {
-    super({ code: "CONFLICT", message: "friend request already exists" });
+    super({ code: "CONFLICT", message: "friend request already exists." });
   }
 }
 
 class FriendRequestNotExistsError extends TRPCError {
   constructor() {
-    super({ code: "CONFLICT", message: "friend request does not exist" });
+    super({ code: "CONFLICT", message: "friend request does not exist." });
   }
 }
 
@@ -46,56 +58,57 @@ export const trpcSocialRouter = createTRPCRouter({
 
         if (!fullUserProfile) throw new UserNotExistError(input.targetUserID);
 
-        // if (
-        //   fullUserProfile.friends.some(
-        //     ({ status, user1_ID, user2_ID }) =>
-        //       status === "confirmed" &&
-        //       (user1_ID === ctx.user.id || user2_ID === ctx.user.id),
-        //   )
-        // ) {
-        //   //are friends (Requries protected procedure)
-        // }
-
         const { id, email, games_b, games_w, image, name } = fullUserProfile;
 
         const allGames = [...games_b, ...games_w];
 
-        // stats regarding the games the user has played
-        const gStats = allGames.reduce(
-          (acc, game) => {
-            if (game.p_black_id === input.targetUserID) {
-              // Player is black
-              if (game.conclusion.termination_type === "draw")
-                acc.black.drawn++;
-              else
-                game.conclusion.termination_type === "b"
-                  ? acc.black.won++
-                  : acc.black.lost++;
-            } else if (game.p_white_id === input.targetUserID) {
-              // Player is white
-              if (game.conclusion.termination_type === "draw")
-                acc.white.drawn++;
-              else
-                game.conclusion.termination_type === "w"
-                  ? acc.white.won++
-                  : acc.white.lost++;
-            }
+        /**
+         * Generate game stats object for profile
+         */
+        function gameStats() {
+          return allGames.reduce(
+            (acc, game) => {
+              const color =
+                game.p_black_id === input.targetUserID ? "asBlack" : "asWhite";
 
-            return { ...acc };
-          },
-          {
-            white: {
-              won: 0,
-              lost: 0,
-              drawn: 0,
+              const term =
+                game.conclusion.victor_pid === null
+                  ? "drawn"
+                  : game.conclusion.victor_pid === input.targetUserID
+                    ? "won"
+                    : "lost";
+
+              acc[term][color]++;
+              acc[term].total++;
+              acc.all.total++;
+              acc.all[color]++;
+
+              return { ...acc };
             },
-            black: {
-              won: 0,
-              lost: 0,
-              drawn: 0,
+            {
+              won: {
+                asWhite: 0,
+                asBlack: 0,
+                total: 0,
+              },
+              lost: {
+                asWhite: 0,
+                asBlack: 0,
+                total: 0,
+              },
+              drawn: {
+                asWhite: 0,
+                asBlack: 0,
+                total: 0,
+              },
+              all: {
+                asWhite: 0,
+                asBlack: 0,
+                total: 0,
+              },
             },
-          },
-        );
+          );
+        }
 
         return {
           profile: {
@@ -104,34 +117,56 @@ export const trpcSocialRouter = createTRPCRouter({
             imageURL: image,
           },
           stats: {
-            games: {
-              won: {
-                asWhite: gStats.white.won,
-                asBlack: gStats.black.won,
-                total: gStats.white.won + gStats.black.won,
-              },
-              lost: {
-                asWhite: gStats.white.lost,
-                asBlack: gStats.black.lost,
-                total: gStats.black.lost + gStats.white.lost,
-              },
-              drawn: {
-                asWhite: gStats.white.drawn,
-                asBlack: gStats.black.drawn,
-                total: gStats.black.drawn + gStats.white.drawn,
-              },
-              all: {
-                total: allGames.length,
-                asWhite: games_w.length,
-                asBlack: games_b.length,
-              },
-            },
+            games: gameStats(),
           },
+        };
+      }),
+    friendRelation: protectedProcedure
+      .input(z.object({ targetUserID: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const userFriends = await getFriendRelation(
+          input.targetUserID,
+          ctx.user.id,
+        );
+
+        const relation:
+          | "none"
+          | "confirmed"
+          | "requestIncoming"
+          | "requestOutgoing" = !userFriends
+          ? "none"
+          : userFriends.status === "confirmed"
+            ? "confirmed"
+            : userFriends.pending_accept === ctx.user.id
+              ? "requestIncoming"
+              : "requestOutgoing";
+
+        return {
+          relation,
         };
       }),
   }),
 
   friend: createTRPCRouter({
+    existing: createTRPCRouter({
+      remove: protectedProcedure
+        .input(z.object({ targetUserID: z.string() }))
+        .mutation(async ({ input, ctx }) => {
+          const { success, error } = await new DrizzleSocialTransaction(
+            ctx.user.id,
+          ).removeConfirmedFriend(input.targetUserID);
+
+          if (!success) {
+            if (error?.isFriendNotExists) throw new FriendshipNotExistsError();
+            if (error?.isUserNotExists)
+              throw new UserNotExistError(input.targetUserID);
+          }
+
+          return {
+            success,
+          };
+        }),
+    }),
     request: createTRPCRouter({
       send: protectedProcedure
         .input(z.object({ targetUserID: z.string() }))
@@ -159,7 +194,7 @@ export const trpcSocialRouter = createTRPCRouter({
             success,
           };
         }),
-      accept: protectedProcedure
+      acceptIncoming: protectedProcedure
         .input(z.object({ targetUserID: z.string() }))
         .mutation(async ({ input, ctx }) => {
           const { success, error } = await new DrizzleSocialTransaction(
