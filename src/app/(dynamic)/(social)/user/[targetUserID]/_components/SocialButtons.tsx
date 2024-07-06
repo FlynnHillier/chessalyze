@@ -20,7 +20,7 @@ import { ReactNode } from "react";
 import { Tooltip } from "react-tooltip";
 
 type ButtonCallbacks<T extends `on${Capitalize<string>}`> = Partial<
-  Record<T, (success: boolean, error?: unknown) => any>
+  Record<T, (success: boolean, error?: Error) => any>
 >;
 
 /**
@@ -34,7 +34,7 @@ export function FriendInteractionButton({
   target: {
     id: string;
   };
-  onError?: (e: unknown) => any;
+  onError?: (e: Error) => any;
 }) {
   const friendRelationQuery = trpc.social.profile.friendRelation.useQuery({
     targetUserID: target.id,
@@ -61,29 +61,29 @@ export function FriendInteractionButton({
     );
   }
 
-  function onSendFriendRequest(success: boolean, error?: unknown) {
+  function onSendFriendRequest(success: boolean, error?: Error) {
     if (success) setCurrentFriendRelation("requestOutgoing");
     else onError?.(error ?? new Error("failed to send friend request"));
   }
 
-  function onCancelOutgoingFriendRequest(success: boolean, error?: unknown) {
+  function onCancelOutgoingFriendRequest(success: boolean, error?: Error) {
     console.log(success);
 
     if (success) setCurrentFriendRelation("none");
     else onError?.(error ?? new Error("failed to cancel friend request"));
   }
 
-  function onAcceptFriendRequest(success: boolean, error?: unknown) {
+  function onAcceptFriendRequest(success: boolean, error?: Error) {
     if (success) setCurrentFriendRelation("confirmed");
     else onError?.(error ?? new Error("failed to accept friend request"));
   }
 
-  function onRejectFriendRequest(success: boolean, error?: unknown) {
+  function onRejectFriendRequest(success: boolean, error?: Error) {
     if (success) setCurrentFriendRelation("none");
     else onError?.(error ?? new Error("failed to accept friend request"));
   }
 
-  function onRemoveExistingFriend(success: boolean, error?: unknown) {
+  function onRemoveExistingFriend(success: boolean, error?: Error) {
     if (success) setCurrentFriendRelation("none");
     else onError?.(error ?? new Error("failed to remove friend"));
   }
@@ -156,7 +156,9 @@ function SendFriendRequestButton({
 
       callbacks?.onSendFriendRequest?.(response.success);
     } catch (e) {
-      callbacks?.onSendFriendRequest?.(false, e);
+      if (e instanceof Error) callbacks?.onSendFriendRequest?.(false, e);
+
+      callbacks?.onSendFriendRequest?.(false);
     }
   }
 
@@ -200,7 +202,8 @@ function HandleIncomingFriendRequest({
 
       callbacks?.onAcceptFriendRequest?.(response.success);
     } catch (e) {
-      callbacks?.onAcceptFriendRequest?.(false, e);
+      if (e instanceof Error) callbacks?.onAcceptFriendRequest?.(false, e);
+      callbacks?.onAcceptFriendRequest?.(false);
     }
   }
 
@@ -212,7 +215,8 @@ function HandleIncomingFriendRequest({
 
       callbacks?.onRejectFriendRequest?.(response.success);
     } catch (e) {
-      callbacks?.onRejectFriendRequest?.(false, e);
+      if (e instanceof Error) callbacks?.onRejectFriendRequest?.(false, e);
+      callbacks?.onRejectFriendRequest?.(false);
     }
   }
 
@@ -251,6 +255,7 @@ function HandleOutgoingFriendRequestButton({
     id: string;
   };
   callbacks?: ButtonCallbacks<"onCancelOutgoingFriendRequest">;
+  button?: React.ButtonHTMLAttributes<HTMLButtonElement>;
 }) {
   const TOOLTIP_ID = "social-cancel-outgoing-request-button";
   const cancelOutgoingFriendRequestMutation =
@@ -264,7 +269,9 @@ function HandleOutgoingFriendRequestButton({
 
       callbacks?.onCancelOutgoingFriendRequest?.(response.success);
     } catch (e) {
-      callbacks?.onCancelOutgoingFriendRequest?.(false, e);
+      if (e instanceof Error)
+        callbacks?.onCancelOutgoingFriendRequest?.(false, e);
+      callbacks?.onCancelOutgoingFriendRequest?.(false);
     }
   }
 
@@ -316,7 +323,8 @@ function HandleExistingFriendButton({
 
       callbacks?.onRemoveExistingFriend?.(response.success);
     } catch (e) {
-      callbacks?.onRemoveExistingFriend?.(false, e);
+      if (e instanceof Error) callbacks?.onRemoveExistingFriend?.(false, e);
+      callbacks?.onRemoveExistingFriend?.(false);
     }
   }
 

@@ -10,6 +10,7 @@ import {
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { FriendInteractionButton } from "./_components/SocialButtons";
 import { useSession } from "~/app/_components/providers/client/session.provider";
+import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 
 /**
  *
@@ -178,6 +179,7 @@ function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
 function UserSideBanner() {
   const { user } = useSession();
   const { profile, isLoading } = useProfileInformation();
+  const { showGlobalError } = useGlobalError();
 
   return (
     <div className="flex h-full min-h-80 w-120 flex-col items-center rounded bg-stone-900 p-3">
@@ -196,7 +198,14 @@ function UserSideBanner() {
           <span className="mt-5 pb-3 text-4xl font-bold">
             {profile.user.username}
           </span>
-          {user && <FriendInteractionButton target={{ id: profile.user.id }} />}
+          {user && (
+            <FriendInteractionButton
+              target={{ id: profile.user.id }}
+              onError={(e) => {
+                showGlobalError(e.message ?? "something went wrong");
+              }}
+            />
+          )}
           <div className="mt-3 flex h-fit w-full  flex-col items-center rounded bg-stone-950 px-2 pt-3 text-center">
             <ProfileStatsView />
           </div>
