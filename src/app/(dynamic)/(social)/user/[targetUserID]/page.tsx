@@ -88,7 +88,7 @@ function ProfileStatsView() {
         <span className=" pb-1 text-lg font-bold"> Match stats </span>
 
         <div className="w-fit px-5">
-          <div className="flex h-fit w-fit flex-row gap-0.5 rounded bg-stone-600 p-0.5 text-xs font-semibold [&>button]:first:rounded-l-sm [&>button]:last:rounded-r-sm">
+          <div className="flex h-fit w-fit flex-row gap-0.5 rounded  p-0.5 text-xs font-semibold [&>button]:first:rounded-l-sm [&>button]:last:rounded-r-sm">
             <button
               className={`bg-stone-${selectedStatView === "all" ? "950" : "800"} px-1.5 py-1`}
               onClick={() => {
@@ -205,7 +205,8 @@ function UserSideBanner() {
               }}
             />
           )}
-          <div className="mt-3 flex h-fit w-full  flex-col items-center rounded bg-stone-950 px-2 pt-3 text-center">
+          <div className="mt-3 flex h-fit w-full  flex-col items-center rounded  px-2 pt-3 text-center">
+            <hr className="mb-3 box-border w-4/5 border-stone-400 bg-stone-600 " />
             <ProfileStatsView />
           </div>
         </>
