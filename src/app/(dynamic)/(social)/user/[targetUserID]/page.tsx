@@ -197,7 +197,7 @@ function UserSideBanner() {
           <span className="mt-5 pb-3 text-4xl font-bold">
             {profile.user.username}
           </span>
-          {user && (
+          {user && user.id !== profile.user.id && (
             <FriendInteractionButton
               target={{ id: profile.user.id }}
               onError={(e) => {
