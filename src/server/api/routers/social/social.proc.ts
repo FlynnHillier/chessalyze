@@ -7,11 +7,19 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import DrizzleSocialTransaction from "~/lib/drizzle/transactions/social.transactions.drizzle";
+import DrizzleSocialTransaction, {
+  convertToDBSocialUserFormat,
+} from "~/lib/drizzle/transactions/social.transactions.drizzle";
 import {
   getFriendRelation,
   getUserProfile,
 } from "~/lib/drizzle/queries/social.queries.drizzle";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { wsSocketRegistry } from "~/lib/ws/registry.ws";
+import { db } from "~/lib/drizzle/db";
+import { users } from "~/lib/drizzle/auth.schema";
+import { eq } from "drizzle-orm";
+import { log } from "~/lib/logging/logger.winston";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -54,19 +62,80 @@ export const trpcSocialRouter = createTRPCRouter({
     user: publicProcedure
       .input(z.object({ targetUserID: z.string() }))
       .query(async ({ input, ctx }) => {
-        const fullUserProfile = await getUserProfile(input.targetUserID);
+        const dbQueryResult = await db.query.users.findFirst({
+          where: eq(users.id, input.targetUserID),
+          with: {
+            friends_user1: true,
+            friends_user2: true,
+            games_b: {
+              with: {
+                conclusion: true,
+              },
+            },
+            games_w: {
+              with: {
+                conclusion: true,
+              },
+            },
+          },
+        });
 
-        if (!fullUserProfile) throw new UserNotExistError(input.targetUserID);
+        if (!dbQueryResult) throw new UserNotExistError(input.targetUserID);
 
-        const { id, email, games_b, games_w, image, name } = fullUserProfile;
+        const {
+          id,
+          games_b,
+          games_w,
+          image,
+          name,
+          friends_user1,
+          friends_user2,
+        } = dbQueryResult;
 
-        const allGames = [...games_b, ...games_w];
+        /**
+         *
+         * get friend relation if request originates from an authed user
+         */
+        function friendRelation() {
+          if (!ctx.user) return undefined;
+
+          const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
+            ctx.user.id,
+            input.targetUserID,
+          );
+
+          const row =
+            user1_ID === ctx.user.id
+              ? friends_user2.find(
+                  (relation) => relation.user1_ID === ctx.user!.id,
+                )
+              : friends_user1.find(
+                  (relation) => relation.user2_ID === ctx.user!.id,
+                );
+
+          if (row === undefined) return "none";
+
+          if (row.status === "confirmed") return "confirmed";
+
+          if (row.status === "pending" && row.pending_accept === ctx.user.id)
+            return "requestIncoming";
+          if (
+            row.status === "pending" &&
+            row.pending_accept === input.targetUserID
+          )
+            return "requestOutgoing";
+
+          log("social").warn(
+            `while attempting receive friend relation between user '${ctx.user.id}' & '${input.targetUserID}', the relation could not be properly determined`,
+          );
+          return undefined;
+        }
 
         /**
          * Generate game stats object for profile
          */
         function gameStats() {
-          return allGames.reduce(
+          return [...games_b, ...games_w].reduce(
             (acc, game) => {
               const color =
                 game.p_black_id === input.targetUserID ? "asBlack" : "asWhite";
@@ -119,6 +188,11 @@ export const trpcSocialRouter = createTRPCRouter({
           stats: {
             games: gameStats(),
           },
+          friend: ctx.user
+            ? {
+                relation: friendRelation() as ReturnType<typeof friendRelation>,
+              }
+            : undefined,
         };
       }),
     friendRelation: protectedProcedure
@@ -162,6 +236,20 @@ export const trpcSocialRouter = createTRPCRouter({
               throw new UserNotExistError(input.targetUserID);
           }
 
+          if (success) {
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: input.targetUserID, new_status: "none" })
+              .to({ socket: wsSocketRegistry.get(ctx.user.id) })
+              .emit();
+
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: ctx.user.id, new_status: "none" })
+              .to({ socket: wsSocketRegistry.get(input.targetUserID) })
+              .emit();
+          }
+
           return {
             success,
           };
@@ -190,6 +278,23 @@ export const trpcSocialRouter = createTRPCRouter({
               throw new FriendRequestExistsError();
           }
 
+          if (success) {
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({
+                playerID: input.targetUserID,
+                new_status: "request_outgoing",
+              })
+              .to({ socket: wsSocketRegistry.get(ctx.user.id) })
+              .emit();
+
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: ctx.user.id, new_status: "request_incoming" })
+              .to({ socket: wsSocketRegistry.get(input.targetUserID) })
+              .emit();
+          }
+
           return {
             success,
           };
@@ -210,6 +315,20 @@ export const trpcSocialRouter = createTRPCRouter({
               throw new UserNotExistError(input.targetUserID);
           }
 
+          if (success) {
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: input.targetUserID, new_status: "confirmed" })
+              .to({ socket: wsSocketRegistry.get(ctx.user.id) })
+              .emit();
+
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: ctx.user.id, new_status: "confirmed" })
+              .to({ socket: wsSocketRegistry.get(input.targetUserID) })
+              .emit();
+          }
+
           return {
             success,
           };
@@ -228,6 +347,20 @@ export const trpcSocialRouter = createTRPCRouter({
               throw new UserNotExistError(input.targetUserID);
           }
 
+          if (success) {
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: input.targetUserID, new_status: "none" })
+              .to({ socket: wsSocketRegistry.get(ctx.user.id) })
+              .emit();
+
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: ctx.user.id, new_status: "none" })
+              .to({ socket: wsSocketRegistry.get(input.targetUserID) })
+              .emit();
+          }
+
           return {
             success,
           };
@@ -244,6 +377,20 @@ export const trpcSocialRouter = createTRPCRouter({
               throw new FriendRequestNotExistsError();
             if (error?.isUserNotExists)
               throw new UserNotExistError(input.targetUserID);
+          }
+
+          if (success) {
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: input.targetUserID, new_status: "none" })
+              .to({ socket: wsSocketRegistry.get(ctx.user.id) })
+              .emit();
+
+            wsServerToClientMessage
+              .send("SOCIAL_PERSONAL_UPDATE")
+              .data({ playerID: ctx.user.id, new_status: "none" })
+              .to({ socket: wsSocketRegistry.get(input.targetUserID) })
+              .emit();
           }
 
           return {

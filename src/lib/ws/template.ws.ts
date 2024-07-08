@@ -3,24 +3,27 @@ import { ZodType, z } from "zod";
 import { SocketRoom } from "~/lib/ws/rooms.ws";
 import { AtleastOneKey } from "~/types/util/util.types";
 
+type EmitTo = AtleastOneKey<{
+  room: SocketRoom;
+  socket: WebSocket | WebSocket[];
+}>;
+
 /**
  *
  * @param eventID the eventID to emit with
  * @param data the data to emit
  * @param to who to emit the event to
  */
-function emit<D extends any>( //TODO: make this type only serializable types
-  eventID: string,
-  data: D,
-  to: AtleastOneKey<{
-    room: SocketRoom;
-    socket: WebSocket;
-  }>,
-) {
+function emit<D extends any>(eventID: string, data: D, to: EmitTo) {
+  //TODO: make this type only serializable types
   const targetSockets = new Set<WebSocket>();
 
   to.room?.sockets().forEach((socket) => targetSockets.add(socket));
-  if (to.socket) targetSockets.add(to.socket);
+  if (to.socket !== undefined) {
+    if (Array.isArray(to.socket))
+      to.socket.forEach((socket) => targetSockets.add(socket));
+    else targetSockets.add(to.socket);
+  }
 
   targetSockets.forEach((socket) =>
     socket.send(
@@ -100,10 +103,7 @@ export class WSMessagesTemplate<T extends Record<string, ZodType>> {
   private sendDataTo<E extends Extract<keyof T, string>>(
     event: E,
     data: z.infer<T[E]>,
-    to: AtleastOneKey<{
-      room: SocketRoom;
-      socket: WebSocket;
-    }>,
+    to: EmitTo,
   ) {
     return {
       /**

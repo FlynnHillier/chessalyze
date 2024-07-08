@@ -18,6 +18,7 @@ import { RxCross2 } from "react-icons/rx";
 import { IconType } from "react-icons/lib";
 import { ReactNode } from "react";
 import { Tooltip } from "react-tooltip";
+import { useDispatchProfile, useProfile } from "./ProfileView.context";
 
 type ButtonCallbacks<T extends `on${Capitalize<string>}`> = Partial<
   Record<T, (success: boolean, error?: Error) => any>
@@ -36,17 +37,8 @@ export function FriendInteractionButton({
   };
   onError?: (e: Error) => any;
 }) {
-  const friendRelationQuery = trpc.social.profile.friendRelation.useQuery({
-    targetUserID: target.id,
-  });
-  const [currentFriendRelation, setCurrentFriendRelation] = useState<
-    "confirmed" | "requestOutgoing" | "requestIncoming" | "none"
-  >();
-
-  useEffect(() => {
-    if (friendRelationQuery.data)
-      setCurrentFriendRelation(friendRelationQuery.data.relation);
-  }, [friendRelationQuery.dataUpdatedAt]);
+  const dispatchProfile = useDispatchProfile();
+  const profile = useProfile();
 
   /**
    * To be displayed while initial friend status is being loaded
@@ -62,50 +54,68 @@ export function FriendInteractionButton({
   }
 
   function onSendFriendRequest(success: boolean, error?: Error) {
-    if (success) setCurrentFriendRelation("requestOutgoing");
+    if (success)
+      dispatchProfile({
+        type: "FRIEND_STATUS_CHANGE",
+        payload: { status: "request_outgoing" },
+      });
     else onError?.(error ?? new Error("failed to send friend request"));
   }
 
   function onCancelOutgoingFriendRequest(success: boolean, error?: Error) {
-    console.log(success);
-
-    if (success) setCurrentFriendRelation("none");
+    if (success)
+      dispatchProfile({
+        type: "FRIEND_STATUS_CHANGE",
+        payload: { status: "none" },
+      });
     else onError?.(error ?? new Error("failed to cancel friend request"));
   }
 
   function onAcceptFriendRequest(success: boolean, error?: Error) {
-    if (success) setCurrentFriendRelation("confirmed");
+    if (success)
+      dispatchProfile({
+        type: "FRIEND_STATUS_CHANGE",
+        payload: { status: "confirmed" },
+      });
     else onError?.(error ?? new Error("failed to accept friend request"));
   }
 
   function onRejectFriendRequest(success: boolean, error?: Error) {
-    if (success) setCurrentFriendRelation("none");
+    if (success)
+      dispatchProfile({
+        type: "FRIEND_STATUS_CHANGE",
+        payload: { status: "none" },
+      });
     else onError?.(error ?? new Error("failed to accept friend request"));
   }
 
   function onRemoveExistingFriend(success: boolean, error?: Error) {
-    if (success) setCurrentFriendRelation("none");
+    if (success)
+      dispatchProfile({
+        type: "FRIEND_STATUS_CHANGE",
+        payload: { status: "none" },
+      });
     else onError?.(error ?? new Error("failed to remove friend"));
   }
 
-  return friendRelationQuery.isLoading ? (
+  return profile.isLoading || !profile.profile?.friend ? (
     <PlaceHolderLoadingButton />
-  ) : currentFriendRelation === "confirmed" ? (
+  ) : profile.profile?.friend.status === "confirmed" ? (
     <HandleExistingFriendButton
       target={target}
       callbacks={{ onRemoveExistingFriend }}
     />
-  ) : currentFriendRelation === "requestOutgoing" ? (
+  ) : profile.profile?.friend.status === "request_outgoing" ? (
     <HandleOutgoingFriendRequestButton
       target={target}
       callbacks={{ onCancelOutgoingFriendRequest }}
     />
-  ) : currentFriendRelation === "requestIncoming" ? (
+  ) : profile.profile?.friend.status === "request_incoming" ? (
     <HandleIncomingFriendRequest
       target={target}
       callbacks={{ onAcceptFriendRequest, onRejectFriendRequest }}
     />
-  ) : currentFriendRelation === "none" ? (
+  ) : profile.profile?.friend.status === "none" ? (
     <SendFriendRequestButton
       target={target}
       callbacks={{ onSendFriendRequest }}

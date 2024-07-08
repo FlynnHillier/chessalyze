@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
-import { trpc } from "~/app/_trpc/client";
 import {
   ProfileViewProvider,
-  useProfileInformation,
+  useProfile,
 } from "./_components/ProfileView.context";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { FriendInteractionButton } from "./_components/SocialButtons";
@@ -18,7 +17,7 @@ import { useGlobalError } from "~/app/_components/providers/client/globalError.p
  *
  */
 function ProfileStatsView() {
-  const { profile } = useProfileInformation();
+  const profile = useProfile();
 
   const [selectedStatView, setSelectedStatView] = useState<
     "all" | "white" | "black"
@@ -35,9 +34,9 @@ function ProfileStatsView() {
       }
     | undefined
   >(() => {
-    if (!profile?.stats) return undefined;
+    if (!profile?.profile?.stats) return undefined;
 
-    const sourceStats = profile.stats;
+    const sourceStats = profile.profile.stats;
 
     const source =
       selectedStatView === "all"
@@ -73,7 +72,7 @@ function ProfileStatsView() {
       lost,
       drawn,
     };
-  }, [selectedStatView, statFormat, profile?.stats]);
+  }, [selectedStatView, statFormat, profile?.profile?.stats]);
 
   /**
    * Switch between number / percentage view
@@ -178,7 +177,7 @@ function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
  */
 function UserSideBanner() {
   const { user } = useSession();
-  const { profile, isLoading } = useProfileInformation();
+  const { profile, isLoading } = useProfile();
   const { showGlobalError } = useGlobalError();
 
   return (

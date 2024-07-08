@@ -1,12 +1,16 @@
+import { useWebSocket } from "next-ws/client";
 import {
   Dispatch,
   ReactNode,
   createContext,
   useContext,
   useEffect,
+  useReducer,
   useState,
 } from "react";
 import { trpc } from "~/app/_trpc/client";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { ReducerAction } from "~/types/util/context.types";
 
 type GameResultsStat = {
   asWhite: number;
@@ -29,12 +33,65 @@ type ProfileData = {
     drawn: GameResultsStat;
     all: GameResultsStat;
   };
+  friend?: {
+    status: "confirmed" | "none" | "request_incoming" | "request_outgoing";
+  };
 };
 
+type ProfileContext = { profile?: ProfileData; isLoading: boolean };
+
+type ProfileReducerAction =
+  | ReducerAction<
+      "FRIEND_STATUS_CHANGE",
+      {
+        status: Exclude<ProfileData["friend"], undefined>["status"];
+      }
+    >
+  | ReducerAction<"INITIAL_LOAD", ProfileData>;
+
+function profileReducer<A extends ProfileReducerAction>(
+  state: ProfileContext,
+  action: A,
+): ProfileContext {
+  const { type, payload } = action;
+
+  switch (type) {
+    case "INITIAL_LOAD": {
+      if (!state.isLoading) return { ...state };
+
+      return {
+        isLoading: false,
+        profile: payload,
+      };
+    }
+    case "FRIEND_STATUS_CHANGE": {
+      return {
+        ...state,
+        profile: state.profile && {
+          ...state.profile,
+          friend: {
+            status: payload.status,
+          },
+        },
+      };
+    }
+  }
+}
+
 const PROFILEVIEWCONTEXT = createContext<{
-  isLoading: boolean;
-  profile?: ProfileData;
-}>({} as { profile?: ProfileData; isLoading: boolean });
+  profile: ProfileContext;
+  dispatchProfile: Dispatch<ProfileReducerAction>;
+}>(
+  {} as {
+    profile: ProfileContext;
+    dispatchProfile: Dispatch<ProfileReducerAction>;
+  },
+);
+
+const defaultContext: ProfileContext = {
+  isLoading: true,
+  profile: undefined,
+};
 
 /**
  *
@@ -47,32 +104,58 @@ export function ProfileViewProvider({
   children: ReactNode;
   target: { id: string };
 }) {
+  const ws = useWebSocket();
   const loadProfileInformationQuery = trpc.social.profile.user.useQuery({
     targetUserID: target.id,
   });
 
-  const [profileInformation, setProfileInformation] = useState<{
-    profile?: ProfileData;
-    isLoading: boolean;
-  }>({
-    isLoading: true,
-    profile: undefined,
-  });
+  const [profile, dispatchProfile] = useReducer(profileReducer, defaultContext);
 
   useEffect(() => {
-    setProfileInformation((p) => ({
-      ...p,
-      isLoading: loadProfileInformationQuery.isLoading,
-    }));
-  }, [loadProfileInformationQuery.isLoading]);
+    // update state when websocket events are received
+    const onWSMessageEvent = (m: MessageEvent) => {
+      wsServerToClientMessage.receiver({
+        SOCIAL_PERSONAL_UPDATE: ({ playerID, new_status }) => {
+          if (playerID === target.id) {
+            if (new_status === "confirmed")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "confirmed" },
+              });
+            else if (new_status === "none")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "none" },
+              });
+            else if (new_status === "request_incoming")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "request_incoming" },
+              });
+            else if (new_status === "request_outgoing")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "request_outgoing" },
+              });
+          }
+        },
+      })(m.data);
+    };
+
+    ws?.addEventListener("message", onWSMessageEvent);
+
+    return () => {
+      ws?.removeEventListener("message", onWSMessageEvent);
+    };
+  }, [ws]);
 
   useEffect(() => {
     if (loadProfileInformationQuery.data) {
-      const { profile, stats } = loadProfileInformationQuery.data;
+      const { profile, stats, friend } = loadProfileInformationQuery.data;
       const { won, lost, drawn, all } = stats.games;
-      setProfileInformation({
-        isLoading: false,
-        profile: {
+      dispatchProfile({
+        type: "INITIAL_LOAD",
+        payload: {
           user: {
             id: profile.id,
             imageURL: profile.imageURL,
@@ -100,18 +183,33 @@ export function ProfileViewProvider({
               asWhite: all.asWhite,
             },
           },
+          friend: friend &&
+            friend.relation && {
+              status:
+                friend.relation === "confirmed"
+                  ? "confirmed"
+                  : friend.relation === "requestIncoming"
+                    ? "request_incoming"
+                    : friend.relation === "requestOutgoing"
+                      ? "request_outgoing"
+                      : "none",
+            },
         },
       });
     }
   }, [loadProfileInformationQuery.data]);
 
   return (
-    <PROFILEVIEWCONTEXT.Provider value={profileInformation}>
+    <PROFILEVIEWCONTEXT.Provider value={{ profile, dispatchProfile }}>
       {children}
     </PROFILEVIEWCONTEXT.Provider>
   );
 }
 
-export function useProfileInformation() {
-  return useContext(PROFILEVIEWCONTEXT);
+export function useProfile() {
+  return useContext(PROFILEVIEWCONTEXT).profile;
+}
+
+export function useDispatchProfile() {
+  return useContext(PROFILEVIEWCONTEXT).dispatchProfile;
 }

@@ -67,6 +67,18 @@ class FriendshipRelationExistsError extends TransactionErrorResult<SocialTransac
 }
 
 /**
+ * Format given user id's into correct order for constitency within database.
+ */
+export function convertToDBSocialUserFormat(
+  userID: string,
+  anotherUserID: string,
+) {
+  const [user1_ID, user2_ID] = [userID, anotherUserID].sort();
+
+  return { user1_ID, user2_ID };
+}
+
+/**
  * Carry out database transactions regarding tables in the 'social context'
  */
 export default class DrizzleSocialTransaction {
@@ -76,7 +88,7 @@ export default class DrizzleSocialTransaction {
    */
   constructor(private userID: string) {}
 
-  private getUserLayout(targetUser: string) {
+  private convertToDBSocialUserFormat(targetUser: string) {
     const [user1_ID, user2_ID] = [this.userID, targetUser].sort();
 
     return { user1_ID, user2_ID };
@@ -91,7 +103,10 @@ export default class DrizzleSocialTransaction {
     targetID: string,
   ): Promise<SocialTransactionResult> {
     try {
-      const { user1_ID, user2_ID } = this.getUserLayout(targetID);
+      const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
+        targetID,
+        this.userID,
+      );
 
       const r = await db
         .insert(friends)
@@ -143,7 +158,10 @@ export default class DrizzleSocialTransaction {
   async removeConfirmedFriend(
     targetID: string,
   ): Promise<SocialTransactionResult> {
-    const { user1_ID, user2_ID } = this.getUserLayout(targetID);
+    const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
+      targetID,
+      this.userID,
+    );
 
     try {
       const r = await db
@@ -198,7 +216,10 @@ export default class DrizzleSocialTransaction {
     targetID: string,
   ): Promise<SocialTransactionResult> {
     try {
-      const { user1_ID, user2_ID } = this.getUserLayout(targetID);
+      const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
+        targetID,
+        this.userID,
+      );
 
       const r = await db
         .delete(friends)
@@ -251,7 +272,10 @@ export default class DrizzleSocialTransaction {
     targetID: string,
   ): Promise<SocialTransactionResult> {
     try {
-      const { user1_ID, user2_ID } = this.getUserLayout(targetID);
+      const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
+        targetID,
+        this.userID,
+      );
 
       const r = await db
         .update(friends)
@@ -307,7 +331,10 @@ export default class DrizzleSocialTransaction {
     targetID: string,
   ): Promise<SocialTransactionResult> {
     try {
-      const { user1_ID, user2_ID } = this.getUserLayout(targetID);
+      const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
+        targetID,
+        this.userID,
+      );
 
       const r = await db
         .delete(friends)

@@ -26,6 +26,15 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   GAME_MOVE: zVerboseMovement,
   LOBBY_END: z.object({}),
   SUMMARY_NEW: zGameSummary,
+  SOCIAL_PERSONAL_UPDATE: z.object({
+    playerID: z.string(),
+    new_status: z.union([
+      z.literal("confirmed"),
+      z.literal("request_incoming"),
+      z.literal("none"),
+      z.literal("request_outgoing"),
+    ]),
+  }),
 });
 
 export type WsServerToClientMessageData<
