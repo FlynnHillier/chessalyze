@@ -35,6 +35,13 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
       z.literal("request_outgoing"),
     ]),
   }),
+  "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": z.object({
+    playerID: z.string(),
+    activity_status: z.object({
+      primaryStatus: z.string(),
+      secondaryStatus: z.string().optional(),
+    }),
+  }),
 });
 
 export type WsServerToClientMessageData<

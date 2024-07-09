@@ -61,6 +61,8 @@ const LOGS = {
   socket: labelledLoggerFactory("socket"),
   game: labelledLoggerFactory("game"),
   lobby: labelledLoggerFactory("lobby"),
+  profile: labelledLoggerFactory("profile"),
+  db: labelledLoggerFactory("db"),
 } as const satisfies Record<string, winston.Logger>;
 
 export const log = (log: keyof typeof LOGS) => LOGS[log];

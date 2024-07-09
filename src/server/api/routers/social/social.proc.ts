@@ -1,7 +1,5 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-
-import { SOCIALPROCEDURE } from "~/server/api/routers/social/social.trpc";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -10,16 +8,15 @@ import {
 import DrizzleSocialTransaction, {
   convertToDBSocialUserFormat,
 } from "~/lib/drizzle/transactions/social.transactions.drizzle";
-import {
-  getFriendRelation,
-  getUserProfile,
-} from "~/lib/drizzle/queries/social.queries.drizzle";
+import { getFriendRelation } from "~/lib/drizzle/queries/social.queries.drizzle";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { db } from "~/lib/drizzle/db";
 import { users } from "~/lib/drizzle/auth.schema";
 import { eq } from "drizzle-orm";
 import { log } from "~/lib/logging/logger.winston";
+import { GameMaster } from "~/lib/game/GameMaster";
+import { SOCIAL_STATUS } from "~/constants/social";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -179,6 +176,38 @@ export const trpcSocialRouter = createTRPCRouter({
           );
         }
 
+        function activity(): {
+          status: {
+            primary: string;
+            secondary?: string;
+          };
+        } {
+          const activeGame = GameMaster.instance().getByPlayer(id);
+
+          if (activeGame) {
+            const gameTimeData = activeGame.getTimeData();
+
+            return {
+              status: {
+                primary: SOCIAL_STATUS.inGame.primary,
+                secondary: SOCIAL_STATUS.inGame.secondary({
+                  timed: gameTimeData && {
+                    preset: gameTimeData.clock?.initial.template,
+                  },
+                }),
+              },
+            };
+          }
+
+          //TODO: update online / offline
+          return {
+            status: {
+              primary: SOCIAL_STATUS.idle.primary,
+              secondary: SOCIAL_STATUS.idle.secondary,
+            },
+          };
+        }
+
         return {
           profile: {
             id,
@@ -193,6 +222,7 @@ export const trpcSocialRouter = createTRPCRouter({
                 relation: friendRelation() as ReturnType<typeof friendRelation>,
               }
             : undefined,
+          activity: activity(),
         };
       }),
     friendRelation: protectedProcedure

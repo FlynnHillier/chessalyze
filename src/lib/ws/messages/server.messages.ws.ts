@@ -11,6 +11,9 @@ import {
 
 export const wsClientToServerMessage = new WSMessagesTemplate({
   SUMMARY_SUBSCRIBE: z.object({}),
+  PROFILE_VIEW_SUBSCRIBE: z.object({
+    profileUserID: z.string(),
+  }),
 });
 
 export type WsClientToServerMessageData<

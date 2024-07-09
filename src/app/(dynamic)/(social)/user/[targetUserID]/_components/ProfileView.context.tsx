@@ -10,6 +10,7 @@ import {
 } from "react";
 import { trpc } from "~/app/_trpc/client";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
 import { ReducerAction } from "~/types/util/context.types";
 
 type GameResultsStat = {
@@ -36,6 +37,12 @@ type ProfileData = {
   friend?: {
     status: "confirmed" | "none" | "request_incoming" | "request_outgoing";
   };
+  activity: {
+    status: {
+      primary: string;
+      secondary?: string;
+    };
+  };
 };
 
 type ProfileContext = { profile?: ProfileData; isLoading: boolean };
@@ -47,7 +54,11 @@ type ProfileReducerAction =
         status: Exclude<ProfileData["friend"], undefined>["status"];
       }
     >
-  | ReducerAction<"INITIAL_LOAD", ProfileData>;
+  | ReducerAction<"INITIAL_LOAD", ProfileData>
+  | ReducerAction<
+      "ACTIVITY_STATUS_CHANGE",
+      Exclude<ProfileData["activity"], undefined>["status"]
+    >;
 
 function profileReducer<A extends ProfileReducerAction>(
   state: ProfileContext,
@@ -71,6 +82,20 @@ function profileReducer<A extends ProfileReducerAction>(
           ...state.profile,
           friend: {
             status: payload.status,
+          },
+        },
+      };
+    }
+    case "ACTIVITY_STATUS_CHANGE": {
+      return {
+        ...state,
+        profile: state.profile && {
+          ...state.profile,
+          activity: {
+            status: {
+              primary: payload.primary,
+              secondary: payload.secondary,
+            },
           },
         },
       };
@@ -112,6 +137,19 @@ export function ProfileViewProvider({
   const [profile, dispatchProfile] = useReducer(profileReducer, defaultContext);
 
   useEffect(() => {
+    if (!profile.profile?.user.id || !ws || ws.readyState !== ws.OPEN) return;
+
+    ws.send(
+      wsClientToServerMessage
+        .send("PROFILE_VIEW_SUBSCRIBE")
+        .data({
+          profileUserID: profile.profile.user.id,
+        })
+        .stringify(),
+    );
+  }, [ws?.readyState, profile.profile?.user.id]);
+
+  useEffect(() => {
     // update state when websocket events are received
     const onWSMessageEvent = (m: MessageEvent) => {
       wsServerToClientMessage.receiver({
@@ -139,6 +177,20 @@ export function ProfileViewProvider({
               });
           }
         },
+        "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": ({
+          playerID,
+          activity_status,
+        }) => {
+          if (playerID === target.id) {
+            dispatchProfile({
+              type: "ACTIVITY_STATUS_CHANGE",
+              payload: {
+                primary: activity_status.primaryStatus,
+                secondary: activity_status.secondaryStatus,
+              },
+            });
+          }
+        },
       })(m.data);
     };
 
@@ -151,7 +203,8 @@ export function ProfileViewProvider({
 
   useEffect(() => {
     if (loadProfileInformationQuery.data) {
-      const { profile, stats, friend } = loadProfileInformationQuery.data;
+      const { profile, stats, friend, activity } =
+        loadProfileInformationQuery.data;
       const { won, lost, drawn, all } = stats.games;
       dispatchProfile({
         type: "INITIAL_LOAD",
@@ -194,6 +247,12 @@ export function ProfileViewProvider({
                       ? "request_outgoing"
                       : "none",
             },
+          activity: {
+            status: {
+              primary: activity.status.primary,
+              secondary: activity.status.secondary,
+            },
+          },
         },
       });
     }

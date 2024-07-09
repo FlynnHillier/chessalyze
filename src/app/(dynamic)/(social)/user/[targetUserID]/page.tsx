@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import {
   ProfileViewProvider,
@@ -10,6 +10,10 @@ import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageRes
 import { FriendInteractionButton } from "./_components/SocialButtons";
 import { useSession } from "~/app/_components/providers/client/session.provider";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
+import { cn } from "~/lib/util/cn";
+import { useWebSocket } from "next-ws/client";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
 
 /**
  *
@@ -175,13 +179,22 @@ function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
 /**
  * Page view - side banner
  */
-function UserSideBanner() {
+function UserSideBanner({
+  className,
+  ...otherprops
+}: React.HTMLAttributes<HTMLDivElement>) {
   const { user } = useSession();
   const { profile, isLoading } = useProfile();
   const { showGlobalError } = useGlobalError();
 
   return (
-    <div className="flex h-full min-h-80 w-120 flex-col items-center rounded bg-stone-900 p-3">
+    <div
+      {...otherprops}
+      className={cn(
+        "flex h-full min-h-80 w-120 min-w-fit flex-col items-center rounded bg-stone-900 p-3",
+        className,
+      )}
+    >
       {isLoading ? (
         <SyncLoader />
       ) : !profile ? (
@@ -216,6 +229,39 @@ function UserSideBanner() {
 }
 
 /**
+ * Page view - side banner
+ */
+function UserContentSection({
+  className,
+  ...otherprops
+}: React.HTMLAttributes<HTMLDivElement>) {
+  const { profile } = useProfile();
+
+  return (
+    <div
+      {...otherprops}
+      className={cn("flex h-full w-full flex-col bg-stone-800 p-4", className)}
+    >
+      <span className="text-4xl font-bold">
+        {profile?.activity.status.primary}
+      </span>
+      <span className="text-lg font-semibold">
+        {profile?.activity.status.secondary}
+      </span>
+    </div>
+  );
+}
+
+function ProfileView() {
+  return (
+    <div className="flex h-full w-full flex-row flex-nowrap ">
+      <UserSideBanner className="rounded-l-md rounded-r-none" />
+      <UserContentSection className="rounded-r-md" />
+    </div>
+  );
+}
+
+/**
  * A page to view details regarding the specified user
  */
 export default function ViewUserProfilePage({
@@ -227,7 +273,7 @@ export default function ViewUserProfilePage({
 }) {
   return (
     <ProfileViewProvider target={{ id: params.targetUserID }}>
-      <UserSideBanner />
+      <ProfileView />
     </ProfileViewProvider>
   );
 }

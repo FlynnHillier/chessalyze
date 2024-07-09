@@ -1,11 +1,7 @@
 import { WebSocket } from "ws";
-import {
-  logDev,
-  loggingCategories,
-  loggingColourCode,
-} from "~/lib/logging/dev.logger";
 import { env } from "~/env";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { log } from "~/lib/logging/logger.winston";
 
 //TODO: Add heartbeat so that
 
@@ -26,11 +22,9 @@ class WSSocketRegistry {
 
     this.sockets.set(uid, sockets);
 
-    logDev({
-      message: `Registered socket connection for user: ${uid}. Socket id: ${socket.id}`,
-      color: loggingColourCode.FgGreen,
-      category: loggingCategories.socket,
-    });
+    log("socket").debug(
+      `Registered socket connection for user: ${uid}. Socket id: ${socket.id}`,
+    );
 
     //De-register socket from user on socket close
     socket.on(
@@ -52,11 +46,9 @@ class WSSocketRegistry {
     const sockets = this.sockets.get(uid);
     const present = !!sockets?.delete(socket);
 
-    logDev({
-      message: `Deregistered socket connection for user ${uid}. Socket id: ${socket.id}`,
-      color: loggingColourCode.FgYellow,
-      category: loggingCategories.socket,
-    });
+    log("socket").debug(
+      `Deregistered socket connection for user ${uid}. Socket id: ${socket.id}`,
+    );
 
     return present;
   }
