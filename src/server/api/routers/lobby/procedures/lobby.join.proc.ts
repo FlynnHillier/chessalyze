@@ -25,6 +25,13 @@ export const trpcLobbyJoinProcedure = LOBBYPROCEDURE.use(
         message: "Target lobby was not found or is no longer available.",
       });
 
+    if (lobby.player.pid === ctx.user.id) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "you can't join a lobby with yourself.",
+      });
+    }
+
     const game = lobby.join({
       pid: ctx.user.id,
       image: ctx.user.image,
