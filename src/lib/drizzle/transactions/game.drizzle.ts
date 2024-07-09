@@ -8,11 +8,6 @@ import {
   timings,
 } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
-import {
-  logDev,
-  loggingCategories,
-  loggingColourCode,
-} from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
 import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
@@ -21,6 +16,7 @@ import { PUBLIC_FOLDER_PATH } from "~/config/config";
 import fs from "fs";
 import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { log } from "~/lib/logging/logger.winston";
 
 type PgUser = InferSelectModel<typeof users>;
 
@@ -244,18 +240,10 @@ export async function saveGameSummary(summary: GameSummary) {
         path.join(FOLDER, `${summary.id}.png`),
       );
     } catch (e) {
-      logDev({
-        category: loggingCategories.misc,
-        message: ["failed to store game image to public folder"],
-        color: loggingColourCode.FgRed,
-      });
+      log("general").error("failed to store game image to public folder.", e);
     }
 
-    logDev({
-      category: loggingCategories.db,
-      color: loggingColourCode.FgGreen,
-      message: [`successfully stored game summary '${summary.id}' to db`],
-    });
+    log("db").debug(`successfully stored game summary '${summary.id}' to db`);
 
     wsServerToClientMessage
       .send("SUMMARY_NEW")
@@ -263,12 +251,7 @@ export async function saveGameSummary(summary: GameSummary) {
       .to({ room: recentGameSummarysSocketRoom })
       .emit();
   } catch (e) {
-    //TODO: add physical storage logging here.
-    logDev({
-      category: loggingCategories.db,
-      message: ["failed to store game in database"],
-      color: loggingColourCode.FgRed,
-    });
+    log("db").error("failed to store game in database.", e);
   }
 }
 
