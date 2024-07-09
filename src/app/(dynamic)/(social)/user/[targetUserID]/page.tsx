@@ -170,7 +170,7 @@ function ProfileStatsView() {
  */
 function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
   return (
-    <div className="aspect-square w-48 overflow-hidden rounded-full bg-stone-500">
+    <div className="h-48 w-48 overflow-hidden rounded-full bg-stone-500">
       <img src={imageURL ?? "/blankuser.png"} className="bg-cover" />
     </div>
   );
@@ -200,29 +200,35 @@ function UserSideBanner({
       ) : !profile ? (
         "profile does not seem to exist"
       ) : (
-        <>
-          <UserProfilePicture
-            imageURL={
-              profile.user.imageURL &&
-              resizeGoogleProfilePictureURL(profile.user.imageURL, 300)
-            }
-          />
-          <span className="mt-5 pb-3 text-4xl font-bold">
-            {profile.user.username}
-          </span>
-          {user && user.id !== profile.user.id && (
-            <FriendInteractionButton
-              target={{ id: profile.user.id }}
-              onError={(e) => {
-                showGlobalError(e.message ?? "something went wrong");
-              }}
+        <div className="overflow-auto scrollbar-hide">
+          <div className="flex min-h-min flex-col items-center">
+            <UserProfilePicture
+              imageURL={
+                profile.user.imageURL &&
+                resizeGoogleProfilePictureURL(profile.user.imageURL, 300)
+              }
             />
-          )}
-          <div className="mt-3 flex h-fit w-full  flex-col items-center rounded  px-2 pt-3 text-center">
-            <hr className="mb-3 box-border w-4/5 border-stone-400 bg-stone-600 " />
-            <ProfileStatsView />
+            <div className="inline-block w-fit max-w-full text-center">
+              <span className="mt-5 text-balance px-5 pb-3 text-4xl font-bold">
+                {profile.user.username}
+              </span>
+              {user && user.id !== profile.user.id && (
+                <div className="mt-3 flex w-full flex-row justify-center overflow-hidden px-2">
+                  <FriendInteractionButton
+                    target={{ id: profile.user.id }}
+                    onError={(e) => {
+                      showGlobalError(e.message ?? "something went wrong");
+                    }}
+                  />
+                </div>
+              )}
+              <hr className="mt-3 box-border w-full border-stone-400 bg-stone-600 " />
+            </div>
+            <div className="mt-1 flex h-fit w-full  flex-col items-center rounded px-2 text-center">
+              <ProfileStatsView />
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
