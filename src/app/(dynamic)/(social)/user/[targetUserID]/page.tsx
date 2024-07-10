@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import {
   ProfileViewProvider,
@@ -11,9 +11,6 @@ import { FriendInteractionButton } from "./_components/SocialButtons";
 import { useSession } from "~/app/_components/providers/client/session.provider";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { cn } from "~/lib/util/cn";
-import { useWebSocket } from "next-ws/client";
-import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
-import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
 
 /**
  *
@@ -248,9 +245,17 @@ function UserContentSection({
       {...otherprops}
       className={cn("flex h-full w-full flex-col bg-stone-800 p-4", className)}
     >
-      <span className="text-4xl font-bold">
-        {profile?.activity.status.isOnline ? "online" : "offline"}
-      </span>
+      <div className="flex w-fit flex-row flex-nowrap items-baseline gap-x-1.5">
+        <span className="inline-block text-4xl font-bold">
+          {profile?.activity.status.isOnline ? "online" : "offline"}
+        </span>
+        <span
+          className={cn("inline-block h-5 w-5 rounded-full", {
+            "bg-green-600": profile?.activity.status.isOnline,
+            "bg-red-600": !profile?.activity.status.isOnline,
+          })}
+        />
+      </div>
       <span className="text-lg font-semibold">
         {profile?.activity.status.messages.primary}{" "}
         {profile?.activity.status.messages.primary &&
