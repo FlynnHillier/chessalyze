@@ -171,40 +171,42 @@ export async function saveGameSummary(summary: GameSummary) {
         p_white_id: summary.players.w?.pid,
       });
 
-      await tx.insert(moves).values(
-        summary.moves.map((move, i) => ({
-          gameID: summary.id,
-          turn: i,
-          fen: move.fen,
-          initiator_pid: move.initiator.player?.pid,
-          initiator_color: move.initiator.color,
-          piece: move.move.piece,
-          source: move.move.source,
-          target: move.move.target,
-          promotion: move.move.promotion,
-          t_timestamp: move.time.timestamp,
-          t_duration: move.time.moveDuration,
-          t_w_remaining: move.time.remaining?.w,
-          t_b_remaining: move.time.remaining?.b,
-        })),
-      );
+      if (summary.moves.length > 0) {
+        await tx.insert(moves).values(
+          summary.moves.map((move, i) => ({
+            gameID: summary.id,
+            turn: i,
+            fen: move.fen,
+            initiator_pid: move.initiator.player?.pid,
+            initiator_color: move.initiator.color,
+            piece: move.move.piece,
+            source: move.move.source,
+            target: move.move.target,
+            promotion: move.move.promotion,
+            t_timestamp: move.time.timestamp,
+            t_duration: move.time.moveDuration,
+            t_w_remaining: move.time.remaining?.w,
+            t_b_remaining: move.time.remaining?.b,
+          })),
+        );
 
-      await tx.insert(captured).values(
-        summary.moves.map((move, i) => ({
-          gameID: summary.id,
-          turnIndex: i,
-          b_b: move.captured.b.b,
-          b_n: move.captured.b.n,
-          b_p: move.captured.b.p,
-          b_q: move.captured.b.q,
-          b_r: move.captured.b.r,
-          w_b: move.captured.w.b,
-          w_n: move.captured.w.n,
-          w_p: move.captured.w.p,
-          w_q: move.captured.w.q,
-          w_r: move.captured.w.r,
-        })),
-      );
+        await tx.insert(captured).values(
+          summary.moves.map((move, i) => ({
+            gameID: summary.id,
+            turnIndex: i,
+            b_b: move.captured.b.b,
+            b_n: move.captured.b.n,
+            b_p: move.captured.b.p,
+            b_q: move.captured.b.q,
+            b_r: move.captured.b.r,
+            w_b: move.captured.w.b,
+            w_n: move.captured.w.n,
+            w_p: move.captured.w.p,
+            w_q: move.captured.w.q,
+            w_r: move.captured.w.r,
+          })),
+        );
+      }
 
       await tx.insert(conclusions).values({
         gameID: summary.id,
