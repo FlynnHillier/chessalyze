@@ -39,8 +39,11 @@ type ProfileData = {
   };
   activity: {
     status: {
-      primary: string;
-      secondary?: string;
+      isOnline: boolean;
+      messages: {
+        primary?: string;
+        secondary?: string;
+      };
     };
   };
 };
@@ -93,8 +96,11 @@ function profileReducer<A extends ProfileReducerAction>(
           ...state.profile,
           activity: {
             status: {
-              primary: payload.primary,
-              secondary: payload.secondary,
+              isOnline: payload.isOnline,
+              messages: {
+                primary: payload.messages.primary,
+                secondary: payload.messages.secondary,
+              },
             },
           },
         },
@@ -177,16 +183,16 @@ export function ProfileViewProvider({
               });
           }
         },
-        "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": ({
-          playerID,
-          activity_status,
-        }) => {
+        "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": ({ playerID, status }) => {
           if (playerID === target.id) {
             dispatchProfile({
               type: "ACTIVITY_STATUS_CHANGE",
               payload: {
-                primary: activity_status.primaryStatus,
-                secondary: activity_status.secondaryStatus,
+                isOnline: status.isOnline,
+                messages: {
+                  primary: status.messages.primary,
+                  secondary: status.messages.secondary,
+                },
               },
             });
           }
@@ -249,8 +255,11 @@ export function ProfileViewProvider({
             },
           activity: {
             status: {
-              primary: activity.status.primary,
-              secondary: activity.status.secondary,
+              isOnline: activity.isOnline,
+              messages: {
+                primary: activity.messages.primary,
+                secondary: activity.messages.secondary,
+              },
             },
           },
         },

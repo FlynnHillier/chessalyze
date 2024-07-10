@@ -10,6 +10,7 @@ import { log } from "~/lib/logging/logger.winston";
  */
 class WSSocketRegistry {
   private sockets: Map<string, Set<WebSocket>> = new Map();
+  private socketsToUsersMap: Map<WebSocket, string> = new Map();
   private _pool: Set<WebSocket> = new Set();
 
   public get(uid: string): WebSocket[] {
@@ -21,6 +22,7 @@ class WSSocketRegistry {
     sockets.add(socket);
 
     this.sockets.set(uid, sockets);
+    this.socketsToUsersMap.set(socket, uid);
 
     log("socket").debug(
       `Registered socket connection for user: ${uid}. Socket id: ${socket.id}`,
@@ -46,6 +48,9 @@ class WSSocketRegistry {
     const sockets = this.sockets.get(uid);
     const present = !!sockets?.delete(socket);
 
+    const registeredToUser = this.socketsToUsersMap.get(socket);
+    if (registeredToUser === uid) this.socketsToUsersMap.delete(socket);
+
     log("socket").debug(
       `Deregistered socket connection for user ${uid}. Socket id: ${socket.id}`,
     );
@@ -61,6 +66,15 @@ class WSSocketRegistry {
 
   public pool(): WebSocket[] {
     return Array.from(this._pool);
+  }
+
+  /**
+   *
+   * @param socket a websocket
+   * @returns the id of the user the socket is registered to, null if no user.
+   */
+  public identifySocket(socket: WebSocket): string | null {
+    return this.socketsToUsersMap.get(socket) ?? null;
   }
 }
 

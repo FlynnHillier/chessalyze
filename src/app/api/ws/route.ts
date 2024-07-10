@@ -6,6 +6,7 @@ import { env } from "~/env";
 import { lucia } from "~/lib/lucia/lucia";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { onWsClientToServerMessage } from "~/app/api/ws/listeners";
+import { ActivityManager } from "~/lib/social/activity.social";
 
 interface WebSocketClient {
   id: string;
@@ -46,6 +47,7 @@ export async function SOCKET(
 
   if (user) {
     wsSocketRegistry.register(client, user.id);
+    ActivityManager._eventHooks.onHeartbeat(user.id);
   }
 
   const onWSMessage = (m: MessageEvent) => {

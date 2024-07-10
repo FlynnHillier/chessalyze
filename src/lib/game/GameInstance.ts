@@ -17,19 +17,12 @@ import { UUID } from "~/types/common.types";
 import { ChessClock } from "~/lib/game/GameClock";
 import { GameMaster } from "~/lib/game/GameMaster";
 import { getOrCreateGameSocketRoom } from "~/lib/ws/rooms/categories/game.room.ws";
-import {
-  logDev,
-  loggingCategories,
-  loggingColourCode,
-} from "~/lib/logging/dev.logger";
 import { AtleastOneKey, ExactlyOneKey } from "~/types/util/util.types";
 import { saveGameSummary } from "~/lib/drizzle/transactions/game.drizzle";
 import { TIMED_PRESET_MAPPINGS } from "~/constants/game";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
-import { SOCIAL_STATUS } from "~/constants/social";
-import { getProfileViewSocketRoom } from "~/lib/ws/rooms/categories/profile.room.ws";
-import { SocketRoom } from "~/lib/ws/rooms.ws";
 import { log } from "~/lib/logging/logger.winston";
+import { ActivityManager } from "~/lib/social/activity.social";
 
 class GameError extends Error {
   constructor(code: string, message?: string) {
@@ -90,50 +83,13 @@ export class GameInstance {
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
       socketRoom.joinUser(this.players.w.pid, this.players.b.pid);
 
+      ActivityManager._eventHooks.onGameStart(this.players.w.pid, this);
+      ActivityManager._eventHooks.onGameStart(this.players.b.pid, this);
+
       wsServerToClientMessage
         .send("GAME_JOIN")
         .data(this.snapshot())
         .to({ room: socketRoom })
-        .emit();
-
-      wsServerToClientMessage
-        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
-        .data({
-          playerID: this.players.w.pid,
-          activity_status: {
-            primaryStatus: SOCIAL_STATUS.inGame.primary,
-            secondaryStatus: SOCIAL_STATUS.inGame.secondary({
-              timed: this.time.clock && {
-                preset: this.time.clock.initial.template,
-              },
-            }),
-          },
-        })
-        .to({
-          room:
-            getProfileViewSocketRoom({ playerID: this.players.w.pid }) ??
-            new SocketRoom(),
-        })
-        .emit();
-
-      wsServerToClientMessage
-        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
-        .data({
-          playerID: this.players.b.pid,
-          activity_status: {
-            primaryStatus: SOCIAL_STATUS.inGame.primary,
-            secondaryStatus: SOCIAL_STATUS.inGame.secondary({
-              timed: this.time.clock && {
-                preset: this.time.clock.initial.template,
-              },
-            }),
-          },
-        })
-        .to({
-          room:
-            getProfileViewSocketRoom({ playerID: this.players.b.pid }) ??
-            new SocketRoom(),
-        })
         .emit();
     }).bind(this),
 
@@ -152,11 +108,7 @@ export class GameInstance {
      * Runs on game end
      */
     onEnd: ((summary: GameSummary) => {
-      logDev({
-        message: [`ending game '${this.id}'`],
-        color: loggingColourCode.FgGreen,
-        category: loggingCategories.game,
-      });
+      log("game").info(`ending game '${this.id}'`);
 
       const socketRoom = getOrCreateGameSocketRoom({ id: this.id });
 
@@ -168,37 +120,8 @@ export class GameInstance {
 
       socketRoom.deregister();
 
-      wsServerToClientMessage
-        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
-        .data({
-          playerID: this.players.w.pid,
-          activity_status: {
-            primaryStatus: SOCIAL_STATUS.idle.primary,
-            secondaryStatus: SOCIAL_STATUS.idle.secondary,
-          },
-        })
-        .to({
-          room:
-            getProfileViewSocketRoom({ playerID: this.players.w.pid }) ??
-            new SocketRoom(),
-        })
-        .emit();
-
-      wsServerToClientMessage
-        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
-        .data({
-          playerID: this.players.w.pid,
-          activity_status: {
-            primaryStatus: SOCIAL_STATUS.idle.primary,
-            secondaryStatus: SOCIAL_STATUS.idle.secondary,
-          },
-        })
-        .to({
-          room:
-            getProfileViewSocketRoom({ playerID: this.players.w.pid }) ??
-            new SocketRoom(),
-        })
-        .emit();
+      ActivityManager._eventHooks.onGameEnd(this.players.w.pid);
+      ActivityManager._eventHooks.onGameEnd(this.players.b.pid);
 
       saveGameSummary(summary);
 

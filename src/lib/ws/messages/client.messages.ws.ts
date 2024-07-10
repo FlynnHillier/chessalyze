@@ -37,9 +37,12 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   }),
   "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": z.object({
     playerID: z.string(),
-    activity_status: z.object({
-      primaryStatus: z.string(),
-      secondaryStatus: z.string().optional(),
+    status: z.object({
+      isOnline: z.boolean(),
+      messages: z.object({
+        primary: z.string().optional(),
+        secondary: z.string().optional(),
+      }),
     }),
   }),
 });

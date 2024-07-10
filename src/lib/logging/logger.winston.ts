@@ -63,6 +63,7 @@ const LOGS = {
   lobby: labelledLoggerFactory("lobby"),
   profile: labelledLoggerFactory("profile"),
   db: labelledLoggerFactory("db"),
+  activity: labelledLoggerFactory("activity"),
 } as const satisfies Record<string, winston.Logger>;
 
 export const log = (log: keyof typeof LOGS) => LOGS[log];

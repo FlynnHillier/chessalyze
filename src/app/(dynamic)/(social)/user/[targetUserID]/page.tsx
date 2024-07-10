@@ -249,10 +249,13 @@ function UserContentSection({
       className={cn("flex h-full w-full flex-col bg-stone-800 p-4", className)}
     >
       <span className="text-4xl font-bold">
-        {profile?.activity.status.primary}
+        {profile?.activity.status.isOnline ? "online" : "offline"}
       </span>
       <span className="text-lg font-semibold">
-        {profile?.activity.status.secondary}
+        {profile?.activity.status.messages.primary}{" "}
+        {profile?.activity.status.messages.primary &&
+          profile.activity.status.messages.secondary &&
+          `- ${profile.activity.status.messages.secondary}`}
       </span>
     </div>
   );

@@ -14,6 +14,9 @@ export const wsClientToServerMessage = new WSMessagesTemplate({
   PROFILE_VIEW_SUBSCRIBE: z.object({
     profileUserID: z.string(),
   }),
+  HEARTBEAT: z.object({
+    timestamp: z.number(),
+  }),
 });
 
 export type WsClientToServerMessageData<

@@ -15,8 +15,7 @@ import { db } from "~/lib/drizzle/db";
 import { users } from "~/lib/drizzle/auth.schema";
 import { eq } from "drizzle-orm";
 import { log } from "~/lib/logging/logger.winston";
-import { GameMaster } from "~/lib/game/GameMaster";
-import { SOCIAL_STATUS } from "~/constants/social";
+import { ActivityManager } from "~/lib/social/activity.social";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -176,36 +175,8 @@ export const trpcSocialRouter = createTRPCRouter({
           );
         }
 
-        function activity(): {
-          status: {
-            primary: string;
-            secondary?: string;
-          };
-        } {
-          const activeGame = GameMaster.instance().getByPlayer(id);
-
-          if (activeGame) {
-            const gameTimeData = activeGame.getTimeData();
-
-            return {
-              status: {
-                primary: SOCIAL_STATUS.inGame.primary,
-                secondary: SOCIAL_STATUS.inGame.secondary({
-                  timed: gameTimeData && {
-                    preset: gameTimeData.clock?.initial.template,
-                  },
-                }),
-              },
-            };
-          }
-
-          //TODO: update online / offline
-          return {
-            status: {
-              primary: SOCIAL_STATUS.idle.primary,
-              secondary: SOCIAL_STATUS.idle.secondary,
-            },
-          };
+        function activity() {
+          return ActivityManager.getExposableStatus(input.targetUserID);
         }
 
         return {
