@@ -143,16 +143,43 @@ export function ProfileViewProvider({
   const [profile, dispatchProfile] = useReducer(profileReducer, defaultContext);
 
   useEffect(() => {
-    if (!profile.profile?.user.id || !ws || ws.readyState !== ws.OPEN) return;
+    function sendSubscribeEvent(): boolean {
+      if (!profile.profile?.user.id || !ws || ws.readyState !== ws.OPEN)
+        return false;
+      ws.send(
+        wsClientToServerMessage
+          .send("PROFILE:ACTIVITY_SUBSCRIBE")
+          .data({
+            profileUserID: profile.profile.user.id,
+          })
+          .stringify(),
+      );
 
-    ws.send(
-      wsClientToServerMessage
-        .send("PROFILE_VIEW_SUBSCRIBE")
-        .data({
-          profileUserID: profile.profile.user.id,
-        })
-        .stringify(),
-    );
+      return true;
+    }
+
+    function sendUnSubscribeEvent(): boolean {
+      if (!profile.profile?.user.id || !ws || ws.readyState !== ws.OPEN)
+        return false;
+      ws.send(
+        wsClientToServerMessage
+          .send("PROFILE:ACTIVITY_UNSUBSCRIBE")
+          .data({
+            profileUserID: profile.profile.user.id,
+          })
+          .stringify(),
+      );
+
+      return true;
+    }
+
+    sendSubscribeEvent();
+    window.addEventListener("beforeunload", sendUnSubscribeEvent);
+
+    return () => {
+      sendUnSubscribeEvent();
+      window.removeEventListener("beforeunload", sendUnSubscribeEvent);
+    };
   }, [ws?.readyState, profile.profile?.user.id]);
 
   useEffect(() => {

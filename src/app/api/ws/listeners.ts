@@ -15,12 +15,21 @@ export function onWsClientToServerMessage(ws: WebSocket) {
 
       recentGameSummarysSocketRoom.joinSocket(ws);
     },
-    PROFILE_VIEW_SUBSCRIBE: ({ profileUserID }) => {
+    "PROFILE:ACTIVITY_SUBSCRIBE": ({ profileUserID }) => {
       log("profile").debug(
         `subscribing a client to receive updates for profile ${profileUserID}`,
       );
 
       getOrCreateProfileViewSocketRoom({ playerID: profileUserID }).joinSocket(
+        ws,
+      );
+    },
+    "PROFILE:ACTIVITY_UNSUBSCRIBE": ({ profileUserID }) => {
+      log("profile").debug(
+        `unsubscribing a client to receive updates for profile ${profileUserID}`,
+      );
+
+      getOrCreateProfileViewSocketRoom({ playerID: profileUserID }).leaveSocket(
         ws,
       );
     },

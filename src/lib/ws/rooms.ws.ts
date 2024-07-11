@@ -178,6 +178,25 @@ export class RegisteredSocketRoom extends SocketRoom {
       `leaving ${sockets.length} socket(s) from registered socket room '${this.name}'.`,
     );
     super.leaveSocket(...sockets);
+
+    sockets.forEach((socket) => {
+      clearTimeout(this.automatedDeregistrationTimeouts.socket.get(socket));
+    });
+
+    if (this.config.deregisterOnEmpty && this.isEmpty()) this.deregister();
+  }
+
+  public leaveUser(...uids: string[]): void {
+    log("socket").debug(
+      `leaving users [${uids.join(", ")}] from registered socket room '${this.name}'.`,
+    );
+
+    super.leaveUser(...uids);
+
+    uids.forEach((uid) => {
+      clearTimeout(this.automatedDeregistrationTimeouts.user.get(uid));
+    });
+
     if (this.config.deregisterOnEmpty && this.isEmpty()) this.deregister();
   }
 

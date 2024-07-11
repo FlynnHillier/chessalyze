@@ -10,12 +10,21 @@ import {
 } from "~/lib/ws/template.ws";
 
 export const wsClientToServerMessage = new WSMessagesTemplate({
-  SUMMARY_SUBSCRIBE: z.object({}),
-  PROFILE_VIEW_SUBSCRIBE: z.object({
-    profileUserID: z.string(),
-  }),
   HEARTBEAT: z.object({
     timestamp: z.number(),
+  }),
+  "PROFILE:RECENT_GAMES:SUBSCRIBE": z.object({
+    profile: z.object({
+      id: z.string(),
+    }),
+  }),
+
+  SUMMARY_SUBSCRIBE: z.object({}),
+  "PROFILE:ACTIVITY_SUBSCRIBE": z.object({
+    profileUserID: z.string(),
+  }),
+  "PROFILE:ACTIVITY_UNSUBSCRIBE": z.object({
+    profileUserID: z.string(),
   }),
 });
 

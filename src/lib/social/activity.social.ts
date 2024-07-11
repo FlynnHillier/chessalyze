@@ -5,195 +5,160 @@ import { SocketRoom } from "~/lib/ws/rooms.ws";
 import { getProfileViewSocketRoom } from "~/lib/ws/rooms/categories/profile.room.ws";
 import _ from "lodash";
 
-/**
- * activity information for server-side use
- */
-type PrivateActivityStatus = {
-  online?: boolean;
-  game?: GameInstance;
-};
-
-/**
- * activity information to be exposed to the client
- */
-type ExposableActivityStatus = {
+type ClientExposedActivityStatus = {
   isOnline: boolean;
+  gameID?: string;
   messages: {
     primary?: string;
     secondary?: string;
   };
 };
 
+class Activity {
+  public constructor(public readonly userID: string) {}
+  private activity: {
+    online: boolean;
+    game?: GameInstance;
+  } = { online: false };
+
+  private static AWAIT_HEARTBEAT_BEFORE_OFFLINE: number = 30000;
+
+  private heartbeatTimeout: NodeJS.Timeout | undefined;
+
+  public onHeartbeat() {
+    clearTimeout(this.heartbeatTimeout);
+
+    this.update({ online: true });
+
+    this.heartbeatTimeout = setTimeout(() => {
+      this.update({ online: false });
+    }, Activity.AWAIT_HEARTBEAT_BEFORE_OFFLINE);
+  }
+
+  /**
+   *
+   * @param updateActivity activity to update
+   */
+  public update(updateActivity: Partial<Activity["activity"]>) {
+    const previousActivity = this.activity;
+
+    this.activity = {
+      ...this.activity,
+      ...updateActivity,
+    };
+
+    if (!_.isEqual(previousActivity, this.activity)) this.onActivityChange();
+
+    if (this.isAbsolutelyOffline()) {
+      ActivityManager._eventHooks.onActivityReportOffline(this.userID);
+    } else {
+      ActivityManager._eventHooks.onActivityReportActive(this.userID, this);
+    }
+  }
+
+  public isAbsolutelyOffline() {
+    return !this.activity.online && !this.activity.game;
+  }
+
+  private onActivityChange() {
+    log("activity").debug(
+      `user '${this.userID} now ${this.activity.online ? "online" : "offline"} ${this.activity.game ? "in-game" : "no-game"}`,
+    );
+
+    const room = getProfileViewSocketRoom({ playerID: this.userID });
+
+    if (room)
+      wsServerToClientMessage
+        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
+        .data({
+          playerID: this.userID,
+          status: this.getClientExposedActivityStatus(),
+        })
+        .to({
+          room,
+        })
+        .emit();
+  }
+
+  public getClientExposedActivityStatus(): ClientExposedActivityStatus {
+    if (this.activity.game)
+      return {
+        isOnline: true,
+        gameID: this.activity.game.id,
+        messages: {
+          primary: "in game",
+        },
+      };
+    if (this.activity.online)
+      return {
+        isOnline: true,
+        messages: {
+          primary: "idle",
+          secondary: "exploring chessalyze",
+        },
+      };
+
+    return {
+      isOnline: false,
+      messages: {},
+    };
+  }
+}
+
 export class ActivityManager {
   private static instance: ActivityManager = new ActivityManager();
-  private static CONSIDER_USER_OFFLINE_AFTER_MS: number = 15000;
 
   protected constructor() {
     if (ActivityManager.instance) return ActivityManager.instance;
     ActivityManager.instance = this;
   }
 
-  private activityMap: Map<string, PrivateActivityStatus> = new Map();
-  private heartbeatTimeoutMap: Map<string, NodeJS.Timeout> = new Map();
+  private activityMap: Map<string, Activity> = new Map();
 
   /**
    * To be hooked into by other components of the server, such that a user's activity can be updated when certain events occur
    */
   public static readonly _eventHooks = {
     /**
+     *
+     * run when activity reports self offline
+     */
+    onActivityReportOffline: (userID: string) => {
+      ActivityManager.instance.activityMap.delete(userID);
+    },
+    /**
+     *
+     * run when activity reports self offline
+     */
+    onActivityReportActive: (userID: string, activity: Activity) => {
+      ActivityManager.instance.activityMap.set(userID, activity);
+    },
+    /**
      * run on game start
      */
     onGameStart: (userID: string, game: GameInstance) => {
-      ActivityManager.instance.update(userID, { game: game });
+      ActivityManager.getActivity(userID).update({ game: game });
     },
     /**
      * run on game end
      */
     onGameEnd: (userID: string) => {
-      ActivityManager.instance.update(userID, { game: undefined });
+      ActivityManager.getActivity(userID).update({ game: undefined });
     },
     /**
      * run on heartbeat
      */
     onHeartbeat: (userID: string) => {
-      clearTimeout(ActivityManager.instance.heartbeatTimeoutMap.get(userID));
-      ActivityManager.instance.update(userID, { online: true });
-
-      const timeout = setTimeout(() => {
-        ActivityManager.instance.update(userID, { online: false });
-        ActivityManager.instance.heartbeatTimeoutMap.delete(userID);
-      }, ActivityManager.CONSIDER_USER_OFFLINE_AFTER_MS);
-
-      ActivityManager.instance.heartbeatTimeoutMap.set(userID, timeout);
+      ActivityManager.getActivity(userID).onHeartbeat();
     },
   } as const satisfies Record<
     `on${Capitalize<string>}`,
     (userID: string, ...args: any[]) => void
   >;
 
-  /**
-   * get status information intended to be exposed to the client, regarding the user specified.
-   *
-   * @param userID target user's id
-   * @returns client-exposable activity status information regarding the user specified
-   */
-  public static getExposableStatus(userID: string): ExposableActivityStatus {
-    const activity = ActivityManager.instance.activityMap.get(userID);
-
-    return ActivityManager.evaluateExposableStatusFromActivity(activity);
-  }
-
-  public static getServerSideStatus(
-    userID: string,
-  ): PrivateActivityStatus | undefined {
-    return ActivityManager.instance.activityMap.get(userID);
-  }
-
-  /**
-   *
-   * @param userID userID to target
-   * @param updateActivity activity to update
-   */
-  private update(
-    userID: string,
-    updateActivity: Partial<PrivateActivityStatus>,
-  ) {
-    const existingActivity = this.activityMap.get(userID);
-    const newActivityStatus: PrivateActivityStatus = {
-      ...(existingActivity ?? {}),
-      ...updateActivity,
-    };
-
-    if (!newActivityStatus.game && !newActivityStatus.online)
-      this.clearActivityEntry(userID);
-    else this.activityMap.set(userID, newActivityStatus);
-
-    this.pingOnActivityChange(userID, {
-      new: this.activityMap.get(userID),
-      previous: existingActivity,
-    });
-  }
-
-  private clearActivityEntry(userID: string) {
-    this.activityMap.delete(userID);
-  }
-
-  /**
-   * Carry out necessary logic if activity status is considered to have changed between updates
-   *
-   * @param userID id of user in question
-   * @param newActivity new activity
-   * @param previousActivity previous activity
-   */
-  private pingOnActivityChange(
-    userID: string,
-    activity: {
-      new?: PrivateActivityStatus;
-      previous?: PrivateActivityStatus;
-    },
-  ) {
-    const newActivityEvaluation =
-      ActivityManager.evaluateExposableStatusFromActivity(activity.new);
-    const previousActivityEvaluation =
-      ActivityManager.evaluateExposableStatusFromActivity(activity.previous);
-
-    const statusMessage = (activity?: PrivateActivityStatus) => {
-      return `${activity?.online ? "online" : "offline"} ${activity?.game ? "in-game" : "no-game"}`;
-    };
-
-    if (!_.isEqual(newActivityEvaluation, previousActivityEvaluation)) {
-      log("activity").debug(
-        `user '${userID}' activity changed from '${statusMessage(activity.previous)}' to '${statusMessage(activity.new)}'`,
-      );
-      wsServerToClientMessage
-        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
-        .data({
-          playerID: userID,
-          status: newActivityEvaluation,
-        })
-        .to({
-          room:
-            getProfileViewSocketRoom({ playerID: userID }) ?? new SocketRoom(),
-        })
-        .emit();
-    }
-  }
-
-  /**
-   * generate exposable status information object based on actual activity information
-   *
-   * @param activity new activity
-   * @returns client-exposable status information based on user activity
-   */
-  private static evaluateExposableStatusFromActivity(
-    activity?: PrivateActivityStatus,
-  ): ExposableActivityStatus {
-    if (!activity)
-      return {
-        isOnline: false,
-        messages: {},
-      };
-
-    if (activity.game) {
-      const timeData = activity.game.getTimeData();
-
-      return {
-        isOnline: true,
-        messages: {
-          primary: "in game",
-          secondary: timeData.clock
-            ? `timed ${timeData.clock.initial.template && `${timeData.clock.initial.template}`}`
-            : "un-timed",
-        },
-      };
-    }
-
-    return {
-      isOnline: true,
-      messages: {
-        primary: "idle",
-        secondary: "exploring chessalyze",
-      },
-    };
+  public static getActivity(userID: string): Activity {
+    return (
+      ActivityManager.instance.activityMap.get(userID) ?? new Activity(userID)
+    );
   }
 }

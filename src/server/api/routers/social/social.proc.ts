@@ -176,7 +176,9 @@ export const trpcSocialRouter = createTRPCRouter({
         }
 
         function activity() {
-          return ActivityManager.getExposableStatus(input.targetUserID);
+          return ActivityManager.getActivity(
+            id,
+          ).getClientExposedActivityStatus();
         }
 
         return {
