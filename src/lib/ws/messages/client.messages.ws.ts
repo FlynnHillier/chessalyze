@@ -4,8 +4,11 @@
 
 import { z } from "zod";
 import {
+  zBW,
+  zColor,
   zGameSnapshot,
   zGameSummary,
+  zGameTimePreset,
   zVerboseMovement,
 } from "@validators/game/game.validators";
 import {
@@ -24,7 +27,23 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   GAME_JOIN: zGameSnapshot,
   GAME_END: zGameSummary,
   GAME_MOVE: zVerboseMovement,
-  LOBBY_END: z.object({}),
+  "LOBBY:END": z.object({}),
+  "LOBBY:JOIN": z.object({
+    lobbyID: z.string(),
+    config: z.object({
+      color: z
+        .object({
+          preference: zColor,
+        })
+        .optional(),
+      time: z
+        .object({
+          absolute: zBW(z.number()).optional(),
+          template: zGameTimePreset.optional(),
+        })
+        .optional(),
+    }),
+  }),
   SUMMARY_NEW: zGameSummary,
   SOCIAL_PERSONAL_UPDATE: z.object({
     playerID: z.string(),

@@ -137,7 +137,7 @@ export class GameInstance {
    */
   public constructor(
     players: { p1: JoiningPlayer; p2: JoiningPlayer },
-    times?: ExactlyOneKey<{
+    times?: AtleastOneKey<{
       template: GameTimePreset;
       absolute: BW<number>;
     }>,

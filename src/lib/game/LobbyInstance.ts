@@ -10,7 +10,7 @@ import {
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
 import { Color } from "chess.js";
-import { ExactlyOneKey } from "~/types/util/util.types";
+import { AtleastOneKey, ExactlyOneKey } from "~/types/util/util.types";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 class LobbyError extends Error {
@@ -37,7 +37,7 @@ class InvalidLobbyError extends LobbyError {
 }
 
 export type LobbyConfig = Partial<{
-  time?: ExactlyOneKey<{
+  time?: AtleastOneKey<{
     template: GameTimePreset;
     absolute: BW<number>;
   }>;
@@ -66,7 +66,22 @@ export class LobbyInstance {
       const room = getOrCreateLobbySocketRoom({ id: this.id });
       room.joinUser(this.player.pid);
 
-      //TODO: maybe emit lobby join event here?
+      wsServerToClientMessage
+        .send("LOBBY:JOIN")
+        .data({
+          lobbyID: this.id,
+          config: {
+            time: this.config.time && {
+              absolute: this.config.time.absolute,
+              template: this.config.time.template,
+            },
+            color: this.config.color && {
+              preference: this.config.color.preference,
+            },
+          },
+        })
+        .to({ room })
+        .emit();
 
       this._lobbyMaster._events.onCreate(this);
     }).bind(this),
@@ -77,7 +92,7 @@ export class LobbyInstance {
     onEnd: (() => {
       const room = getOrCreateLobbySocketRoom({ id: this.id });
 
-      wsServerToClientMessage.send("LOBBY_END").data({}).to({ room }).emit();
+      wsServerToClientMessage.send("LOBBY:END").data({}).to({ room }).emit();
 
       room.deregister();
 
@@ -131,8 +146,6 @@ export class LobbyInstance {
   public end() {
     this.validateLobby();
     this.events.onEnd();
-
-    //TODO: lobby end emit event
   }
 
   /**

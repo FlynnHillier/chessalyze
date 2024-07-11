@@ -13,16 +13,18 @@ import { UUID } from "~/types/common.types";
 import { BW, GameTimePreset } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { Color } from "chess.js";
-import { ExactlyOneKey } from "~/types/util/util.types";
+import { AtleastOneKey } from "~/types/util/util.types";
+import { useWebSocket } from "next-ws/client";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 export interface LOBBYCONTEXT {
   present: boolean;
   lobby?: {
     id: string;
     config: {
-      time?: ExactlyOneKey<{
-        absolute: BW<number>;
-        template: GameTimePreset;
+      time?: AtleastOneKey<{
+        absolute?: BW<number>;
+        template?: GameTimePreset;
       }>;
       color?: {
         preference: Color;
@@ -91,6 +93,45 @@ export function useLobby() {
 export const LobbyProvider = ({ children }: { children: ReactNode }) => {
   const [lobby, dispatchLobby] = useReducer(reducer, defaultContext);
   const query = trpc.lobby.status.useQuery();
+  const ws = useWebSocket();
+
+  useEffect(() => {
+    function onWSMessageEvent(e: MessageEvent) {
+      wsServerToClientMessage.receiver({
+        "LOBBY:END": ({}) => {
+          dispatchLobby({
+            type: "END",
+            payload: {},
+          });
+        },
+        "LOBBY:JOIN": ({ lobbyID, config }) => {
+          dispatchLobby({
+            type: "START",
+            payload: {
+              lobby: {
+                config: {
+                  color: config.color && {
+                    preference: config.color.preference,
+                  },
+                  time: config.time && {
+                    absolute: config.time.absolute,
+                    template: config.time.template,
+                  },
+                },
+                id: lobbyID,
+              },
+            },
+          });
+        },
+      })(e.data);
+    }
+
+    ws?.addEventListener("message", onWSMessageEvent);
+
+    return () => {
+      ws?.removeEventListener("message", onWSMessageEvent);
+    };
+  }, [ws]);
 
   useEffect(() => {
     //load initial lobby context
