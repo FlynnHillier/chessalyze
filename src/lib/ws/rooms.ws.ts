@@ -1,10 +1,6 @@
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { WebSocket } from "ws";
-import {
-  logDev,
-  loggingCategories,
-  loggingColourCode,
-} from "~/lib/logging/dev.logger";
+import { log } from "~/lib/logging/logger.winston";
 
 class SocketRoomError extends Error {
   constructor(code: string, message?: string) {
@@ -16,6 +12,13 @@ class SocketRoomExistsError extends SocketRoomError {
     super("SOCKET_ROOM_EXISTS", `socket room '${roomName}' already exists`);
   }
 }
+
+type RegisteredSocketRoomConfig = {
+  deregisterOnEmpty?: boolean;
+  autoDeregisterAfter?: false | number;
+};
+
+type SocketRoomParticipants = { uids?: string[]; sockets?: WebSocket[] };
 
 /**
  * Create and manage a privatised collection of users / specified sockets to receive socket events
@@ -29,7 +32,10 @@ export class SocketRoom {
     sockets: new Set(),
   };
 
-  constructor({ uids, sockets }: { uids?: string[]; sockets?: [] } = {}) {
+  constructor({
+    uids,
+    sockets,
+  }: { uids?: string[]; sockets?: WebSocket[] } = {}) {
     if (uids) this.joinUser(...uids);
     if (sockets) this.joinSocket(...sockets);
   }
@@ -82,6 +88,12 @@ export class SocketRoom {
       new Set([...userSockets, ...this.registered.sockets.values()]),
     );
   }
+
+  public isEmpty(): boolean {
+    return (
+      this.registered.users.size === 0 && this.registered.sockets.size === 0
+    );
+  }
 }
 
 /**
@@ -92,12 +104,34 @@ export class RegisteredSocketRoom extends SocketRoom {
   public readonly name: string;
   public registeredToRegistry: boolean = true;
 
+  private readonly automatedDeregistrationTimeouts: {
+    user: Map<string, NodeJS.Timeout>;
+    socket: Map<WebSocket, NodeJS.Timeout>;
+  } = {
+    user: new Map(),
+    socket: new Map(),
+  };
+
+  private readonly config: Readonly<Required<RegisteredSocketRoomConfig>>;
+
   public constructor(
     name: string,
-    { uids, sockets }: { uids?: string[]; sockets?: [] } = {},
+    {
+      participants,
+      config,
+    }: {
+      participants?: SocketRoomParticipants;
+      config?: RegisteredSocketRoomConfig;
+    } = {},
   ) {
-    super({ uids, sockets });
+    super({ uids: participants?.uids, sockets: participants?.sockets });
     this.name = name;
+
+    this.config = {
+      deregisterOnEmpty: config?.deregisterOnEmpty ?? true,
+      autoDeregisterAfter: config?.autoDeregisterAfter ?? false,
+    };
+
     this.registry._register(name, this);
   }
 
@@ -110,12 +144,68 @@ export class RegisteredSocketRoom extends SocketRoom {
   }
 
   public joinUser(...uids: string[]) {
-    logDev({
-      message: `joining users [${uids.join(", ")}] to registered socket room ${this.name}`,
-      color: loggingColourCode.FgGreen,
-      category: loggingCategories.socket,
-    });
+    log("socket").debug(
+      `joining users [${uids.join(", ")}] to registered socket room '${this.name}'.`,
+    );
     super.joinUser(...uids);
+
+    if (this.config.autoDeregisterAfter !== false)
+      uids.forEach((uid) => {
+        this.queueAutoDeregisterUser(
+          uid,
+          this.config.autoDeregisterAfter as number,
+        );
+      });
+  }
+
+  public joinSocket(...sockets: WebSocket[]): void {
+    log("socket").debug(
+      `joining ${sockets.length} socket(s) to registered socket room '${this.name}'.`,
+    );
+    super.joinSocket(...sockets);
+
+    if (this.config.autoDeregisterAfter !== false)
+      sockets.forEach((socket) => {
+        this.queueAutoDeregisterSocket(
+          socket,
+          this.config.autoDeregisterAfter as number,
+        );
+      });
+  }
+
+  public leaveSocket(...sockets: WebSocket[]): void {
+    log("socket").debug(
+      `leaving ${sockets.length} socket(s) from registered socket room '${this.name}'.`,
+    );
+    super.leaveSocket(...sockets);
+    if (this.config.deregisterOnEmpty && this.isEmpty()) this.deregister();
+  }
+
+  private queueAutoDeregisterUser(uid: string, after: number) {
+    const existingTimeout = this.automatedDeregistrationTimeouts.user.get(uid);
+
+    if (existingTimeout) clearTimeout(existingTimeout);
+
+    const newTimeout = setTimeout(() => {
+      this.leaveUser(uid);
+      this.automatedDeregistrationTimeouts.user.delete(uid);
+    }, after);
+
+    this.automatedDeregistrationTimeouts.user.set(uid, newTimeout);
+  }
+
+  private queueAutoDeregisterSocket(socket: WebSocket, after: number) {
+    const existingTimeout =
+      this.automatedDeregistrationTimeouts.socket.get(socket);
+
+    if (existingTimeout) clearTimeout(existingTimeout);
+
+    const newTimeout = setTimeout(() => {
+      this.leaveSocket(socket);
+      this.automatedDeregistrationTimeouts.socket.delete(socket);
+    }, after);
+
+    this.automatedDeregistrationTimeouts.socket.set(socket, newTimeout);
   }
 }
 
@@ -127,6 +217,8 @@ export class RegisteredSocketRoom extends SocketRoom {
 export class SocketRoomCategory<A extends object> {
   private readonly _registry: WSRoomRegistry = WSRoomRegistry.instance();
   public readonly prefix: string;
+  private defaultRoomConfig: RegisteredSocketRoomConfig;
+
   /**
    * Build a string from args A
    */
@@ -136,9 +228,14 @@ export class SocketRoomCategory<A extends object> {
    * @param category identifier used to differenciate room names, this should be unique.
    * @param stringBuilder generates a string given specified args. Used in combination with the category string to generate room name
    */
-  public constructor(category: string, stringBuilder: (args: A) => string) {
+  public constructor(
+    category: string,
+    stringBuilder: (args: A) => string,
+    defaultRoomConfig: RegisteredSocketRoomConfig = {},
+  ) {
     this.prefix = `#${category.toLocaleUpperCase()}_`;
     this.stringBuilder = stringBuilder;
+    this.defaultRoomConfig = defaultRoomConfig;
   }
 
   private generateRoomName(args: A) {
@@ -149,10 +246,14 @@ export class SocketRoomCategory<A extends object> {
     return this._registry.get(this.generateRoomName(args));
   }
 
-  public getOrCreate(args: A): RegisteredSocketRoom {
-    const r = this._registry.getOrCreate(this.generateRoomName(args));
-
-    return r;
+  public getOrCreate(
+    args: A,
+    config: RegisteredSocketRoomConfig = {},
+  ): RegisteredSocketRoom {
+    return this._registry.getOrCreate(this.generateRoomName(args), {
+      ...this.defaultRoomConfig,
+      ...config,
+    });
   }
 }
 
@@ -194,8 +295,13 @@ export class WSRoomRegistry {
    * @param name name of the target room
    * @returns Room
    */
-  public getOrCreate(roomName: string): RegisteredSocketRoom {
-    const room = this.rooms.get(roomName) ?? new RegisteredSocketRoom(roomName);
+  public getOrCreate(
+    roomName: string,
+    config: RegisteredSocketRoomConfig = {},
+  ): RegisteredSocketRoom {
+    const room =
+      this.rooms.get(roomName) ??
+      new RegisteredSocketRoom(roomName, { config });
     this.rooms.set(roomName, room);
     return room;
   }
@@ -220,11 +326,8 @@ export class WSRoomRegistry {
    */
   public _register(name: string, room: RegisteredSocketRoom) {
     if (this.exists(name)) throw new SocketRoomExistsError(name);
-    logDev({
-      message: `registering socket room ${name}`,
-      color: loggingColourCode.FgGreen,
-      category: loggingCategories.socket,
-    });
+
+    log("socket").debug(`registering socket room ${name}`);
 
     this.rooms.set(name, room);
   }
@@ -236,12 +339,11 @@ export class WSRoomRegistry {
    */
   public _deregister(room: RegisteredSocketRoom) {
     if (this.rooms.get(room.name) === room) {
-      logDev({
-        message: `de-registering socket room ${room.name}`,
-        color: loggingColourCode.FgYellow,
-        category: loggingCategories.socket,
-      });
-      this.destroy(room.name);
+      if (this.destroy(room.name)) {
+        log("socket").debug(
+          `deregistering registered socket room ${room.name}`,
+        );
+      }
     }
   }
 
