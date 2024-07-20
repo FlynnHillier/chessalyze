@@ -100,8 +100,6 @@ export const trpcSocialRouter = createTRPCRouter({
 
           const summaryCount = summaryCountRes[0].count;
 
-          console.log(summaryCount);
-
           const isMore = input.start + input.count < summaryCount;
 
           return {
