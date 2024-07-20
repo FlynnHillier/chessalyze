@@ -65,6 +65,7 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
       }),
     }),
   }),
+  "PROFILE:NEW_GAME_SUMMARY": zGameSummary,
 });
 
 export type WsServerToClientMessageData<

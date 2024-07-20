@@ -17,6 +17,7 @@ import fs from "fs";
 import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { log } from "~/lib/logging/logger.winston";
+import { socketRoom_ProfileRecentGames } from "~/lib/ws/rooms/categories/profile.room.ws";
 
 type PgUser = InferSelectModel<typeof users>;
 
@@ -252,6 +253,34 @@ export async function saveGameSummary(summary: GameSummary) {
       .data(summary)
       .to({ room: recentGameSummarysSocketRoom })
       .emit();
+
+    if (summary.players.w) {
+      const room = socketRoom_ProfileRecentGames.get({
+        playerID: summary.players.w.pid,
+      });
+      if (room)
+        wsServerToClientMessage
+          .send("PROFILE:NEW_GAME_SUMMARY")
+          .data(summary)
+          .to({
+            room,
+          })
+          .emit();
+    }
+
+    if (summary.players.b) {
+      const room = socketRoom_ProfileRecentGames.get({
+        playerID: summary.players.b.pid,
+      });
+      if (room)
+        wsServerToClientMessage
+          .send("PROFILE:NEW_GAME_SUMMARY")
+          .data(summary)
+          .to({
+            room,
+          })
+          .emit();
+    }
   } catch (e) {
     log("db").error("failed to store game in database.", e);
   }

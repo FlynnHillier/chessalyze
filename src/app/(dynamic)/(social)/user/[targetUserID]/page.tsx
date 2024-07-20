@@ -320,7 +320,7 @@ function PlayerRecentGameSummarys({ profile }: { profile: { id: string } }) {
           setGameSummarys((p) => [summary, ...p]);
           tail.current++;
         },
-      });
+      })(e.data);
     }
 
     ws?.addEventListener("message", onWSMessageEvent);
