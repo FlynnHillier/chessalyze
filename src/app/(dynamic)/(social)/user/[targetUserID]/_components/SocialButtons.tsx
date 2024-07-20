@@ -135,7 +135,7 @@ function SocialButtonContent({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex h-full w-full flex-row flex-nowrap items-center gap-x-1 text-nowrap text-center">
+    <div className="flex h-full w-fit flex-row flex-nowrap items-center gap-x-1 text-nowrap text-center">
       {Icon && <Icon size={20} />}
       {text}
       {children}
@@ -233,7 +233,7 @@ function HandleIncomingFriendRequest({
   return (
     <div className="flex flex-row gap-1">
       <FixedSizeAsyncButton
-        className="rounded bg-green-600 p-2 font-semibold"
+        className="w-fit rounded bg-green-600 p-2 font-semibold "
         onClick={acceptFriendRequest}
         isLoading={acceptFriendRequestMutation.isLoading}
         disabled={rejectFriendRequestMutation.isLoading}
@@ -242,7 +242,7 @@ function HandleIncomingFriendRequest({
         <SocialButtonContent Icon={FaUserPlus} text={"accept"} />
       </FixedSizeAsyncButton>
       <FixedSizeAsyncButton
-        className="rounded bg-red-800 p-2 font-semibold"
+        className="w-fit rounded bg-red-800 p-2 font-semibold "
         onClick={rejectFriendRequest}
         isLoading={rejectFriendRequestMutation.isLoading}
         disabled={acceptFriendRequestMutation.isLoading}
@@ -300,7 +300,7 @@ function HandleOutgoingFriendRequestButton({
             <RxCross2 />
           </button>
         }
-        className="rounded bg-green-600 p-2 font-semibold"
+        className="w-fit  rounded bg-green-600 p-2 font-semibold"
       >
         <FaUserClock />
         request sent
@@ -353,7 +353,7 @@ function HandleExistingFriendButton({
             <RxCross2 />
           </button>
         }
-        className="rounded bg-green-600 p-2 font-semibold"
+        className="w-fit rounded bg-green-600 p-2 font-semibold"
       >
         <FaUserCheck />
         friends

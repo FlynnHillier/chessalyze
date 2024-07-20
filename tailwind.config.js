@@ -23,6 +23,9 @@ const config = {
         132: "34rem",
         136: "35rem",
         140: "36rem",
+        224: "58rem",
+        256: "66rem",
+        280: "72rem",
       },
       keyframes: {
         fade: {

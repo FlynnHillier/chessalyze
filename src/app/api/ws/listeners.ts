@@ -3,7 +3,10 @@ import { log } from "~/lib/logging/logger.winston";
 import { ActivityManager } from "~/lib/social/activity.social";
 import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
-import { getOrCreateProfileViewSocketRoom } from "~/lib/ws/rooms/categories/profile.room.ws";
+import {
+  getOrCreateProfileViewSocketRoom,
+  socketRoom_ProfileRecentGames,
+} from "~/lib/ws/rooms/categories/profile.room.ws";
 import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
 
 export function onWsClientToServerMessage(ws: WebSocket) {
@@ -32,6 +35,16 @@ export function onWsClientToServerMessage(ws: WebSocket) {
       getOrCreateProfileViewSocketRoom({ playerID: profileUserID }).leaveSocket(
         ws,
       );
+    },
+    "PROFILE:RECENT_GAMES:SUBSCRIBE": ({ profile }) => {
+      socketRoom_ProfileRecentGames
+        .getOrCreate({ playerID: profile.id })
+        .joinSocket(ws);
+    },
+    "PROFILE:RECENT_GAMES:UNSUBSCRIBE": ({ profile }) => {
+      socketRoom_ProfileRecentGames
+        .get({ playerID: profile.id })
+        ?.leaveSocket(ws);
     },
     HEARTBEAT: ({ timestamp }) => {
       const userID = wsSocketRegistry.identifySocket(ws);

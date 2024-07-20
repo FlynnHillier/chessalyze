@@ -21,3 +21,12 @@ export const getProfileViewSocketRoom = profileViewSocketRoom.get.bind(
  */
 export const getOrCreateProfileViewSocketRoom =
   profileViewSocketRoom.getOrCreate.bind(profileViewSocketRoom);
+
+export const socketRoom_ProfileRecentGames = new SocketRoomCategory(
+  "profile_recent_games",
+  ({ playerID }: { playerID: string }) => playerID,
+  {
+    deregisterOnEmpty: true,
+    autoDeregisterAfter: 1000 * 60 * 60 * 2,
+  },
+);

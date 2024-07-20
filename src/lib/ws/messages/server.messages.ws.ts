@@ -18,7 +18,11 @@ export const wsClientToServerMessage = new WSMessagesTemplate({
       id: z.string(),
     }),
   }),
-
+  "PROFILE:RECENT_GAMES:UNSUBSCRIBE": z.object({
+    profile: z.object({
+      id: z.string(),
+    }),
+  }),
   SUMMARY_SUBSCRIBE: z.object({}),
   "PROFILE:ACTIVITY_SUBSCRIBE": z.object({
     profileUserID: z.string(),

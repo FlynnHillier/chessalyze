@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SyncLoader from "~/app/_components/loading/SyncLoader";
 import {
   ProfileViewProvider,
@@ -11,6 +11,13 @@ import { FriendInteractionButton } from "./_components/SocialButtons";
 import { useSession } from "~/app/_components/providers/client/session.provider";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { cn } from "~/lib/util/cn";
+import { useWebSocket } from "next-ws/client";
+import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
+import { GameSummary } from "~/types/game.types";
+import { trpc } from "~/app/_trpc/client";
+import InfiniteScroller from "~/app/_components/common/scroll/InfiniteScroll";
+import { GameSummaryPill } from "~/app/_components/game/summary/GameSummaryPill";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 /**
  *
@@ -231,6 +238,116 @@ function UserSideBanner({
   );
 }
 
+function PlayerRecentGameSummarys({ profile }: { profile: { id: string } }) {
+  const ws = useWebSocket();
+  const profileRecentGameSummaryInfiniteScrollMutation =
+    trpc.social.profile.games.infiniteScroll.useMutation();
+
+  const [isMore, setIsMore] = useState<boolean>(true);
+  const [gameSummarys, setGameSummarys] = useState<GameSummary[]>([]);
+  const tail = useRef<number>(0);
+
+  async function fetchNext() {
+    const res =
+      await profileRecentGameSummaryInfiniteScrollMutation.mutateAsync({
+        profile: {
+          id: profile.id,
+        },
+        start: tail.current,
+        count: 10,
+      });
+
+    tail.current = res.tail;
+    setIsMore(res.isMore);
+    setGameSummarys((p) => [...p, ...res.data]);
+  }
+
+  function sendProfileRecentGameSubscribeEvent() {
+    if (ws && ws.readyState === ws.OPEN)
+      ws.send(
+        wsClientToServerMessage
+          .send("PROFILE:RECENT_GAMES:SUBSCRIBE")
+          .data({
+            profile: {
+              id: profile.id,
+            },
+          })
+          .stringify(),
+      );
+  }
+
+  function sendProfileRecentGameUnSubscribeEvent() {
+    if (ws && ws.readyState === ws.OPEN)
+      ws.send(
+        wsClientToServerMessage
+          .send("PROFILE:RECENT_GAMES:UNSUBSCRIBE")
+          .data({
+            profile: {
+              id: profile.id,
+            },
+          })
+          .stringify(),
+      );
+  }
+
+  /**
+   * Emit subscribe event to server so that component receives message when new game summary occurs
+   */
+  useEffect(() => {
+    if (!ws || ws.readyState !== ws.OPEN) return;
+
+    sendProfileRecentGameSubscribeEvent();
+
+    window.addEventListener(
+      "beforeunload",
+      sendProfileRecentGameUnSubscribeEvent,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "beforeunload",
+        sendProfileRecentGameUnSubscribeEvent,
+      );
+    };
+  }, [ws?.readyState]);
+
+  useEffect(() => {
+    function onWSMessageEvent(e: MessageEvent) {
+      wsServerToClientMessage.receiver({
+        "PROFILE:NEW_GAME_SUMMARY": (summary) => {
+          setGameSummarys((p) => [summary, ...p]);
+          tail.current++;
+        },
+      });
+    }
+
+    ws?.addEventListener("message", onWSMessageEvent);
+
+    return () => {
+      ws?.removeEventListener("message", onWSMessageEvent);
+    };
+  }, [ws]);
+
+  return (
+    <InfiniteScroller
+      isMore={isMore}
+      loadNext={fetchNext}
+      onLoading={<SyncLoader dotCount={4} customTailwind="bg-stone-800" />}
+      onNoMore={
+        <span className="text-balance text-center text-lg font-semibold">
+          {gameSummarys.length > 0
+            ? "No more games to see here"
+            : "This user is yet to play any games - why not give them a challenge?"}
+        </span>
+      }
+    >
+      {gameSummarys.map((summary, i) => (
+        <GameSummaryPill summary={summary} key={summary.id} redirect={true} />
+      ))}
+    </InfiniteScroller>
+  );
+}
+
 /**
  * Page view - side banner
  */
@@ -243,32 +360,45 @@ function UserContentSection({
   return (
     <div
       {...otherprops}
-      className={cn("flex h-full w-full flex-col bg-stone-800 p-4", className)}
+      className={cn(
+        "relative flex h-full w-full flex-col items-stretch bg-stone-800",
+        className,
+      )}
     >
-      <div className="flex w-fit flex-row flex-nowrap items-baseline gap-x-1.5">
-        <span className="inline-block text-4xl font-bold">
-          {profile?.activity.status.isOnline ? "online" : "offline"}
-        </span>
-        <span
-          className={cn("inline-block h-5 w-5 rounded-full", {
-            "bg-green-600": profile?.activity.status.isOnline,
-            "bg-red-600": !profile?.activity.status.isOnline,
-          })}
-        />
+      <div className="absolute left-0 top-0 box-border h-full w-full">
+        <div className="mb-3 bg-stone-800 px-3 pb-3 pt-3 shadow-xl">
+          <div className="flex w-fit flex-row flex-nowrap items-baseline gap-x-1.5">
+            <span className="inline-block text-4xl font-bold">
+              {profile?.activity.status.isOnline ? "online" : "offline"}
+            </span>
+            <span
+              className={cn("inline-block h-5 w-5 rounded-full", {
+                "bg-green-600": profile?.activity.status.isOnline,
+                "bg-red-600": !profile?.activity.status.isOnline,
+              })}
+            />
+          </div>
+          <span className="text-lg font-semibold">
+            {profile?.activity.status.messages.primary}{" "}
+            {profile?.activity.status.messages.primary &&
+              profile.activity.status.messages.secondary &&
+              `- ${profile.activity.status.messages.secondary}`}
+          </span>
+        </div>
+        <div className="h-5/6 p-3 pb-3">
+          {/* TODO: the height is sorted of cheated here */}
+          {profile && (
+            <PlayerRecentGameSummarys profile={{ id: profile?.user.id }} />
+          )}
+        </div>
       </div>
-      <span className="text-lg font-semibold">
-        {profile?.activity.status.messages.primary}{" "}
-        {profile?.activity.status.messages.primary &&
-          profile.activity.status.messages.secondary &&
-          `- ${profile.activity.status.messages.secondary}`}
-      </span>
     </div>
   );
 }
 
 function ProfileView() {
   return (
-    <div className="flex h-full w-full flex-row flex-nowrap ">
+    <div className="box-border flex h-full w-full flex-row flex-nowrap ">
       <UserSideBanner className="rounded-l-md rounded-r-none" />
       <UserContentSection className="rounded-r-md" />
     </div>

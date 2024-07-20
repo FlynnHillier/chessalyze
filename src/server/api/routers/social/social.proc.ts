@@ -13,9 +13,14 @@ import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { db } from "~/lib/drizzle/db";
 import { users } from "~/lib/drizzle/auth.schema";
-import { eq } from "drizzle-orm";
+import { count, eq, or } from "drizzle-orm";
 import { log } from "~/lib/logging/logger.winston";
 import { ActivityManager } from "~/lib/social/activity.social";
+import {
+  drizzleGameSummaryWithQuery,
+  pgGameSummaryQueryResultToGameSummary,
+} from "~/lib/drizzle/transactions/game.drizzle";
+import { games } from "~/lib/drizzle/games.schema";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -55,6 +60,55 @@ class FriendRequestNotExistsError extends TRPCError {
 
 export const trpcSocialRouter = createTRPCRouter({
   profile: createTRPCRouter({
+    games: createTRPCRouter({
+      infiniteScroll: publicProcedure
+        .input(
+          z.object({
+            profile: z.object({
+              id: z.string(),
+            }),
+            start: z.number().min(0),
+            count: z.number().min(0).max(20).default(10),
+          }),
+        )
+        .mutation(async ({ ctx, input }) => {
+          const { db } = ctx;
+
+          const pgResult = await db.query.games.findMany({
+            with: drizzleGameSummaryWithQuery,
+            where: or(
+              eq(games.p_black_id, input.profile.id),
+              eq(games.p_white_id, input.profile.id),
+            ),
+            limit: input.count,
+            orderBy: (games, { desc }) => [desc(games.serial)],
+            offset: input.start,
+          });
+
+          const summarys = pgResult.map(pgGameSummaryQueryResultToGameSummary);
+
+          const summaryCountRes = await db
+            .select({ count: count(games.id) })
+            .from(games)
+            .innerJoin(
+              users,
+              or(
+                eq(games.p_black_id, input.profile.id),
+                eq(games.p_white_id, input.profile.id),
+              ),
+            );
+
+          const summaryCount = summaryCountRes[0].count;
+
+          const isMore = input.start + input.count < summaryCount;
+
+          return {
+            isMore: isMore,
+            tail: isMore ? input.start + input.count : summaryCount,
+            data: summarys,
+          };
+        }),
+    }),
     user: publicProcedure
       .input(z.object({ targetUserID: z.string() }))
       .query(async ({ input, ctx }) => {
