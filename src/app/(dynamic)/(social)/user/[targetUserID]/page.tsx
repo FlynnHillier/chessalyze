@@ -304,6 +304,8 @@ function PlayerRecentGameSummarys({ profile }: { profile: { id: string } }) {
     );
 
     return () => {
+      sendProfileRecentGameUnSubscribeEvent();
+
       window.removeEventListener(
         "beforeunload",
         sendProfileRecentGameUnSubscribeEvent,
