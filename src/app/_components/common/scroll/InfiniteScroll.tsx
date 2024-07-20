@@ -82,7 +82,7 @@ export default function InfiniteScroller({
     <div
       className={cn(
         className,
-        "flex h-full w-full flex-col gap-3 overflow-y-scroll scrollbar-hide",
+        "flex h-full w-full flex-col items-center gap-3 overflow-y-scroll scrollbar-hide",
       )}
       onScroll={loadNextIfNecessary}
       ref={containerRef}

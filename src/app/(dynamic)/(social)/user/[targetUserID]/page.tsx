@@ -18,6 +18,7 @@ import { trpc } from "~/app/_trpc/client";
 import InfiniteScroller from "~/app/_components/common/scroll/InfiniteScroll";
 import { GameSummaryPill } from "~/app/_components/game/summary/GameSummaryPill";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { BeatLoader } from "react-spinners";
 
 /**
  *
@@ -172,10 +173,23 @@ function ProfileStatsView() {
 /**
  * Display user profile picture
  */
-function UserProfilePicture({ imageURL }: { imageURL: string | null }) {
+function UserProfilePicture() {
+  const { profile } = useProfile();
+
   return (
     <div className="h-48 w-48 overflow-hidden rounded-full bg-stone-500">
-      <img src={imageURL ?? "/blankuser.png"} className="bg-cover" />
+      {!profile ? (
+        <div className="h-full w-full animate-pulse bg-stone-600"></div>
+      ) : (
+        <img
+          src={
+            profile?.user.imageURL
+              ? resizeGoogleProfilePictureURL(profile.user.imageURL, 300)
+              : "/blankuser.png"
+          }
+          className="bg-cover"
+        />
+      )}
     </div>
   );
 }
@@ -188,7 +202,7 @@ function UserSideBanner({
   ...otherprops
 }: React.HTMLAttributes<HTMLDivElement>) {
   const { user } = useSession();
-  const { profile, isLoading } = useProfile();
+  const { profile } = useProfile();
   const { showGlobalError } = useGlobalError();
 
   return (
@@ -199,41 +213,34 @@ function UserSideBanner({
         className,
       )}
     >
-      {isLoading ? (
-        <SyncLoader />
-      ) : !profile ? (
-        "profile does not seem to exist"
-      ) : (
-        <div className="overflow-auto scrollbar-hide">
-          <div className="flex min-h-min flex-col items-center">
-            <UserProfilePicture
-              imageURL={
-                profile.user.imageURL &&
-                resizeGoogleProfilePictureURL(profile.user.imageURL, 300)
-              }
-            />
-            <div className="inline-block w-fit max-w-full text-center">
-              <span className="mt-5 text-balance px-5 pb-3 text-4xl font-bold">
-                {profile.user.username}
-              </span>
-              {user && user.id !== profile.user.id && (
-                <div className="mt-3 flex w-full flex-row justify-center overflow-hidden px-2">
-                  <FriendInteractionButton
-                    target={{ id: profile.user.id }}
-                    onError={(e) => {
-                      showGlobalError(e.message ?? "something went wrong");
-                    }}
-                  />
-                </div>
+      <div className="overflow-auto scrollbar-hide">
+        <div className="flex min-h-min flex-col items-center">
+          <UserProfilePicture />
+          <div className={cn("inline-block w-fit max-w-full text-center")}>
+            <div className="mt-5 text-balance px-5 pb-3 text-4xl font-bold">
+              {!profile ? (
+                <div className="h-12 w-52 animate-pulse rounded-sm bg-stone-600"></div>
+              ) : (
+                <span>{profile?.user.username ?? "username"}</span>
               )}
-              <hr className="mt-3 box-border w-full border-stone-400 bg-stone-600 " />
             </div>
-            <div className="mt-1 flex h-fit w-full  flex-col items-center rounded px-2 text-center">
-              <ProfileStatsView />
-            </div>
+            {profile && user && user.id !== profile.user.id && (
+              <div className="mt-3 flex w-full flex-row justify-center overflow-hidden px-2">
+                <FriendInteractionButton
+                  target={{ id: profile.user.id }}
+                  onError={(e) => {
+                    showGlobalError(e.message ?? "something went wrong");
+                  }}
+                />
+              </div>
+            )}
+            <hr className="mt-3 box-border w-full border-stone-400 bg-stone-600 " />
+          </div>
+          <div className="mt-1 flex h-fit w-full  flex-col items-center rounded px-2 text-center">
+            <ProfileStatsView />
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -334,7 +341,7 @@ function PlayerRecentGameSummarys({ profile }: { profile: { id: string } }) {
     <InfiniteScroller
       isMore={isMore}
       loadNext={fetchNext}
-      onLoading={<SyncLoader dotCount={4} customTailwind="bg-stone-800" />}
+      onLoading={<BeatLoader size={14} color="gray" />}
       onNoMore={
         <span className="text-balance text-center text-lg font-semibold">
           {gameSummarys.length > 0
@@ -344,7 +351,12 @@ function PlayerRecentGameSummarys({ profile }: { profile: { id: string } }) {
       }
     >
       {gameSummarys.map((summary, i) => (
-        <GameSummaryPill summary={summary} key={summary.id} redirect={true} />
+        <GameSummaryPill
+          summary={summary}
+          key={summary.id}
+          redirect={true}
+          className="hover:bg-stone-950"
+        />
       ))}
     </InfiniteScroller>
   );
@@ -369,23 +381,36 @@ function UserContentSection({
     >
       <div className="absolute left-0 top-0 box-border h-full w-full">
         <div className="mb-3 bg-stone-800 px-3 pb-3 pt-3 shadow-xl">
-          <div className="flex w-fit flex-row flex-nowrap items-baseline gap-x-1.5">
-            <span className="inline-block text-4xl font-bold">
-              {profile?.activity.status.isOnline ? "online" : "offline"}
-            </span>
-            <span
-              className={cn("inline-block h-5 w-5 rounded-full", {
-                "bg-green-600": profile?.activity.status.isOnline,
-                "bg-red-600": !profile?.activity.status.isOnline,
-              })}
-            />
+          <div className="flex flex-col flex-nowrap gap-1.5">
+            {!profile ? (
+              <>
+                <div className="inline-block h-10 w-32 animate-pulse rounded-sm bg-stone-600" />
+                <div className="inline-block h-8 w-48 animate-pulse rounded-sm bg-stone-600" />
+              </>
+            ) : (
+              profile && (
+                <>
+                  <div className="flex w-fit flex-row flex-nowrap items-baseline gap-x-1.5">
+                    <span className="inline-block text-4xl font-bold">
+                      {profile.activity.status.isOnline ? "online" : "offline"}
+                    </span>
+                    <span
+                      className={cn("inline-block h-5 w-5 rounded-full", {
+                        "bg-green-600": profile.activity.status.isOnline,
+                        "bg-red-600": !profile.activity.status.isOnline,
+                      })}
+                    />
+                  </div>
+                  <span className="text-lg font-semibold">
+                    {profile?.activity.status.messages.primary}{" "}
+                    {profile?.activity.status.messages.primary &&
+                      profile.activity.status.messages.secondary &&
+                      `- ${profile.activity.status.messages.secondary}`}
+                  </span>
+                </>
+              )
+            )}
           </div>
-          <span className="text-lg font-semibold">
-            {profile?.activity.status.messages.primary}{" "}
-            {profile?.activity.status.messages.primary &&
-              profile.activity.status.messages.secondary &&
-              `- ${profile.activity.status.messages.secondary}`}
-          </span>
         </div>
         <div className="h-5/6 p-3 pb-3">
           {/* TODO: the height is sorted of cheated here */}

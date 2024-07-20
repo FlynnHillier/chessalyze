@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { trpc, TRPCAppClientError } from "~/app/_trpc/client";
+import { trpc } from "~/app/_trpc/client";
 import {
   FixedSizeAsyncButton,
   FixedSizeAsyncButtonRight,
@@ -98,7 +97,7 @@ export function FriendInteractionButton({
     else onError?.(error ?? new Error("failed to remove friend"));
   }
 
-  return profile.isLoading || !profile.profile?.friend ? (
+  return !profile.profile?.friend ? (
     <PlaceHolderLoadingButton />
   ) : profile.profile?.friend.status === "confirmed" ? (
     <HandleExistingFriendButton

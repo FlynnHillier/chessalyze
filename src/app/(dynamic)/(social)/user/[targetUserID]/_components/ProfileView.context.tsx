@@ -1,4 +1,7 @@
+"use client";
+
 import { useWebSocket } from "next-ws/client";
+import { useRouter } from "next/navigation";
 import {
   Dispatch,
   ReactNode,
@@ -6,8 +9,8 @@ import {
   useContext,
   useEffect,
   useReducer,
-  useState,
 } from "react";
+import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { trpc } from "~/app/_trpc/client";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsClientToServerMessage } from "~/lib/ws/messages/server.messages.ws";
@@ -48,7 +51,7 @@ type ProfileData = {
   };
 };
 
-type ProfileContext = { profile?: ProfileData; isLoading: boolean };
+type ProfileContext = { profile?: ProfileData };
 
 type ProfileReducerAction =
   | ReducerAction<
@@ -57,7 +60,7 @@ type ProfileReducerAction =
         status: Exclude<ProfileData["friend"], undefined>["status"];
       }
     >
-  | ReducerAction<"INITIAL_LOAD", ProfileData>
+  | ReducerAction<"INITIAL_LOAD", { profile: ProfileData | undefined }>
   | ReducerAction<
       "ACTIVITY_STATUS_CHANGE",
       Exclude<ProfileData["activity"], undefined>["status"]
@@ -71,11 +74,8 @@ function profileReducer<A extends ProfileReducerAction>(
 
   switch (type) {
     case "INITIAL_LOAD": {
-      if (!state.isLoading) return { ...state };
-
       return {
-        isLoading: false,
-        profile: payload,
+        profile: payload.profile,
       };
     }
     case "FRIEND_STATUS_CHANGE": {
@@ -120,7 +120,6 @@ const PROFILEVIEWCONTEXT = createContext<{
 );
 
 const defaultContext: ProfileContext = {
-  isLoading: true,
   profile: undefined,
 };
 
@@ -136,6 +135,8 @@ export function ProfileViewProvider({
   target: { id: string };
 }) {
   const ws = useWebSocket();
+  const router = useRouter();
+  const { showGlobalError } = useGlobalError();
   const loadProfileInformationQuery = trpc.social.profile.user.useQuery({
     targetUserID: target.id,
   });
@@ -236,63 +237,79 @@ export function ProfileViewProvider({
 
   useEffect(() => {
     if (loadProfileInformationQuery.data) {
-      const { profile, stats, friend, activity } =
-        loadProfileInformationQuery.data;
-      const { won, lost, drawn, all } = stats.games;
+      if (
+        !loadProfileInformationQuery.data.exists ||
+        !loadProfileInformationQuery.data.profile
+      ) {
+        showGlobalError("No such user exists");
+        router.push("/social");
+      }
+
+      const { profile, exists } = loadProfileInformationQuery.data;
       dispatchProfile({
         type: "INITIAL_LOAD",
         payload: {
-          user: {
-            id: profile.id,
-            imageURL: profile.imageURL,
-            username: profile.username,
-          },
-          stats: {
-            won: {
-              total: won.total,
-              asBlack: won.asBlack,
-              asWhite: won.asWhite,
-            },
-            lost: {
-              total: lost.total,
-              asBlack: lost.asBlack,
-              asWhite: lost.asWhite,
-            },
-            drawn: {
-              total: drawn.total,
-              asBlack: drawn.asBlack,
-              asWhite: drawn.asWhite,
-            },
-            all: {
-              total: all.total,
-              asBlack: all.asBlack,
-              asWhite: all.asWhite,
-            },
-          },
-          friend: friend &&
-            friend.relation && {
-              status:
-                friend.relation === "confirmed"
-                  ? "confirmed"
-                  : friend.relation === "requestIncoming"
-                    ? "request_incoming"
-                    : friend.relation === "requestOutgoing"
-                      ? "request_outgoing"
-                      : "none",
-            },
-          activity: {
-            status: {
-              isOnline: activity.isOnline,
-              messages: {
-                primary: activity.messages.primary,
-                secondary: activity.messages.secondary,
-              },
-            },
-          },
+          profile:
+            !exists || !profile
+              ? undefined
+              : {
+                  user: {
+                    id: profile.user.id,
+                    imageURL: profile.user.imageURL,
+                    username: profile.user.username,
+                  },
+                  stats: {
+                    won: {
+                      total: profile.stats.games.won.total,
+                      asBlack: profile.stats.games.won.asBlack,
+                      asWhite: profile.stats.games.won.asWhite,
+                    },
+                    lost: {
+                      total: profile.stats.games.lost.total,
+                      asBlack: profile.stats.games.lost.asBlack,
+                      asWhite: profile.stats.games.lost.asWhite,
+                    },
+                    drawn: {
+                      total: profile.stats.games.drawn.total,
+                      asBlack: profile.stats.games.drawn.asBlack,
+                      asWhite: profile.stats.games.drawn.asWhite,
+                    },
+                    all: {
+                      total: profile.stats.games.all.total,
+                      asBlack: profile.stats.games.all.asBlack,
+                      asWhite: profile.stats.games.all.asWhite,
+                    },
+                  },
+                  friend: profile.friend &&
+                    profile.friend.relation && {
+                      status:
+                        profile.friend.relation === "confirmed"
+                          ? "confirmed"
+                          : profile.friend.relation === "requestIncoming"
+                            ? "request_incoming"
+                            : profile.friend.relation === "requestOutgoing"
+                              ? "request_outgoing"
+                              : "none",
+                    },
+                  activity: {
+                    status: {
+                      isOnline: profile.activity.isOnline,
+                      messages: {
+                        primary: profile.activity.messages.primary,
+                        secondary: profile.activity.messages.secondary,
+                      },
+                    },
+                  },
+                },
         },
       });
     }
   }, [loadProfileInformationQuery.data]);
+
+  useEffect(() => {
+    if (loadProfileInformationQuery.error)
+      showGlobalError(loadProfileInformationQuery.error.message);
+  }, [loadProfileInformationQuery.errorUpdatedAt]);
 
   return (
     <PROFILEVIEWCONTEXT.Provider value={{ profile, dispatchProfile }}>

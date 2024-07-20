@@ -13,7 +13,7 @@ import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { db } from "~/lib/drizzle/db";
 import { users } from "~/lib/drizzle/auth.schema";
-import { count, eq, or } from "drizzle-orm";
+import { countDistinct, eq, or } from "drizzle-orm";
 import { log } from "~/lib/logging/logger.winston";
 import { ActivityManager } from "~/lib/social/activity.social";
 import {
@@ -88,7 +88,7 @@ export const trpcSocialRouter = createTRPCRouter({
           const summarys = pgResult.map(pgGameSummaryQueryResultToGameSummary);
 
           const summaryCountRes = await db
-            .select({ count: count(games.id) })
+            .select({ count: countDistinct(games.id) })
             .from(games)
             .innerJoin(
               users,
@@ -99,6 +99,8 @@ export const trpcSocialRouter = createTRPCRouter({
             );
 
           const summaryCount = summaryCountRes[0].count;
+
+          console.log(summaryCount);
 
           const isMore = input.start + input.count < summaryCount;
 
@@ -130,7 +132,10 @@ export const trpcSocialRouter = createTRPCRouter({
           },
         });
 
-        if (!dbQueryResult) throw new UserNotExistError(input.targetUserID);
+        if (!dbQueryResult)
+          return {
+            exists: false,
+          };
 
         const {
           id,
@@ -236,20 +241,25 @@ export const trpcSocialRouter = createTRPCRouter({
         }
 
         return {
+          exists: true,
           profile: {
-            id,
-            username: name,
-            imageURL: image,
+            user: {
+              id,
+              username: name,
+              imageURL: image,
+            },
+            stats: {
+              games: gameStats(),
+            },
+            friend: ctx.user
+              ? {
+                  relation: friendRelation() as ReturnType<
+                    typeof friendRelation
+                  >,
+                }
+              : undefined,
+            activity: activity(),
           },
-          stats: {
-            games: gameStats(),
-          },
-          friend: ctx.user
-            ? {
-                relation: friendRelation() as ReturnType<typeof friendRelation>,
-              }
-            : undefined,
-          activity: activity(),
         };
       }),
     friendRelation: protectedProcedure
