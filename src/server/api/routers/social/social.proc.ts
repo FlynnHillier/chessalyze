@@ -5,22 +5,18 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import DrizzleSocialTransaction, {
-  convertToDBSocialUserFormat,
-} from "~/lib/drizzle/transactions/social.transactions.drizzle";
+import DrizzleSocialTransaction from "~/lib/drizzle/transactions/social.transactions.drizzle";
 import { getFriendRelation } from "~/lib/drizzle/queries/social.queries.drizzle";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
-import { db } from "~/lib/drizzle/db";
 import { users } from "~/lib/drizzle/auth.schema";
 import { countDistinct, eq, or } from "drizzle-orm";
-import { log } from "~/lib/logging/logger.winston";
-import { ActivityManager } from "~/lib/social/activity.social";
 import {
   drizzleGameSummaryWithQuery,
   pgGameSummaryQueryResultToGameSummary,
 } from "~/lib/drizzle/transactions/game.drizzle";
 import { games } from "~/lib/drizzle/games.schema";
+import { trpcSocialProfileProcedure } from "~/server/api/routers/social/social.profile.proc";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -60,6 +56,7 @@ class FriendRequestNotExistsError extends TRPCError {
 
 export const trpcSocialRouter = createTRPCRouter({
   profile: createTRPCRouter({
+    user: trpcSocialProfileProcedure,
     games: createTRPCRouter({
       infiniteScroll: publicProcedure
         .input(
@@ -109,157 +106,6 @@ export const trpcSocialRouter = createTRPCRouter({
           };
         }),
     }),
-    user: publicProcedure
-      .input(z.object({ targetUserID: z.string() }))
-      .query(async ({ input, ctx }) => {
-        const dbQueryResult = await db.query.users.findFirst({
-          where: eq(users.id, input.targetUserID),
-          with: {
-            friends_user1: true,
-            friends_user2: true,
-            games_b: {
-              with: {
-                conclusion: true,
-              },
-            },
-            games_w: {
-              with: {
-                conclusion: true,
-              },
-            },
-          },
-        });
-
-        if (!dbQueryResult)
-          return {
-            exists: false,
-          };
-
-        const {
-          id,
-          games_b,
-          games_w,
-          image,
-          name,
-          friends_user1,
-          friends_user2,
-        } = dbQueryResult;
-
-        /**
-         *
-         * get friend relation if request originates from an authed user
-         */
-        function friendRelation() {
-          if (!ctx.user) return undefined;
-
-          const { user1_ID, user2_ID } = convertToDBSocialUserFormat(
-            ctx.user.id,
-            input.targetUserID,
-          );
-
-          const row =
-            user1_ID === ctx.user.id
-              ? friends_user2.find(
-                  (relation) => relation.user1_ID === ctx.user!.id,
-                )
-              : friends_user1.find(
-                  (relation) => relation.user2_ID === ctx.user!.id,
-                );
-
-          if (row === undefined) return "none";
-
-          if (row.status === "confirmed") return "confirmed";
-
-          if (row.status === "pending" && row.pending_accept === ctx.user.id)
-            return "requestIncoming";
-          if (
-            row.status === "pending" &&
-            row.pending_accept === input.targetUserID
-          )
-            return "requestOutgoing";
-
-          log("social").warn(
-            `while attempting receive friend relation between user '${ctx.user.id}' & '${input.targetUserID}', the relation could not be properly determined`,
-          );
-          return undefined;
-        }
-
-        /**
-         * Generate game stats object for profile
-         */
-        function gameStats() {
-          return [...games_b, ...games_w].reduce(
-            (acc, game) => {
-              const color =
-                game.p_black_id === input.targetUserID ? "asBlack" : "asWhite";
-
-              const term =
-                game.conclusion.victor_pid === null
-                  ? "drawn"
-                  : game.conclusion.victor_pid === input.targetUserID
-                    ? "won"
-                    : "lost";
-
-              acc[term][color]++;
-              acc[term].total++;
-              acc.all.total++;
-              acc.all[color]++;
-
-              return { ...acc };
-            },
-            {
-              won: {
-                asWhite: 0,
-                asBlack: 0,
-                total: 0,
-              },
-              lost: {
-                asWhite: 0,
-                asBlack: 0,
-                total: 0,
-              },
-              drawn: {
-                asWhite: 0,
-                asBlack: 0,
-                total: 0,
-              },
-              all: {
-                asWhite: 0,
-                asBlack: 0,
-                total: 0,
-              },
-            },
-          );
-        }
-
-        function activity() {
-          return ActivityManager.getActivity(
-            id,
-          ).getClientExposedActivityStatus();
-        }
-
-        return {
-          exists: true,
-          profile: {
-            user: {
-              id,
-              username: name,
-              imageURL: image,
-            },
-            stats: {
-              games: gameStats(),
-            },
-            friend: ctx.user
-              ? {
-                  relation: friendRelation() as ReturnType<
-                    typeof friendRelation
-                  >,
-                }
-              : undefined,
-            activity: activity(),
-          },
-        };
-      }),
     friendRelation: protectedProcedure
       .input(z.object({ targetUserID: z.string() }))
       .query(async ({ ctx, input }) => {

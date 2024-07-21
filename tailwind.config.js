@@ -6,6 +6,9 @@ const config = {
   plugins: [containerQueries, scrollbarHide],
   theme: {
     extend: {
+      fontSize: {
+        "3xl": "2rem",
+      },
       fontFamily: {
         roboto: ["Roboto", "sans-serif"],
       },
