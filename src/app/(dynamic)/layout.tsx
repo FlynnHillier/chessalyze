@@ -10,9 +10,7 @@ import { GlobalErrorProvider } from "../_components/providers/client/globalError
 export default async function Layout({ children }: { children: ReactNode }) {
   return (
     <TRPCProvider>
-      <WSProvider>
-        <GlobalErrorProvider>{children}</GlobalErrorProvider>
-      </WSProvider>
+      <WSProvider>{children}</WSProvider>
     </TRPCProvider>
   );
 }

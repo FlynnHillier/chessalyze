@@ -9,6 +9,8 @@ import {
 } from "react";
 import { useTimeout } from "usehooks-ts";
 import { RxCross2 } from "react-icons/rx";
+import { ClassNameValue } from "tailwind-merge";
+import { cn } from "~/lib/util/cn";
 
 type ContextType = {
   showGlobalError: (message: string, autoHideAfter?: false | number) => any;
@@ -24,7 +26,13 @@ export function useGlobalError() {
   return useContext(GLOBAL_ERROR_CONTEXT);
 }
 
-export function GlobalErrorProvider({ children }: { children: ReactNode }) {
+export function GlobalErrorProvider({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className: ClassNameValue;
+}) {
   const [errorMessage, setErrorMessage] = useState<string>();
   const [hideErrorMessageTimeoutMS, setHideErrorMessageTimeoutMS] = useState<
     number | null
@@ -60,9 +68,9 @@ export function GlobalErrorProvider({ children }: { children: ReactNode }) {
         showGlobalError: showGlobalError,
       }}
     >
-      <div className="relative h-full w-full">
+      <div className={cn("h-full w-full", className, "relative")}>
         {errorMessage && (
-          <div className="no-wrap absolute left-0 top-0 flex h-fit w-full flex-row items-center justify-center">
+          <div className="no-wrap absolute left-0 top-3 z-50 flex h-fit w-full flex-row items-center justify-center text-balance text-center font-semibold">
             <div className="flex max-w-64 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-1 overflow-hidden rounded bg-red-700 px-3 py-2">
               {errorMessage}
               <button
@@ -70,7 +78,7 @@ export function GlobalErrorProvider({ children }: { children: ReactNode }) {
                   hideGlobalError();
                 }}
               >
-                <RxCross2 />
+                <RxCross2 size={18} />
               </button>
             </div>
           </div>

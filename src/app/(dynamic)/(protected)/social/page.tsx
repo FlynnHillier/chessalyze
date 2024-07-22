@@ -10,9 +10,138 @@ import { cn } from "~/lib/util/cn";
 import { Tooltip } from "react-tooltip";
 import { trpc } from "~/app/_trpc/client";
 import { ClipLoader } from "react-spinners";
-import { useEffect } from "react";
+import { ComponentProps, CompositionEvent, useEffect, useState } from "react";
 import { useDispatchProfile } from "./_components/profile.context";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
+import { GenericModal } from "~/app/_components/modal/modals";
+import { useTimeout } from "usehooks-ts";
+import { SocialInteractionButton } from "./_components/SocialInteraction";
+
+/**
+ * A modal to allow users to search for and add friends using their ID
+ */
+function AddFriendByIDModal({
+  isOpen,
+  close,
+}: {
+  isOpen: boolean;
+  close: () => any;
+}) {
+  const TIME_AFTER_INPUT_TO_QUERY: number = 1500;
+
+  const { showGlobalError } = useGlobalError();
+  const [friendID, setFriendID] = useState<string>("");
+  const [timeUntilQueryFriendID, setTimeUntilQueryFriendID] = useState<
+    number | null
+  >(null);
+
+  const [isAwaitingFetch, setIsAwaitingFetch] = useState<boolean>(false);
+
+  const profileQueryMutation = trpc.social.profile.user.target.useQuery(
+    { targetUserID: friendID },
+    {
+      enabled: Boolean(friendID && timeUntilQueryFriendID === null),
+    },
+  );
+
+  useEffect(() => {
+    setIsAwaitingFetch(
+      profileQueryMutation.isFetching || !!timeUntilQueryFriendID,
+    );
+  }, [profileQueryMutation.isFetching, timeUntilQueryFriendID]);
+
+  useTimeout(() => {
+    setTimeUntilQueryFriendID(null);
+  }, timeUntilQueryFriendID);
+
+  function PendingProfilePill() {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex h-24 w-3/4 min-w-fit flex-row flex-nowrap justify-center gap-1 rounded p-2.5">
+          <div
+            className={cn(
+              "box-border aspect-square h-full overflow-hidden rounded bg-stone-600",
+              {
+                "animate-pulse": isAwaitingFetch,
+              },
+            )}
+          >
+            {profileQueryMutation.data?.profile && !isAwaitingFetch && (
+              <img
+                className="bg-cover"
+                src={
+                  profileQueryMutation.data.profile?.user.imageURL
+                    ? resizeGoogleProfilePictureURL(
+                        profileQueryMutation.data.profile?.user.imageURL,
+                        200,
+                      )
+                    : "/blankuser.png"
+                }
+              />
+            )}
+          </div>
+          <div className="flex h-full flex-col flex-nowrap"></div>
+
+          <div
+            className={cn(
+              "h-8 w-32 text-nowrap rounded text-start text-xl font-semibold ",
+              {
+                "animate-pulse": isAwaitingFetch,
+                "bg-stone-600": !profileQueryMutation.data || isAwaitingFetch,
+              },
+            )}
+          >
+            {!isAwaitingFetch &&
+              profileQueryMutation.data?.profile?.user.username}
+          </div>
+        </div>
+        {profileQueryMutation.data?.profile && !isAwaitingFetch && (
+          <SocialInteractionButton target={{ id: friendID }} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <GenericModal isOpen={isOpen} onRequestClose={close} header="Add friend">
+      <form
+        className="flex flex-col flex-nowrap items-center justify-center gap-2 text-center "
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+      >
+        <input
+          className="w-3/4 rounded border-none bg-stone-900 p-2 text-lg placeholder-stone-500 caret-stone-300 shadow-inner shadow-stone-800 focus:shadow-stone-600 focus:outline-none"
+          value={friendID}
+          onBeforeInput={(e) => {
+            const event = e as unknown as CompositionEvent;
+            if (!new RegExp("^[A-Za-z0-9]+$").test(event.data)) {
+              showGlobalError("only alphanumeric characters are allowed", 6000);
+              e.preventDefault();
+            }
+          }}
+          onInput={(e) => {
+            const target = e.target as HTMLInputElement;
+            setFriendID(target.value);
+            setTimeUntilQueryFriendID(TIME_AFTER_INPUT_TO_QUERY);
+          }}
+          placeholder="Your friend's ID"
+        />
+
+        {profileQueryMutation.data?.profile || isAwaitingFetch ? (
+          <PendingProfilePill />
+        ) : (
+          friendID && (
+            <span className="text-balance font-semibold ">
+              We couldn't find that user, are you sure you've entered your
+              friend's ID correctly?
+            </span>
+          )
+        )}
+      </form>
+    </GenericModal>
+  );
+}
 
 function SocialButton({
   className,
@@ -41,9 +170,9 @@ function FriendLinkButton({}) {
   );
 }
 
-function AddFriendByIDButton({}) {
+function AddFriendByIDButton({ onClick }: ComponentProps<"button">) {
   return (
-    <SocialButton>
+    <SocialButton onClick={onClick}>
       <RiUserSearchLine />
       Add friend by ID
     </SocialButton>
@@ -137,6 +266,9 @@ export default function SocialPage() {
   const dispatchProfile = useDispatchProfile();
   const ownProfileQuery = trpc.social.profile.user.self.useQuery();
 
+  const [showAddFriendByIDModal, setShowAddFriendByIDModal] =
+    useState<boolean>(false);
+
   /**
    * Clear previously loaded profile
    */
@@ -216,13 +348,22 @@ export default function SocialPage() {
 
   return (
     <>
+      <AddFriendByIDModal
+        isOpen={showAddFriendByIDModal}
+        close={() => setShowAddFriendByIDModal(false)}
+      />
       <div className="mb-3 flex flex-row flex-nowrap items-center gap-2 bg-stone-800 px-3 pb-3 pt-3 text-3xl font-bold tracking-wide shadow-2xl">
         <BsFillPeopleFill /> Social
       </div>
+
       <div className="container h-full w-full p-3">
         <div className="flex flex-row gap-3">
           <FriendLinkButton />
-          <AddFriendByIDButton />
+          <AddFriendByIDButton
+            onClick={() => {
+              setShowAddFriendByIDModal(true);
+            }}
+          />
           <GameChallengeLinkButton />
         </div>
 

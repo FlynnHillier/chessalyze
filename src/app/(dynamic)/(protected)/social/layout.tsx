@@ -4,10 +4,9 @@ import { ReactNode, useMemo, useState } from "react";
 import { ProfileProvider, useProfile } from "./_components/profile.context";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { useSession } from "~/app/_components/providers/client/session.provider";
-import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { cn } from "~/lib/util/cn";
-import { FriendInteractionButton } from "./_components/SocialButtons";
 import { ClassNameValue } from "tailwind-merge";
+import { SocialInteractionButton } from "./_components/SocialInteraction";
 
 /**
  *
@@ -165,7 +164,6 @@ function ProfileStats() {
 function ProfileBanner({ className }: { className: ClassNameValue }) {
   const { user } = useSession();
   const { profile } = useProfile();
-  const { showGlobalError } = useGlobalError();
 
   return (
     <div
@@ -187,12 +185,7 @@ function ProfileBanner({ className }: { className: ClassNameValue }) {
             </div>
             {profile && user && user.id !== profile.user.id && (
               <div className="mt-3 flex w-full flex-row justify-center overflow-hidden px-2">
-                <FriendInteractionButton
-                  target={{ id: profile.user.id }}
-                  onError={(e) => {
-                    showGlobalError(e.message ?? "something went wrong");
-                  }}
-                />
+                <SocialInteractionButton target={{ id: profile.user.id }} />
               </div>
             )}
             <hr className="mt-3 box-border w-full border-stone-400 bg-stone-600 " />
