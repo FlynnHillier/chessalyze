@@ -1,10 +1,8 @@
 "use client";
 
 import { BsFillPeopleFill } from "react-icons/bs";
-import { FaUserPlus } from "react-icons/fa";
-import { FaLink } from "react-icons/fa6";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
-import { FaChessBoard, FaUserXmark } from "react-icons/fa6";
+import { FaChessBoard, FaUserXmark, FaLink } from "react-icons/fa6";
 import { RiUserSearchLine, RiUserAddLine } from "react-icons/ri";
 import { cn } from "~/lib/util/cn";
 import { Tooltip } from "react-tooltip";
@@ -16,6 +14,48 @@ import { useGlobalError } from "~/app/_components/providers/client/globalError.p
 import { GenericModal } from "~/app/_components/modal/modals";
 import { useTimeout } from "usehooks-ts";
 import { SocialInteractionButton } from "./_components/SocialInteraction";
+import { useSession } from "~/app/_components/providers/client/session.provider";
+
+import { LuCopyCheck, LuCopy } from "react-icons/lu";
+import { ClassNameValue } from "tailwind-merge";
+
+/**
+ * A text field to allowing users to copy its contents
+ */
+function CopyField({
+  textToCopy,
+  className,
+}: {
+  textToCopy: string;
+  className?: ClassNameValue;
+}) {
+  const [revertToCopyIconTimeout, setRevertToCopyIconTimeout] = useState<
+    null | number
+  >(null);
+
+  async function onClick() {
+    await navigator.clipboard.writeText(textToCopy);
+
+    setRevertToCopyIconTimeout(30 * 1000);
+  }
+
+  useTimeout(() => {
+    setRevertToCopyIconTimeout(null);
+  }, revertToCopyIconTimeout);
+
+  return (
+    <div
+      className={cn(
+        "flex w-1/2 cursor-pointer flex-row flex-nowrap items-center justify-center gap-1 rounded border  border-stone-100 px-5 py-1 text-center shadow-inner shadow-stone-700",
+        className,
+      )}
+      onClick={onClick}
+    >
+      {!revertToCopyIconTimeout ? <LuCopy /> : <LuCopyCheck />}
+      {textToCopy}
+    </div>
+  );
+}
 
 /**
  * A modal to allow users to search for and add friends using their ID
@@ -27,6 +67,8 @@ function AddFriendByIDModal({
   isOpen: boolean;
   close: () => any;
 }) {
+  const { user } = useSession();
+
   const TIME_AFTER_INPUT_TO_QUERY: number = 1500;
 
   const { showGlobalError } = useGlobalError();
@@ -56,7 +98,7 @@ function AddFriendByIDModal({
 
   function PendingProfilePill() {
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex h-full flex-col items-center gap-2">
         <div className="flex h-24 w-3/4 min-w-fit flex-row flex-nowrap justify-center gap-1 rounded p-2.5">
           <div
             className={cn(
@@ -80,8 +122,6 @@ function AddFriendByIDModal({
               />
             )}
           </div>
-          <div className="flex h-full flex-col flex-nowrap"></div>
-
           <div
             className={cn(
               "h-8 w-32 text-nowrap rounded text-start text-xl font-semibold ",
@@ -104,12 +144,7 @@ function AddFriendByIDModal({
 
   return (
     <GenericModal isOpen={isOpen} onRequestClose={close} header="Add friend">
-      <form
-        className="flex flex-col flex-nowrap items-center justify-center gap-2 text-center "
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
-      >
+      <div className="box-border flex h-full flex-col flex-nowrap items-center gap-2 pt-4 text-center">
         <input
           className="w-3/4 rounded border-none bg-stone-900 p-2 text-lg placeholder-stone-500 caret-stone-300 shadow-inner shadow-stone-800 focus:shadow-stone-600 focus:outline-none"
           value={friendID}
@@ -128,7 +163,9 @@ function AddFriendByIDModal({
           placeholder="Your friend's ID"
         />
 
-        {profileQueryMutation.data?.profile || isAwaitingFetch ? (
+        {(profileQueryMutation.data?.profile || isAwaitingFetch) &&
+        friendID !== "" &&
+        friendID !== undefined ? (
           <PendingProfilePill />
         ) : (
           friendID && (
@@ -138,7 +175,13 @@ function AddFriendByIDModal({
             </span>
           )
         )}
-      </form>
+        {user && (
+          <div className="mb-5 mt-auto flex h-12 w-full flex-col items-center gap-1.5 justify-self-end text-balance font-semibold text-stone-400">
+            want to share your ID?
+            <CopyField textToCopy={user.id} className="text-stone-200" />
+          </div>
+        )}
+      </div>
     </GenericModal>
   );
 }

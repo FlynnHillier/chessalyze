@@ -27,9 +27,9 @@ export function GenericModal({
       ariaHideApp={false}
       shouldCloseOnOverlayClick={true}
       className={cn(
-        "h-128 w-108 rounded bg-stone-950",
+        "h-fit w-108 rounded-lg bg-stone-950",
         portalClassName,
-        " relative overflow-hidden",
+        "relative overflow-hidden",
       )}
       onRequestClose={onRequestClose}
       shouldFocusAfterRender={false}
@@ -42,11 +42,13 @@ export function GenericModal({
           </button>
         )}
         {header && (
-          <div className=" mb-2 w-full text-balance py-2 text-center text-xl font-bold tracking-wide shadow-lg shadow-stone-900">
+          <div className="mb-2 h-12 w-full text-balance py-2 text-center text-xl font-bold tracking-wide shadow-lg shadow-stone-900">
             {header}
           </div>
         )}
-        <div className={cn("p-3", className)}> {children} </div>
+        <div className={cn("inline-block h-112 w-full p-3", className)}>
+          {children}
+        </div>
       </>
     </Modal>
   );
