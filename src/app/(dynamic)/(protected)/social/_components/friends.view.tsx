@@ -15,6 +15,7 @@ import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageRes
 import { FaUserXmark, FaChessBoard } from "react-icons/fa6";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { ReducerAction } from "~/types/util/context.types";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 type User = {
   id: string;
@@ -43,7 +44,8 @@ type FriendReducerAction =
       "UPDATE_EXISTING",
       { id: string; updates: Partial<Omit<User, "id">> }
     >
-  | ReducerAction<"REMOVE", { id: string }>;
+  | ReducerAction<"REMOVE", { id: string }>
+  | ReducerAction<"NEW", User>;
 
 function allFriendsReducer<A extends FriendReducerAction>(
   state: AllFriends,
@@ -71,6 +73,12 @@ function allFriendsReducer<A extends FriendReducerAction>(
       delete state[payload.id];
       return {
         ...state,
+      };
+    }
+    case "NEW": {
+      return {
+        ...state,
+        [payload.id]: payload,
       };
     }
   }
@@ -109,6 +117,41 @@ export function AllExistingFriends({
       },
     },
   );
+
+  useEffect(() => {
+    if (!ws) return;
+
+    function onWSMessageEvent(e: MessageEvent) {
+      wsServerToClientMessage.receiver({
+        SOCIAL_PERSONAL_UPDATE: ({ new_status, playerID }) => {
+          if (friends[playerID] && new_status !== "confirmed") {
+            dispatchFriends({
+              type: "REMOVE",
+              payload: {
+                id: playerID,
+              },
+            });
+          }
+        },
+        "SOCIAL:FRIEND_NEW": ({ activity, user }) => {
+          dispatchFriends({
+            type: "NEW",
+            payload: {
+              id: user.id,
+              username: user.username,
+              imageURL: user.imageURL,
+            },
+          });
+        },
+      })(e.data);
+    }
+
+    ws.addEventListener("message", onWSMessageEvent);
+
+    return () => {
+      ws.removeEventListener("message", onWSMessageEvent);
+    };
+  }, [ws]);
 
   return (
     <AllFriendsContext.Provider

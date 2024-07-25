@@ -54,6 +54,16 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
       z.literal("request_outgoing"),
     ]),
   }),
+  "SOCIAL:FRIEND_NEW": z.object({
+    user: z.object({
+      id: z.string(),
+      username: z.string(),
+      imageURL: z.string().optional(),
+    }),
+    activity: z.object({
+      isOnline: z.boolean(),
+    }),
+  }),
   "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": z.object({
     playerID: z.string(),
     status: z.object({

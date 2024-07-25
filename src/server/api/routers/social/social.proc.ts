@@ -20,6 +20,9 @@ import {
 } from "~/lib/drizzle/transactions/game.drizzle";
 import { games } from "~/lib/drizzle/games.schema";
 import { trpcSocialProfileProcedure } from "~/server/api/routers/social/social.profile.proc";
+import { ActivityManager } from "~/lib/social/activity.social";
+import { db } from "~/lib/drizzle/db";
+import { log } from "~/lib/logging/logger.winston";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -54,6 +57,79 @@ class FriendRequestExistsError extends TRPCError {
 class FriendRequestNotExistsError extends TRPCError {
   constructor() {
     super({ code: "CONFLICT", message: "friend request does not exist." });
+  }
+}
+
+async function emitNewFriendEvent(user1_ID: string, user2_ID: string) {
+  try {
+    const u1 = await db.query.users.findFirst({
+      where: eq(users.id, user1_ID),
+      columns: {
+        id: true,
+        image: true,
+        name: true,
+      },
+    });
+
+    const u2 = await db.query.users.findFirst({
+      where: eq(users.id, user2_ID),
+      columns: {
+        id: true,
+        image: true,
+        name: true,
+      },
+    });
+
+    if (!u1 || !u2) {
+      return log("social").warn(
+        `failed to emit new friend event to users '${user1_ID}' & '${user2_ID}'. One of the users did not exist!`,
+      );
+    }
+
+    wsServerToClientMessage
+      .send("SOCIAL:FRIEND_NEW")
+      .data({
+        activity: {
+          isOnline:
+            ActivityManager.getActivity(
+              user1_ID,
+            ).getClientExposedActivityStatus().isOnline,
+        },
+        user: {
+          id: u1.id,
+          username: u1.name,
+          imageURL: u1.image ?? undefined,
+        },
+      })
+      .to({
+        socket: wsSocketRegistry.get(u2.id),
+      })
+      .emit();
+
+    wsServerToClientMessage
+      .send("SOCIAL:FRIEND_NEW")
+      .data({
+        activity: {
+          isOnline:
+            ActivityManager.getActivity(
+              user2_ID,
+            ).getClientExposedActivityStatus().isOnline,
+        },
+        user: {
+          id: u2.id,
+          username: u2.name,
+          imageURL: u2.image ?? undefined,
+        },
+      })
+      .to({
+        socket: wsSocketRegistry.get(u1.id),
+      })
+      .emit();
+  } catch (e) {
+    log("social").error(
+      `failed to emit new friend event to users '${user1_ID}' & '${user2_ID}'. `,
+      e,
+    );
   }
 }
 
@@ -244,6 +320,8 @@ export const trpcSocialRouter = createTRPCRouter({
               .data({ playerID: ctx.user.id, new_status: "confirmed" })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
+
+            emitNewFriendEvent(input.targetUserID, ctx.user.id);
           }
 
           return {
