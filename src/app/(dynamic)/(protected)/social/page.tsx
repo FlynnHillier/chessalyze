@@ -3,11 +3,11 @@
 import { BsFillPeopleFill } from "react-icons/bs";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { FaChessBoard, FaUserXmark, FaLink } from "react-icons/fa6";
-import { RiUserSearchLine, RiUserAddLine } from "react-icons/ri";
+import { RiUserSearchLine, RiUserShared2Line } from "react-icons/ri";
 import { cn } from "~/lib/util/cn";
 import { Tooltip } from "react-tooltip";
 import { trpc } from "~/app/_trpc/client";
-import { ClipLoader } from "react-spinners";
+import { ClipLoader, MoonLoader } from "react-spinners";
 import { ComponentProps, CompositionEvent, useEffect, useState } from "react";
 import { useDispatchProfile } from "./_components/profile.context";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
@@ -18,6 +18,7 @@ import { useSession } from "~/app/_components/providers/client/session.provider"
 
 import { LuCopyCheck, LuCopy } from "react-icons/lu";
 import { ClassNameValue } from "tailwind-merge";
+import { useWebSocket } from "next-ws/client";
 
 /**
  * A text field to allowing users to copy its contents
@@ -204,11 +205,11 @@ function SocialButton({
   );
 }
 
-function FriendLinkButton({}) {
+function ShareOwnProfileButton({}) {
   return (
     <SocialButton>
-      <RiUserAddLine />
-      Friend link
+      <RiUserShared2Line />
+      Share profile
     </SocialButton>
   );
 }
@@ -222,89 +223,160 @@ function AddFriendByIDButton({ onClick }: ComponentProps<"button">) {
   );
 }
 
-function GameChallengeLinkButton() {
-  return (
-    <SocialButton>
-      <FaLink />
-      Challenge link
-    </SocialButton>
-  );
-}
-
-function FriendPill({
-  user,
+function ExistingFriendsView({
+  className,
 }: {
-  user: { id: string; imageURL: string | null; username: string };
+  className?: ComponentProps<"div">["className"];
 }) {
-  const removeFriendMutation = trpc.social.friend.existing.remove.useMutation();
-  const challengeFriendMutation = ""; //TODO
+  const ws = useWebSocket();
+  const { showGlobalError } = useGlobalError();
+  const [friends, setFriends] =
+    useState<
+      Record<
+        string,
+        { id: string; username: string; imageURL: string | undefined }
+      >
+    >();
 
-  const ToolTipID = {
-    CHALLENGE: "tooltip-challenge-friend-" + user.id,
-    REMOVE_FRIEND: "tooltip-remove-friend-" + user.id,
-  };
+  const removeConfirmedFriendMutation =
+    trpc.social.friend.request.remove.useMutation({
+      onError(error, variables, context) {
+        showGlobalError(error.message);
+      },
+    });
+  const queryConfirmedFriends = trpc.social.friend.getAllFriends.useQuery(
+    undefined,
+    {
+      onSettled(data, error) {
+        if (data) {
+          setFriends(
+            data.reduce(
+              (acc, { id, image, name }) => ({
+                ...acc,
+                [id]: {
+                  id,
+                  imageURL: image,
+                  username: name,
+                },
+              }),
+              {},
+            ),
+          );
+        }
+      },
+    },
+  );
+
+  // useEffect(() => {
+  //   wsServerToClientMessage.receiver({
+  //     SOCIAL_PERSONAL_UPDATE:()
+  //   })
+
+  // },[ws])
 
   return (
-    <>
-      <Tooltip id={ToolTipID.CHALLENGE} content="challenge" className="z-30" />
-      <Tooltip
-        id={ToolTipID.REMOVE_FRIEND}
-        content="remove friend"
-        className="z-30"
-      />
-      <div className="h-18 flex w-64 flex-row flex-nowrap gap-2 rounded bg-inherit bg-stone-900  p-2">
-        <div className="relative aspect-square w-16">
-          <img
-            className=" left-0 top-0 h-full w-full overflow-hidden rounded bg-cover"
-            alt={`${user.username}'s profile picture`}
-            src={
-              user.imageURL
-                ? resizeGoogleProfilePictureURL(user.imageURL, 100)
-                : "/blankuser.png"
-            }
-          />
-          <span
-            className={cn(
-              "absolute -bottom-1 -right-1 z-10 inline-block aspect-square w-5 rounded-full",
-              { "bg-green-600": true, "bg-red-700": true },
-            )}
-          />
-        </div>
-        <div className="flex flex-col justify-between">
-          <span className="text-xl font-semibold">{user.username}</span>
-          <div className="flex h-1/2 flex-row flex-nowrap items-start gap-1.5 text-xl">
-            <button
-              onClick={() => {
-                removeFriendMutation.mutate({ targetUserID: user.id });
-              }}
-              disabled={removeFriendMutation.isLoading}
-              data-tooltip-id={ToolTipID.CHALLENGE}
-            >
-              {removeFriendMutation.isLoading ? (
-                <ClipLoader size={20} color="gray" />
-              ) : (
-                <FaChessBoard />
-              )}
-            </button>
-            <button
-              className="border-none"
-              onClick={() => {}}
-              disabled={removeFriendMutation.isLoading}
-            >
-              {false ? (
-                <ClipLoader size={5} />
-              ) : (
-                <FaUserXmark data-tooltip-id={ToolTipID.REMOVE_FRIEND} />
-              )}
-            </button>
-          </div>
+    <div
+      className={cn(
+        "flow flex h-full max-h-full w-full flex-col rounded",
+        className,
+      )}
+    >
+      <div className="mb-3 flex w-full flex-shrink flex-grow-0 basis-auto text-nowrap px-3 text-2xl font-semibold">
+        Friends
+      </div>
+
+      <div className="flex flex-grow overflow-y-auto">
+        <div
+          className={cn(
+            "flex h-fit flex-row flex-wrap items-start gap-3 overflow-y-auto px-3 pb-5",
+          )}
+        >
+          {friends === undefined || queryConfirmedFriends.isLoading ? (
+            <MoonLoader />
+          ) : queryConfirmedFriends.isError ? (
+            "something went wrong"
+          ) : Object.keys(friends).length === 0 ? (
+            "no friends to see here. try adding some."
+          ) : (
+            Object.values(friends).map(({ id, imageURL, username }) => {
+              const ToolTipID = {
+                CHALLENGE: "tooltip-challenge-friend-" + id,
+                REMOVE_FRIEND: "tooltip-remove-friend-" + id,
+              };
+
+              return (
+                <>
+                  <Tooltip id={ToolTipID.CHALLENGE} content="challenge" />
+                  <Tooltip
+                    id={ToolTipID.REMOVE_FRIEND}
+                    content="remove friend"
+                  />
+                  <div className="flex h-20 w-full min-w-64 flex-row  flex-nowrap justify-start gap-2 rounded p-2 shadow-lg shadow-stone-900 hover:bg-stone-900 lg:w-[calc(50%-(0.75rem/2))]  xl:w-[calc(32.8%-0.25rem)]  ">
+                    <div className="relative aspect-square w-16 flex-shrink-0">
+                      <img
+                        className="left-0 top-0 h-full w-full overflow-hidden rounded bg-cover"
+                        alt={`${username}'s profile picture`}
+                        src={
+                          imageURL
+                            ? resizeGoogleProfilePictureURL(imageURL, 100)
+                            : "/blankuser.png"
+                        }
+                      />
+                      <span
+                        className={cn(
+                          "absolute -bottom-1 -right-1 z-[0] inline-block aspect-square w-5 rounded-full",
+                          { "bg-green-600": true, "bg-red-700": true },
+                        )}
+                      />
+                    </div>
+                    <div className="flex flex-grow flex-col justify-between overflow-hidden whitespace-nowrap">
+                      <span className="inline-block text-ellipsis whitespace-nowrap text-xl font-semibold">
+                        {username}
+                      </span>
+                      <div className="flex h-1/2 flex-row flex-nowrap items-start gap-1.5 text-xl">
+                        <button
+                          className="border-none"
+                          onClick={() => {}}
+                          disabled={removeConfirmedFriendMutation.isLoading}
+                        >
+                          {false ? (
+                            <ClipLoader size={5} />
+                          ) : (
+                            <FaChessBoard
+                              data-tooltip-id={ToolTipID.CHALLENGE}
+                            />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            removeConfirmedFriendMutation.mutate({
+                              targetUserID: id,
+                            });
+                          }}
+                          disabled={removeConfirmedFriendMutation.isLoading}
+                          data-tooltip-id={ToolTipID.REMOVE_FRIEND}
+                        >
+                          {removeConfirmedFriendMutation.isLoading ? (
+                            <ClipLoader size={20} color="gray" />
+                          ) : (
+                            <FaUserXmark />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
-export default function SocialPage() {
+export default function Page() {
   const { showGlobalError } = useGlobalError();
   const dispatchProfile = useDispatchProfile();
   const ownProfileQuery = trpc.social.profile.user.self.useQuery();
@@ -395,29 +467,23 @@ export default function SocialPage() {
         isOpen={showAddFriendByIDModal}
         close={() => setShowAddFriendByIDModal(false)}
       />
-      <div className="mb-3 flex flex-row flex-nowrap items-center gap-2 bg-stone-800 px-3 pb-3 pt-3 text-3xl font-bold tracking-wide shadow-2xl">
-        <BsFillPeopleFill /> Social
-      </div>
 
-      <div className="container h-full w-full p-3">
-        <div className="flex flex-row gap-3">
-          <FriendLinkButton />
-          <AddFriendByIDButton
-            onClick={() => {
-              setShowAddFriendByIDModal(true);
-            }}
-          />
-          <GameChallengeLinkButton />
+      <div className="flex flex-grow flex-col gap-1 ">
+        <div className="flex flex-row flex-nowrap items-center gap-2 bg-stone-800 px-3 pb-3 pt-3 text-3xl font-bold tracking-wide shadow-2xl">
+          <BsFillPeopleFill /> Social
         </div>
+        <div className="flex w-full flex-grow flex-col">
+          <div className="m-3 flex flex-row gap-3">
+            <ShareOwnProfileButton />
+            <AddFriendByIDButton
+              onClick={() => {
+                setShowAddFriendByIDModal(true);
+              }}
+            />
+          </div>
 
-        {/* <FriendPill
-          user={{
-            id: "123",
-            imageURL:
-              "https://lh3.googleusercontent.com/a/ACg8ocLc5Wkrdbp64B0ozgDG0bX3onu4z5T2F8HgMALKVC8KIKpWa6E9=s96-c",
-            username: "user name",
-          }}
-        /> */}
+          <ExistingFriendsView />
+        </div>
       </div>
     </>
   );

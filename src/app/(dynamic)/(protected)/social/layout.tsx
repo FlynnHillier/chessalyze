@@ -168,7 +168,7 @@ function ProfileBanner({ className }: { className: ClassNameValue }) {
   return (
     <div
       className={cn(
-        "flex h-full w-120 min-w-fit flex-col items-center bg-stone-900 p-3",
+        "flex h-full w-88 min-w-fit flex-col items-center bg-stone-900 p-3",
         className,
       )}
     >
@@ -230,8 +230,8 @@ function ProfilePicture() {
 function SocialLayout({ children }: { children: ReactNode }) {
   return (
     <div className="box-border flex h-full w-full flex-row flex-nowrap ">
-      <ProfileBanner className="rounded-l-md rounded-r-none bg-stone-900" />
-      <div className="w-full overflow-hidden rounded-r-md bg-stone-800">
+      <ProfileBanner className="rounded-l-md rounded-r-none bg-stone-900 " />
+      <div className="flex flex-grow flex-col overflow-hidden rounded-r-md bg-stone-800">
         {children}
       </div>
     </div>

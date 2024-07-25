@@ -293,7 +293,7 @@ function SocialHandleExistingFriendButton({ target }: { target: Target }) {
   const { showGlobalError } = useGlobalError();
 
   const RemoveExistingFriendMutation =
-    trpc.social.friend.existing.remove.useMutation({
+    trpc.social.friend.request.remove.useMutation({
       onSettled(data, error, variables, context) {
         if (data?.success) return setRelation("none");
         if (error) showGlobalError(error.message);

@@ -6,7 +6,10 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import DrizzleSocialTransaction from "~/lib/drizzle/transactions/social.transactions.drizzle";
-import { getFriendRelation } from "~/lib/drizzle/queries/social.queries.drizzle";
+import {
+  getFriendRelation,
+  getUserConfirmedFriends,
+} from "~/lib/drizzle/queries/social.queries.drizzle";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { users } from "~/lib/drizzle/auth.schema";
@@ -131,9 +134,14 @@ export const trpcSocialRouter = createTRPCRouter({
         };
       }),
   }),
-
   friend: createTRPCRouter({
-    existing: createTRPCRouter({
+    getAllFriends: protectedProcedure.query(async ({ ctx }) => {
+      return (await getUserConfirmedFriends(ctx.user.id)).map(
+        ({ id, image, name }) => ({ id, image, name }),
+      );
+    }),
+
+    request: createTRPCRouter({
       remove: protectedProcedure
         .input(z.object({ targetUserID: z.string() }))
         .mutation(async ({ input, ctx }) => {
@@ -165,8 +173,6 @@ export const trpcSocialRouter = createTRPCRouter({
             success,
           };
         }),
-    }),
-    request: createTRPCRouter({
       send: protectedProcedure
         .input(z.object({ targetUserID: z.string() }))
         .mutation(async ({ input, ctx }) => {
