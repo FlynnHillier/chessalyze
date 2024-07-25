@@ -173,15 +173,21 @@ export function AllExistingFriends({
         <div className="flex flex-grow overflow-y-auto">
           <div
             className={cn(
-              "flex h-fit flex-row flex-wrap items-start gap-3 overflow-y-auto px-3 pb-5",
+              "flex h-fit w-full flex-row flex-wrap items-start gap-3 overflow-y-auto px-3 pb-5",
             )}
           >
             {friends === undefined || queryConfirmedFriends.isLoading ? (
-              <MoonLoader />
+              <div className="flex h-fit w-full flex-row items-center justify-center">
+                <MoonLoader />
+              </div>
             ) : queryConfirmedFriends.isError ? (
-              "something went wrong"
+              <div className="flex h-fit w-full flex-row items-center justify-start font-semibold">
+                something went wrong!
+              </div>
             ) : Object.keys(friends).length === 0 ? (
-              "no friends to see here. try adding some."
+              <div className="flex h-fit w-full flex-row items-center justify-start font-semibold">
+                No friends to see here. Try adding some!
+              </div>
             ) : (
               Object.values(friends).map(({ id }) => (
                 <ExistingFriendPill id={id} />
