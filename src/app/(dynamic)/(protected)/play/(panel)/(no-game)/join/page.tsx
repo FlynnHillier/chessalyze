@@ -29,97 +29,12 @@ export default function JoinPanel() {
   const game = useGame();
   const dispatchGame = useDispatchGame();
 
-  const trpcJoinLobbyMutation = trpc.lobby.join.useMutation();
-  const trpcQueryLobbyMutation = trpc.lobby.query.useMutation();
-
-  const [loading, setLoading] = useState<{
-    isLoading: boolean;
-    message?: string;
-  }>({ isLoading: false });
-
-  /**
-   * Target lobby to join.
-   */
-  const [target, setTarget] = useState<
-    | {
-        exists: true;
-        id: string;
-        config: Pick<LobbyConfig, "time" | "color">;
-      }
-    | {
-        exists: false;
-        id: undefined;
-        config: undefined;
-      }
-  >();
-
-  useEffect(() => {
-    setLoading(() => {
-      if (game.game)
-        return {
-          isLoading: true,
-          message: "redirecting to your game...",
-        };
-      if (trpcQueryLobbyMutation.isLoading)
-        return {
-          isLoading: true,
-          message: "loading challenge details...",
-        };
-
-      return {
-        isLoading: false,
-      };
-    });
-  }, [trpcQueryLobbyMutation.isLoading, game.game]);
-
-  /**
-   * Query information regarding specified lobby
-   *
-   * @param lobbyID id of lobby to target
-   */
-  async function queryLobby(lobbyID: string) {
-    try {
-      if (trpcQueryLobbyMutation.isLoading) return;
-
-      const { exists, lobby } = await trpcQueryLobbyMutation.mutateAsync({
-        lobby: {
-          id: lobbyID,
-        },
-      });
-
-      if (!exists || !lobby)
-        return setTarget({
-          exists: false,
-          id: undefined,
-          config: undefined,
-        });
-
-      setTarget({
-        exists: true,
-        id: lobby.id,
-        config: {
-          color: lobby.config.color,
-          time: lobby.config.time,
-        },
-      });
-    } catch (e) {
-      if (e instanceof TRPCClientError) showError(e.message);
-      else showError("something went wrong");
-    }
-  }
-
-  /**
-   * Attempt to join specified lobby
-   *
-   * @param lobbyID id of the lobby to attempt to join
-   */
-  async function joinLobby(lobbyID: string) {
-    try {
-      if (trpcJoinLobbyMutation.isLoading) return;
-
-      const { game } = await trpcJoinLobbyMutation.mutateAsync({
-        lobby: { id: lobbyID },
-      });
+  const trpcJoinLobbyMutation = trpc.lobby.join.useMutation({
+    onError(err) {
+      showError(err.message);
+    },
+    onSuccess(data, variables, context) {
+      const { game } = data;
 
       dispatchGame({
         type: "LOAD",
@@ -152,30 +67,72 @@ export default function JoinPanel() {
           },
         },
       });
-    } catch (e) {
-      if (e instanceof TRPCClientError) showError(e.message);
-      else showError("something went wrong");
-    }
+    },
+  });
+  const trpcQueryLobbyMutation = trpc.lobby.query.id.useQuery(
+    { lobbyID: searchParams.get("challenge") as string },
+    {
+      enabled: !!searchParams.get("challenge"),
+      onError(err) {
+        showError(err.message);
+      },
+      onSuccess(data) {
+        console.log(data);
+
+        if (data.lobby)
+          setTarget({
+            exists: true,
+            config: {
+              color: data.lobby.config.color,
+              time: data.lobby.config.time,
+            },
+            id: data.lobby.id,
+          });
+        else
+          setTarget({
+            exists: false,
+            config: undefined,
+            id: undefined,
+          });
+      },
+    },
+  );
+
+  function LoadingElement({ message }: { message: string }) {
+    return (
+      <div className="flex w-full flex-col justify-center font-semibold">
+        {message}
+        <div className="w-full">
+          <SyncLoader customTailwind="bg-stone-600" />
+        </div>
+      </div>
+    );
   }
 
-  useEffect(() => {
-    const target = searchParams.get("challenge");
-    if (!target || game.game) return;
-
-    queryLobby(target);
-  }, []);
+  /**
+   * Target lobby to join.
+   */
+  const [target, setTarget] = useState<
+    | {
+        exists: true;
+        id: string;
+        config: Pick<LobbyConfig, "time" | "color">;
+      }
+    | {
+        exists: false;
+        id: undefined;
+        config: undefined;
+      }
+  >();
 
   //TODO: add actual UI here
   // - once friends are added, option to invite friends appears here.
   return (
     <Panel subtitle="Accept challenge?" goBackTo="/play">
-      {loading.isLoading ? (
-        <div className="flex w-full flex-col justify-center font-semibold">
-          {loading.message}
-          <div className="w-full">
-            <SyncLoader customTailwind="bg-stone-600" />
-          </div>
-        </div>
+      {!!game.game ? (
+        <LoadingElement message="redirecting to your game..." />
+      ) : trpcQueryLobbyMutation.isFetching ? (
+        <LoadingElement message="loading challenge details..." />
       ) : (
         <div className="flex w-full flex-col items-center">
           {target && target.exists ? (
@@ -204,7 +161,7 @@ export default function JoinPanel() {
                 isLoading={trpcJoinLobbyMutation.isLoading}
                 onLoading={<SyncLoader customTailwind={"bg-green-700"} />}
                 onClick={() => {
-                  joinLobby(target.id);
+                  trpcJoinLobbyMutation.mutate({ lobbyID: target.id });
                 }}
                 className="hover:bg-green rounded bg-green-600 p-2"
               >

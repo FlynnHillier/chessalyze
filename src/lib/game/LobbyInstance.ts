@@ -10,8 +10,11 @@ import {
   loggingColourCode,
 } from "~/lib/logging/dev.logger";
 import { Color } from "chess.js";
-import { AtleastOneKey, ExactlyOneKey } from "~/types/util/util.types";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import {
+  NonVerboseLobbySnapshot,
+  VerboseLobbySnapshot,
+} from "~/types/lobby.types";
 
 class LobbyError extends Error {
   constructor(code: string, message?: string) {
@@ -36,15 +39,25 @@ class InvalidLobbyError extends LobbyError {
   }
 }
 
+class LobbyAccessibilityError extends LobbyError {
+  constructor(message?: string) {
+    super("LOBBY_ACCESS_DENIED", message);
+  }
+}
+
 export type LobbyConfig = Partial<{
-  time?: AtleastOneKey<{
+  time?: {
     template: GameTimePreset;
-    absolute: BW<number>;
-  }>;
+  };
   color: {
     preference: Color;
   };
 }>;
+
+type Accessibility = {
+  allowPublicLink: boolean;
+  invited: Set<string>;
+};
 
 /**
  * A player lobby
@@ -56,9 +69,20 @@ export class LobbyInstance {
 
   public readonly player: Player;
   public readonly id: UUID;
-  public readonly config: LobbyConfig;
+  private readonly config: LobbyConfig;
+  private accessibility: Accessibility;
+
+  private ended: boolean = false;
 
   private readonly events = {
+    onAccessibilityChange: () => {
+      if (
+        this.accessibility.invited.size === 0 &&
+        this.accessibility.allowPublicLink === false
+      )
+        this.end();
+      else this._emitLobbyUpdateSocketEvent();
+    },
     /**
      * Runs on lobby creation
      */
@@ -67,19 +91,8 @@ export class LobbyInstance {
       room.joinUser(this.player.pid);
 
       wsServerToClientMessage
-        .send("LOBBY:JOIN")
-        .data({
-          lobbyID: this.id,
-          config: {
-            time: this.config.time && {
-              absolute: this.config.time.absolute,
-              template: this.config.time.template,
-            },
-            color: this.config.color && {
-              preference: this.config.color.preference,
-            },
-          },
-        })
+        .send("LOBBY:UPDATE")
+        .data(this.verboseSnapshot())
         .to({ room })
         .emit();
 
@@ -113,14 +126,22 @@ export class LobbyInstance {
     }).bind(this),
   };
 
-  private ended: boolean = false;
-
   /**
    * Create a player lobby containing specfied player
    *
    * @param player player to inhabit lobby
    */
-  public constructor(player: Player, config: LobbyInstance["config"] = {}) {
+  public constructor(
+    player: Player,
+
+    {
+      config,
+      accessibility: accessibilty,
+    }: Partial<{
+      config: Partial<LobbyConfig>;
+      accessibility: Partial<Accessibility>;
+    }> = {},
+  ) {
     if (this._lobbyMaster.getByPlayer(player.pid))
       throw new LobbyExistsError(
         "Unable to create new lobby, player is already in one.",
@@ -128,7 +149,13 @@ export class LobbyInstance {
 
     this.id = uuidv1();
     this.player = player;
-    this.config = config;
+    this.config = config ?? {};
+
+    this.accessibility = {
+      allowPublicLink: false,
+      invited: new Set(),
+      ...accessibilty,
+    };
 
     this.events.onCreate();
   }
@@ -145,7 +172,12 @@ export class LobbyInstance {
    */
   public end() {
     this.validateLobby();
+    this.ended = true;
     this.events.onEnd();
+  }
+
+  public isEnded() {
+    return this.ended;
   }
 
   /**
@@ -155,11 +187,31 @@ export class LobbyInstance {
    *
    * @param player player to join lobby
    */
-  public join(player: Player): GameInstance {
+  public join(player: Player):
+    | {
+        success: false;
+        reason: "ATTEMPT_JOIN_SELF" | "NOT_INVITED";
+      }
+    | {
+        success: true;
+        game: GameInstance;
+      } {
     this.validateLobby();
 
     if (player.pid === this.player.pid)
-      throw new LobbyJoinError("Player cannot join their own lobby");
+      return {
+        success: false,
+        reason: "ATTEMPT_JOIN_SELF",
+      };
+
+    if (
+      !this.accessibility.allowPublicLink &&
+      !this.accessibility.invited.has(player.pid)
+    )
+      return {
+        success: false,
+        reason: "NOT_INVITED",
+      };
 
     // If joining player is already in a lobby, end that lobby.
     const existingLobby = this._lobbyMaster.getByPlayer(player.pid);
@@ -168,18 +220,100 @@ export class LobbyInstance {
 
     this.events.onJoin(this, player);
 
-    return new GameInstance(
-      {
-        p1: {
-          player: this.player,
-          preference: this.config.color?.preference,
+    return {
+      success: true,
+      game: new GameInstance(
+        {
+          p1: {
+            player: this.player,
+            preference: this.config.color?.preference,
+          },
+          p2: {
+            player: player,
+            preference: undefined,
+          },
         },
-        p2: {
-          player: player,
-          preference: undefined,
+        this.config.time,
+      ),
+    };
+  }
+
+  public setAllowPublicLink(allowPublicLink: boolean) {
+    if (allowPublicLink !== this.accessibility.allowPublicLink) {
+      this.accessibility.allowPublicLink = allowPublicLink;
+      this.events.onAccessibilityChange();
+    }
+  }
+
+  public invitePlayers(...playerIDs: string[]) {
+    playerIDs = playerIDs.filter((id) => id !== this.player.pid);
+
+    const newInvited = new Set(...this.accessibility.invited, ...playerIDs);
+
+    if (newInvited.size !== this.accessibility.invited.size) {
+      this.accessibility.invited = newInvited;
+      this.events.onAccessibilityChange();
+    }
+  }
+
+  public revokePlayerInvites(...playerIDs: string[]) {
+    const prevSize = this.accessibility.invited.size;
+
+    playerIDs.forEach(this.accessibility.invited.delete);
+
+    if (prevSize !== this.accessibility.invited.size)
+      this.events.onAccessibilityChange();
+  }
+
+  public playerIsInvited(playerID: string) {
+    return this.accessibility.invited.has(playerID);
+  }
+
+  public isPublicLinkAllowed() {
+    return this.accessibility.allowPublicLink;
+  }
+
+  public getConfig() {
+    return this.config;
+  }
+
+  public getInvited() {
+    return Array.from(this.accessibility.invited);
+  }
+
+  public nonVerboseSnapshot(): NonVerboseLobbySnapshot {
+    return {
+      id: this.id,
+      config: {
+        color: this.config.color && {
+          preference: this.config.color.preference,
+        },
+        time: this.config.time && {
+          template: this.config.time.template,
         },
       },
-      this.config.time,
-    );
+    };
+  }
+
+  public verboseSnapshot(): VerboseLobbySnapshot {
+    return {
+      ...this.nonVerboseSnapshot(),
+      accessibility: {
+        invited: this.getInvited(),
+        isPublicLinkAllowed: this.isPublicLinkAllowed(),
+      },
+    };
+  }
+
+  private _emitLobbyUpdateSocketEvent() {
+    wsServerToClientMessage
+      .send("LOBBY:UPDATE")
+      .data(this.verboseSnapshot())
+      .to({
+        room: getOrCreateLobbySocketRoom({
+          id: this.id,
+        }),
+      })
+      .emit();
   }
 }

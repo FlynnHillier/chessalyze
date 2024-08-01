@@ -9,13 +9,13 @@ import {
   ReactNode,
 } from "react";
 import { ReducerAction } from "~/types/util/context.types";
-import { UUID } from "~/types/common.types";
 import { BW, GameTimePreset } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { Color } from "chess.js";
 import { AtleastOneKey } from "~/types/util/util.types";
 import { useWebSocket } from "next-ws/client";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { useGlobalError } from "./globalError.provider";
 
 export interface LOBBYCONTEXT {
   present: boolean;
@@ -30,6 +30,10 @@ export interface LOBBYCONTEXT {
         preference: Color;
       };
     };
+    accessibility: {
+      invited: string[];
+      isPublicLinkAllowed: boolean;
+    };
   };
 }
 
@@ -40,15 +44,7 @@ const defaultContext: LOBBYCONTEXT = {
 
 type LobbyRdcrActn =
   | ReducerAction<"LOAD", LOBBYCONTEXT>
-  | ReducerAction<
-      "START",
-      {
-        lobby: {
-          id: UUID;
-          config: NonNullable<LOBBYCONTEXT["lobby"]>["config"];
-        };
-      }
-    >
+  | ReducerAction<"UPDATE", NonNullable<LOBBYCONTEXT["lobby"]>>
   | ReducerAction<"END", {}>;
 
 function reducer<A extends LobbyRdcrActn>(
@@ -60,20 +56,16 @@ function reducer<A extends LobbyRdcrActn>(
   switch (type) {
     case "LOAD":
       return payload;
-    case "START":
+    case "UPDATE":
       return {
         present: true,
-        lobby: {
-          id: payload.lobby.id,
-          config: payload.lobby.config,
-        },
+        lobby: payload,
       };
     case "END":
       return {
         present: false,
         lobby: undefined,
       };
-
     default:
       return { ...state };
   }
@@ -91,8 +83,33 @@ export function useLobby() {
 }
 
 export const LobbyProvider = ({ children }: { children: ReactNode }) => {
+  const { showGlobalError } = useGlobalError();
+
   const [lobby, dispatchLobby] = useReducer(reducer, defaultContext);
-  const query = trpc.lobby.status.useQuery();
+  const ownLobbyStatusQuery = trpc.lobby.query.own.useQuery(undefined, {
+    onSettled(data, error) {
+      if (error) showGlobalError(error.message);
+      else if (data)
+        dispatchLobby({
+          type: "LOAD",
+          payload: {
+            present: data.exists,
+            lobby: data.lobby && {
+              id: data.lobby.id,
+              config: {
+                color: data.lobby.config.color,
+                time: data.lobby.config.time,
+              },
+              accessibility: {
+                invited: data.lobby.accessibility.invited,
+                isPublicLinkAllowed:
+                  data.lobby.accessibility.isPublicLinkAllowed,
+              },
+            },
+          },
+        });
+    },
+  });
   const ws = useWebSocket();
 
   useEffect(() => {
@@ -104,23 +121,10 @@ export const LobbyProvider = ({ children }: { children: ReactNode }) => {
             payload: {},
           });
         },
-        "LOBBY:JOIN": ({ lobbyID, config }) => {
+        "LOBBY:UPDATE": (lobby) => {
           dispatchLobby({
-            type: "START",
-            payload: {
-              lobby: {
-                config: {
-                  color: config.color && {
-                    preference: config.color.preference,
-                  },
-                  time: config.time && {
-                    absolute: config.time.absolute,
-                    template: config.time.template,
-                  },
-                },
-                id: lobbyID,
-              },
-            },
+            type: "UPDATE",
+            payload: lobby,
           });
         },
       })(e.data);
@@ -132,16 +136,6 @@ export const LobbyProvider = ({ children }: { children: ReactNode }) => {
       ws?.removeEventListener("message", onWSMessageEvent);
     };
   }, [ws]);
-
-  useEffect(() => {
-    //load initial lobby context
-    if (query.isFetched && query.data) {
-      dispatchLobby({
-        type: "LOAD",
-        payload: query.data,
-      });
-    }
-  }, [query.isLoading]);
 
   return (
     <LobbyContext.Provider value={{ lobby, dispatchLobby }}>

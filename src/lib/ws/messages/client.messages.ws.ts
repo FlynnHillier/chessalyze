@@ -16,6 +16,7 @@ import {
   WSMessagesTemplate,
   ExtractWSMessageTemplateGeneric,
 } from "~/lib/ws/template.ws";
+import { zVerboseLobbySnapshot } from "~/lib/zod/lobby/lobby.validators";
 
 export const wsServerToClientMessage = new WSMessagesTemplate({
   DEV_ID: z.object({
@@ -28,22 +29,7 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   GAME_END: zGameSummary,
   GAME_MOVE: zVerboseMovement,
   "LOBBY:END": z.object({}),
-  "LOBBY:JOIN": z.object({
-    lobbyID: z.string(),
-    config: z.object({
-      color: z
-        .object({
-          preference: zColor,
-        })
-        .optional(),
-      time: z
-        .object({
-          absolute: zBW(z.number()).optional(),
-          template: zGameTimePreset.optional(),
-        })
-        .optional(),
-    }),
-  }),
+  "LOBBY:UPDATE": zVerboseLobbySnapshot,
   SUMMARY_NEW: zGameSummary,
   SOCIAL_PERSONAL_UPDATE: z.object({
     playerID: z.string(),
