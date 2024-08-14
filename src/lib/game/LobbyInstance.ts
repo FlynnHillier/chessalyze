@@ -253,11 +253,7 @@ export class LobbyInstance {
       (id) => !this.accessibility.invited.has(id),
     );
 
-    console.log(notPreviouslyInvited);
-
     const newInvited = new Set([...this.accessibility.invited, ...playerIDs]);
-
-    console.log(newInvited);
 
     this.accessibility.invited = newInvited;
 
