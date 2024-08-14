@@ -4,11 +4,8 @@
 
 import { z } from "zod";
 import {
-  zBW,
-  zColor,
   zGameSnapshot,
   zGameSummary,
-  zGameTimePreset,
   zVerboseMovement,
 } from "@validators/game/game.validators";
 import {
@@ -16,7 +13,11 @@ import {
   WSMessagesTemplate,
   ExtractWSMessageTemplateGeneric,
 } from "~/lib/ws/template.ws";
-import { zVerboseLobbySnapshot } from "~/lib/zod/lobby/lobby.validators";
+import {
+  zNonVerboseLobbySnapshot,
+  zVerboseLobbySnapshot,
+} from "~/lib/zod/lobby/lobby.validators";
+import { zSocialUser } from "~/lib/zod/social/social.validators";
 
 export const wsServerToClientMessage = new WSMessagesTemplate({
   DEV_ID: z.object({
@@ -28,6 +29,10 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   GAME_JOIN: zGameSnapshot,
   GAME_END: zGameSummary,
   GAME_MOVE: zVerboseMovement,
+  "LOBBY:INVITE_RECEIVED": z.object({
+    user: zSocialUser,
+    lobbyPreview: zNonVerboseLobbySnapshot,
+  }),
   "LOBBY:END": z.object({}),
   "LOBBY:UPDATE": zVerboseLobbySnapshot,
   SUMMARY_NEW: zGameSummary,
@@ -41,11 +46,7 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
     ]),
   }),
   "SOCIAL:FRIEND_NEW": z.object({
-    user: z.object({
-      id: z.string(),
-      username: z.string(),
-      imageURL: z.string().optional(),
-    }),
+    user: zSocialUser,
     activity: z.object({
       isOnline: z.boolean(),
     }),

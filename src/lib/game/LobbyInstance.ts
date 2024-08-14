@@ -15,6 +15,7 @@ import {
   NonVerboseLobbySnapshot,
   VerboseLobbySnapshot,
 } from "~/types/lobby.types";
+import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 
 class LobbyError extends Error {
   constructor(code: string, message?: string) {
@@ -248,12 +249,36 @@ export class LobbyInstance {
   public invitePlayers(...playerIDs: string[]) {
     playerIDs = playerIDs.filter((id) => id !== this.player.pid);
 
-    const newInvited = new Set(...this.accessibility.invited, ...playerIDs);
+    const notPreviouslyInvited = playerIDs.filter(
+      (id) => !this.accessibility.invited.has(id),
+    );
 
-    if (newInvited.size !== this.accessibility.invited.size) {
-      this.accessibility.invited = newInvited;
-      this.events.onAccessibilityChange();
-    }
+    console.log(notPreviouslyInvited);
+
+    const newInvited = new Set([...this.accessibility.invited, ...playerIDs]);
+
+    console.log(newInvited);
+
+    this.accessibility.invited = newInvited;
+
+    notPreviouslyInvited.forEach((pid) => {
+      wsServerToClientMessage
+        .send("LOBBY:INVITE_RECEIVED")
+        .data({
+          user: {
+            id: this.player.pid,
+            username: this.player.username,
+            imageURL: this.player.image,
+          },
+          lobbyPreview: this.nonVerboseSnapshot(),
+        })
+        .to({
+          socket: wsSocketRegistry.get(pid),
+        })
+        .emit();
+    });
+
+    if (notPreviouslyInvited.length > 0) this.events.onAccessibilityChange();
   }
 
   public revokePlayerInvites(...playerIDs: string[]) {

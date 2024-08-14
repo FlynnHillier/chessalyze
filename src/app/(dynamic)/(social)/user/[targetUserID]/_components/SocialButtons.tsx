@@ -15,9 +15,11 @@ import {
 import { RxCross2 } from "react-icons/rx";
 
 import { IconType } from "react-icons/lib";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Tooltip } from "react-tooltip";
 import { useDispatchProfile, useProfile } from "./ProfileView.context";
+import { useWebSocket } from "next-ws/client";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 type ButtonCallbacks<T extends `on${Capitalize<string>}`> = Partial<
   Record<T, (success: boolean, error?: Error) => any>
@@ -38,6 +40,59 @@ export function FriendInteractionButton({
 }) {
   const dispatchProfile = useDispatchProfile();
   const profile = useProfile();
+  const ws = useWebSocket();
+
+  useEffect(() => {
+    // update state when websocket events are received
+    const onWSMessageEvent = (m: MessageEvent) => {
+      wsServerToClientMessage.receiver({
+        SOCIAL_PERSONAL_UPDATE: ({ playerID, new_status }) => {
+          if (playerID === target.id) {
+            if (new_status === "confirmed")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "confirmed" },
+              });
+            else if (new_status === "none")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "none" },
+              });
+            else if (new_status === "request_incoming")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "request_incoming" },
+              });
+            else if (new_status === "request_outgoing")
+              dispatchProfile({
+                type: "FRIEND_STATUS_CHANGE",
+                payload: { status: "request_outgoing" },
+              });
+          }
+        },
+        "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": ({ playerID, status }) => {
+          if (playerID === target.id) {
+            dispatchProfile({
+              type: "ACTIVITY_STATUS_CHANGE",
+              payload: {
+                isOnline: status.isOnline,
+                messages: {
+                  primary: status.messages.primary,
+                  secondary: status.messages.secondary,
+                },
+              },
+            });
+          }
+        },
+      })(m.data);
+    };
+
+    ws?.addEventListener("message", onWSMessageEvent);
+
+    return () => {
+      ws?.removeEventListener("message", onWSMessageEvent);
+    };
+  }, [ws]);
 
   /**
    * To be displayed while initial friend status is being loaded

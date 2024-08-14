@@ -4,8 +4,6 @@ import {
   Color as chessJSColor,
   PieceSymbol,
 } from "chess.js";
-import { z } from "zod";
-import { zodGameTimePreset } from "~/server/api/routers/lobby/zod/lobby.isTimingTemplate";
 import {
   CAPTURABLEPIECE,
   DECISIVE_TERMINATIONS,

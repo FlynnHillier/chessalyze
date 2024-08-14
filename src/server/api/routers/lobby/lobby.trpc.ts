@@ -104,6 +104,8 @@ export const trpcLobbyRouter = createTRPCRouter({
         )
         .mutation(({ ctx, input }) => {
           ctx.lobby.revokePlayerInvites(input.playerID);
+
+          return { success: true };
         }),
     }),
     link: createTRPCRouter({

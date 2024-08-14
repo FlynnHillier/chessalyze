@@ -1,10 +1,8 @@
 "use client";
 
-import { TRPCClientError } from "@trpc/client";
-import { TRPCError } from "@trpc/server";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   useDispatchGame,
   useGame,

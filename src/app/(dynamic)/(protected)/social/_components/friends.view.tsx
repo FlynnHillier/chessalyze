@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useState,
 } from "react";
 import { useWebSocket } from "next-ws/client";
 import { cn } from "~/lib/util/cn";
@@ -12,10 +13,13 @@ import { ComponentProps } from "react";
 import { ClipLoader, MoonLoader } from "react-spinners";
 import { Tooltip } from "react-tooltip";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
-import { FaUserXmark, FaChessBoard } from "react-icons/fa6";
+import { FaUserXmark, FaChessBoard, FaC } from "react-icons/fa6";
+import { FaCheck } from "react-icons/fa";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { ReducerAction } from "~/types/util/context.types";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { useGame } from "~/app/_components/providers/client/game.provider";
+import { toast } from "react-toastify";
 
 type User = {
   id: string;
@@ -189,8 +193,8 @@ export function AllExistingFriends({
                 No friends to see here. Try adding some!
               </div>
             ) : (
-              Object.values(friends).map(({ id }) => (
-                <ExistingFriendPill id={id} />
+              Object.values(friends).map((user) => (
+                <ExistingFriendPill user={user} />
               ))
             )}
           </div>
@@ -200,37 +204,104 @@ export function AllExistingFriends({
   );
 }
 
-function ExistingFriendPill({ id }: { id: User["id"] }) {
+function ExistingFriendPill({ user }: { user: User }) {
   const { friends, dispatchFriends } = useAllFriendsContext();
-
   const { showGlobalError } = useGlobalError();
 
-  const removeConfirmedFriendMutation =
-    trpc.social.friend.request.remove.useMutation({
-      onSettled(data, error, variables, context) {
-        if (error) return showGlobalError(error.message);
-        if (data) {
-          if (data.success) {
-            dispatchFriends({
-              type: "REMOVE",
-              payload: {
-                id,
-              },
-            });
-          }
+  const TOOLTIP_ID = {
+    challenge: "tooltip-social-challenge_" + user.id,
+    remove: "tooltip-social-remove_" + user.id,
+  };
+
+  function ChallengeInviteButton() {
+    const { game } = useGame();
+    const [hasSentInvite, setHasSentInvite] = useState<boolean>(false);
+
+    const sendChallengeMutation = trpc.lobby.configure.invite.send.useMutation({
+      onError(error, variables, context) {
+        showGlobalError(error.message);
+      },
+      onSuccess(data, variables, context) {
+        if (data.success) {
+          setHasSentInvite(true);
+          toast.success(`successfully sent game invite to ${user.username}`);
         }
       },
     });
 
-  useEffect(() => {}, [id, friends]);
+    const revokeChallengeInviteMutation =
+      trpc.lobby.configure.invite.revoke.useMutation({
+        onError(error, variables, context) {
+          showGlobalError(error.message);
 
-  const TOOLTIP_ID = {
-    challenge: "tooltip-social-challenge_" + id,
-    remove: "tooltip-social-remove_" + id,
-  };
+          // if(error.)
+        },
+        onSuccess(data, variables, context) {
+          if (data.success) {
+            setHasSentInvite(true);
+            toast.success(`successfully revoked invite for ${user.username}`);
+          }
+        },
+      });
+
+    return (
+      <button
+        className="border-none"
+        onClick={() => {
+          sendChallengeMutation.mutate({ playerID: user.id });
+        }}
+        disabled={
+          !!game?.live || sendChallengeMutation.isLoading || hasSentInvite
+        }
+      >
+        {sendChallengeMutation.isLoading ? (
+          <ClipLoader size={5} />
+        ) : hasSentInvite ? (
+          <FaCheck size={18} />
+        ) : (
+          <FaChessBoard data-tooltip-id={TOOLTIP_ID.challenge} />
+        )}
+      </button>
+    );
+  }
+
+  function RemoveFriendButton() {
+    const removeConfirmedFriendMutation =
+      trpc.social.friend.request.remove.useMutation({
+        onSettled(data, error, variables, context) {
+          if (error) return showGlobalError(error.message);
+          if (data) {
+            if (data.success) {
+              dispatchFriends({
+                type: "REMOVE",
+                payload: {
+                  id: user.id,
+                },
+              });
+            }
+          }
+        },
+      });
+
+    return (
+      <button
+        className="border-none"
+        onClick={() => {
+          removeConfirmedFriendMutation.mutate({ targetUserID: user.id });
+        }}
+        disabled={removeConfirmedFriendMutation.isLoading}
+      >
+        {removeConfirmedFriendMutation.isLoading ? (
+          <ClipLoader size={5} />
+        ) : (
+          <FaUserXmark data-tooltip-id={TOOLTIP_ID.remove} />
+        )}
+      </button>
+    );
+  }
 
   return (
-    friends?.[id] && (
+    friends?.[user.id] && (
       <>
         <Tooltip
           id={TOOLTIP_ID.challenge}
@@ -246,10 +317,13 @@ function ExistingFriendPill({ id }: { id: User["id"] }) {
           <div className="relative aspect-square w-16 flex-shrink-0">
             <img
               className="left-0 top-0 h-full w-full overflow-hidden rounded bg-cover"
-              alt={`${friends[id].username}'s profile picture`}
+              alt={`${friends[user.id].username}'s profile picture`}
               src={
-                friends[id].imageURL
-                  ? resizeGoogleProfilePictureURL(friends[id].imageURL, 100)
+                friends[user.id].imageURL
+                  ? resizeGoogleProfilePictureURL(
+                      friends[user.id].imageURL as string,
+                      100,
+                    )
                   : "/blankuser.png"
               }
             />
@@ -262,36 +336,11 @@ function ExistingFriendPill({ id }: { id: User["id"] }) {
           </div>
           <div className="flex flex-grow flex-col justify-between overflow-hidden whitespace-nowrap">
             <span className="inline-block text-ellipsis whitespace-nowrap text-xl font-semibold">
-              {friends[id].username}
+              {friends[user.id].username}
             </span>
             <div className="flex h-1/2 flex-row flex-nowrap items-start gap-1.5 text-xl">
-              <button
-                className="border-none"
-                onClick={() => {}}
-                disabled={removeConfirmedFriendMutation.isLoading}
-              >
-                {false ? (
-                  <ClipLoader size={5} />
-                ) : (
-                  <FaChessBoard data-tooltip-id={TOOLTIP_ID.challenge} />
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  removeConfirmedFriendMutation.mutate({
-                    targetUserID: id,
-                  });
-                }}
-                disabled={removeConfirmedFriendMutation.isLoading}
-                data-tooltip-id={TOOLTIP_ID.remove}
-              >
-                {removeConfirmedFriendMutation.isLoading ? (
-                  <ClipLoader size={20} color="gray" />
-                ) : (
-                  <FaUserXmark />
-                )}
-              </button>
+              <RemoveFriendButton />
+              <ChallengeInviteButton />
             </div>
           </div>
         </div>

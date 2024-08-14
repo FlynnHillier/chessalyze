@@ -64,6 +64,7 @@
     "react-live-relative-time": "^1.0.0",
     "react-modal": "^3.16.1",
     "react-spinners": "^0.14.1",
+    "react-toastify": "^10.0.5",
     "react-tooltip": "^5.27.1",
     "superjson": "^2.2.1",
     "tailwind-merge": "^2.4.0",
