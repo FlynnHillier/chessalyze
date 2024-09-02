@@ -5,3 +5,17 @@ export const zSocialUser = z.object({
   username: z.string(),
   imageURL: z.string().optional(),
 });
+
+export const zSocialActivity = z.object({
+  isOnline: z.boolean(),
+  game: z.string().optional(),
+  status: z.object({
+    primary: z.string().optional(),
+    secondary: z.string().optional(),
+  }),
+});
+
+export const zVerboseSocialUser = z.object({
+  user: zSocialUser,
+  activity: zSocialActivity,
+});

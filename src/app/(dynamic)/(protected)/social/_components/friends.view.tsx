@@ -1,216 +1,67 @@
 import { trpc } from "~/app/_trpc/client";
-import {
-  createContext,
-  Dispatch,
-  useContext,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
-import { useWebSocket } from "next-ws/client";
 import { cn } from "~/lib/util/cn";
-import { ComponentProps } from "react";
+import { ComponentProps, useState } from "react";
 import { ClipLoader, MoonLoader } from "react-spinners";
 import { Tooltip } from "react-tooltip";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { FaUserXmark, FaChessBoard, FaC } from "react-icons/fa6";
 import { FaCheck } from "react-icons/fa";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
-import { ReducerAction } from "~/types/util/context.types";
-import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { useGame } from "~/app/_components/providers/client/game.provider";
 import { toast } from "react-toastify";
+import { useFriendsContext } from "~/app/_components/providers/client/friends.provider";
+import { VerboseSocialUser } from "~/types/social.types";
 
-type User = {
-  id: string;
-  username: string;
-  imageURL?: string;
-};
-
-type AllFriends = Record<User["id"], User>;
-
-type FriendsContextType = {
-  dispatchFriends: Dispatch<FriendReducerAction>;
-  friends: AllFriends | undefined;
-};
-
-const AllFriendsContext = createContext<FriendsContextType>(
-  {} as FriendsContextType,
-);
-
-function useAllFriendsContext() {
-  return useContext(AllFriendsContext);
-}
-
-type FriendReducerAction =
-  | ReducerAction<"LOAD", AllFriends>
-  | ReducerAction<
-      "UPDATE_EXISTING",
-      { id: string; updates: Partial<Omit<User, "id">> }
-    >
-  | ReducerAction<"REMOVE", { id: string }>
-  | ReducerAction<"NEW", User>;
-
-function allFriendsReducer<A extends FriendReducerAction>(
-  state: AllFriends,
-  action: A,
-): AllFriends {
-  const { type, payload } = action;
-
-  switch (type) {
-    case "LOAD": {
-      return {
-        ...payload,
-      };
-    }
-    case "UPDATE_EXISTING": {
-      if (!state[payload.id]) return { ...state };
-      return {
-        ...state,
-        [payload.id]: {
-          ...state[payload.id],
-          ...payload.updates,
-        },
-      };
-    }
-    case "REMOVE": {
-      delete state[payload.id];
-      return {
-        ...state,
-      };
-    }
-    case "NEW": {
-      return {
-        ...state,
-        [payload.id]: payload,
-      };
-    }
-  }
-}
-
-export function AllExistingFriends({
+export function ViewAllConfirmedFriends({
   className,
 }: {
   className?: ComponentProps<"div">["className"];
 }) {
-  const ws = useWebSocket();
-  const { showGlobalError } = useGlobalError();
-
-  const [friends, dispatchFriends] = useReducer(allFriendsReducer, {});
-
-  const queryConfirmedFriends = trpc.social.friend.getAllFriends.useQuery(
-    undefined,
-    {
-      onSettled(data, error) {
-        if (data) {
-          dispatchFriends({
-            type: "LOAD",
-            payload: data.reduce(
-              (acc, { id, image, name }) => ({
-                ...acc,
-                [id]: {
-                  id,
-                  imageURL: image,
-                  username: name,
-                },
-              }),
-              {},
-            ),
-          });
-        }
-      },
-    },
-  );
-
-  useEffect(() => {
-    if (!ws) return;
-
-    function onWSMessageEvent(e: MessageEvent) {
-      wsServerToClientMessage.receiver({
-        SOCIAL_PERSONAL_UPDATE: ({ new_status, playerID }) => {
-          if (friends[playerID] && new_status !== "confirmed") {
-            dispatchFriends({
-              type: "REMOVE",
-              payload: {
-                id: playerID,
-              },
-            });
-          }
-        },
-        "SOCIAL:FRIEND_NEW": ({ activity, user }) => {
-          dispatchFriends({
-            type: "NEW",
-            payload: {
-              id: user.id,
-              username: user.username,
-              imageURL: user.imageURL,
-            },
-          });
-        },
-      })(e.data);
-    }
-
-    ws.addEventListener("message", onWSMessageEvent);
-
-    return () => {
-      ws.removeEventListener("message", onWSMessageEvent);
-    };
-  }, [ws]);
+  const { friends, isLoading } = useFriendsContext();
 
   return (
-    <AllFriendsContext.Provider
-      value={{
-        dispatchFriends,
-        friends,
-      }}
+    <div
+      className={cn(
+        "flow flex h-full max-h-full w-full flex-col rounded",
+        className,
+      )}
     >
-      <div
-        className={cn(
-          "flow flex h-full max-h-full w-full flex-col rounded",
-          className,
-        )}
-      >
-        <div className="mb-3 flex w-full flex-shrink flex-grow-0 basis-auto text-nowrap px-3 text-2xl font-semibold">
-          Friends
-        </div>
+      <div className="mb-3 flex w-full flex-shrink flex-grow-0 basis-auto text-nowrap px-3 text-2xl font-semibold">
+        Friends
+      </div>
 
-        <div className="flex flex-grow overflow-y-auto">
-          <div
-            className={cn(
-              "flex h-fit w-full flex-row flex-wrap items-start gap-3 overflow-y-auto px-3 pb-5",
-            )}
-          >
-            {friends === undefined || queryConfirmedFriends.isLoading ? (
-              <div className="flex h-fit w-full flex-row items-center justify-center">
-                <MoonLoader />
-              </div>
-            ) : queryConfirmedFriends.isError ? (
-              <div className="flex h-fit w-full flex-row items-center justify-start font-semibold">
-                something went wrong!
-              </div>
-            ) : Object.keys(friends).length === 0 ? (
-              <div className="flex h-fit w-full flex-row items-center justify-start font-semibold">
-                No friends to see here. Try adding some!
-              </div>
-            ) : (
-              Object.values(friends).map((user) => (
-                <ExistingFriendPill user={user} />
-              ))
-            )}
-          </div>
+      <div className="flex flex-grow overflow-y-auto">
+        <div
+          className={cn(
+            "flex h-fit w-full flex-row flex-wrap items-start gap-3 overflow-y-auto px-3 pb-5",
+          )}
+        >
+          {isLoading ? (
+            <div className="flex h-fit w-full flex-row items-center justify-center">
+              <MoonLoader />
+            </div>
+          ) : Object.keys(friends).length === 0 ? (
+            <div className="flex h-fit w-full flex-row items-center justify-start font-semibold">
+              No friends to see here. Try adding some!
+            </div>
+          ) : (
+            Object.values(friends).map((user) => (
+              <ExistingFriendPill user={user} key={user.user.id} />
+            ))
+          )}
         </div>
       </div>
-    </AllFriendsContext.Provider>
+    </div>
   );
 }
 
-function ExistingFriendPill({ user }: { user: User }) {
-  const { friends, dispatchFriends } = useAllFriendsContext();
+function ExistingFriendPill({ user }: { user: VerboseSocialUser }) {
+  const { dispatchFriends } = useFriendsContext();
   const { showGlobalError } = useGlobalError();
 
   const TOOLTIP_ID = {
-    challenge: "tooltip-social-challenge_" + user.id,
-    remove: "tooltip-social-remove_" + user.id,
+    challenge: "tooltip-social-challenge_" + user.user.id,
+    remove: "tooltip-social-remove_" + user.user.id,
   };
 
   function ChallengeInviteButton() {
@@ -224,7 +75,7 @@ function ExistingFriendPill({ user }: { user: User }) {
       onSuccess(data, variables, context) {
         if (data.success) {
           setHasSentInvite(true);
-          toast.success(`Game invite sent to ${user.username}`);
+          toast.success(`Game invite sent to ${user.user.username}`);
         }
       },
     });
@@ -239,7 +90,9 @@ function ExistingFriendPill({ user }: { user: User }) {
         onSuccess(data, variables, context) {
           if (data.success) {
             setHasSentInvite(true);
-            toast.success(`successfully revoked invite for ${user.username}`);
+            toast.success(
+              `successfully revoked invite for ${user.user.username}`,
+            );
           }
         },
       });
@@ -248,7 +101,7 @@ function ExistingFriendPill({ user }: { user: User }) {
       <button
         className="border-none"
         onClick={() => {
-          sendChallengeMutation.mutate({ playerID: user.id });
+          sendChallengeMutation.mutate({ playerID: user.user.id });
         }}
         disabled={
           !!game?.live || sendChallengeMutation.isLoading || hasSentInvite
@@ -275,7 +128,7 @@ function ExistingFriendPill({ user }: { user: User }) {
               dispatchFriends({
                 type: "REMOVE",
                 payload: {
-                  id: user.id,
+                  id: user.user.id,
                 },
               });
             }
@@ -287,7 +140,7 @@ function ExistingFriendPill({ user }: { user: User }) {
       <button
         className="border-none"
         onClick={() => {
-          removeConfirmedFriendMutation.mutate({ targetUserID: user.id });
+          removeConfirmedFriendMutation.mutate({ targetUserID: user.user.id });
         }}
         disabled={removeConfirmedFriendMutation.isLoading}
       >
@@ -301,50 +154,44 @@ function ExistingFriendPill({ user }: { user: User }) {
   }
 
   return (
-    friends?.[user.id] && (
-      <>
-        <Tooltip
-          id={TOOLTIP_ID.challenge}
-          content="challenge"
-          className="z-10"
-        />
-        <Tooltip
-          id={TOOLTIP_ID.remove}
-          content="remove friend"
-          className="z-10"
-        />
-        <div className="flex h-20 w-full min-w-64 flex-row  flex-nowrap justify-start gap-2 rounded p-2 shadow-lg shadow-stone-900 hover:bg-stone-900 lg:w-[calc(50%-(0.75rem/2))]  xl:w-[calc(32.8%-0.25rem)]  ">
-          <div className="relative aspect-square w-16 flex-shrink-0">
-            <img
-              className="left-0 top-0 h-full w-full overflow-hidden rounded bg-cover"
-              alt={`${friends[user.id].username}'s profile picture`}
-              src={
-                friends[user.id].imageURL
-                  ? resizeGoogleProfilePictureURL(
-                      friends[user.id].imageURL as string,
-                      100,
-                    )
-                  : "/blankuser.png"
-              }
-            />
-            <span
-              className={cn(
-                "absolute -bottom-1 -right-1 z-[0] inline-block aspect-square w-5 rounded-full",
-                { "bg-green-600": true, "bg-red-700": true },
-              )}
-            />
-          </div>
-          <div className="flex flex-grow flex-col justify-between overflow-hidden whitespace-nowrap">
-            <span className="inline-block text-ellipsis whitespace-nowrap text-xl font-semibold">
-              {friends[user.id].username}
-            </span>
-            <div className="flex h-1/2 flex-row flex-nowrap items-start gap-1.5 text-xl">
-              <RemoveFriendButton />
-              <ChallengeInviteButton />
-            </div>
+    <>
+      <Tooltip id={TOOLTIP_ID.challenge} content="challenge" className="z-10" />
+      <Tooltip
+        id={TOOLTIP_ID.remove}
+        content="remove friend"
+        className="z-10"
+      />
+      <div className="flex h-20 w-full min-w-64 flex-row  flex-nowrap justify-start gap-2 rounded p-2 shadow-lg shadow-stone-900 hover:bg-stone-900 lg:w-[calc(50%-(0.75rem/2))]  xl:w-[calc(32.8%-0.25rem)]  ">
+        <div className="relative aspect-square w-16 flex-shrink-0">
+          <img
+            className="left-0 top-0 h-full w-full overflow-hidden rounded bg-cover"
+            alt={`${user.user.username}'s profile picture`}
+            src={
+              user.user.imageURL
+                ? resizeGoogleProfilePictureURL(user.user.imageURL, 100)
+                : "/blankuser.png"
+            }
+          />
+          <span
+            className={cn(
+              "absolute -bottom-1 -right-1 z-[0] inline-block aspect-square w-5 rounded-full",
+              {
+                "bg-green-600": user.activity.isOnline,
+                "bg-red-700": !user.activity.isOnline,
+              },
+            )}
+          />
+        </div>
+        <div className="flex flex-grow flex-col justify-between overflow-hidden whitespace-nowrap">
+          <span className="inline-block text-ellipsis whitespace-nowrap text-xl font-semibold">
+            {user.user.username}
+          </span>
+          <div className="flex h-1/2 flex-row flex-nowrap items-start gap-1.5 text-xl">
+            <RemoveFriendButton />
+            <ChallengeInviteButton />
           </div>
         </div>
-      </>
-    )
+      </div>
+    </>
   );
 }

@@ -23,6 +23,7 @@ import { trpcSocialProfileProcedure } from "~/server/api/routers/social/social.p
 import { ActivityManager } from "~/lib/social/activity.social";
 import { db } from "~/lib/drizzle/db";
 import { log } from "~/lib/logging/logger.winston";
+import { VerboseSocialUser } from "~/types/social.types";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -61,6 +62,8 @@ class FriendRequestNotExistsError extends TRPCError {
 }
 
 async function emitNewFriendEvent(user1_ID: string, user2_ID: string) {
+  // This is only used once, but is necessary because need to get other user information. Activity Manager only works with reference to user ID.
+
   try {
     const u1 = await db.query.users.findFirst({
       where: eq(users.id, user1_ID),
@@ -89,17 +92,12 @@ async function emitNewFriendEvent(user1_ID: string, user2_ID: string) {
     wsServerToClientMessage
       .send("SOCIAL:FRIEND_NEW")
       .data({
-        activity: {
-          isOnline:
-            ActivityManager.getActivity(
-              user1_ID,
-            ).getClientExposedActivityStatus().isOnline,
-        },
         user: {
           id: u1.id,
           username: u1.name,
           imageURL: u1.image ?? undefined,
         },
+        activity: ActivityManager.getActivity(user1_ID).getSocialActivity(),
       })
       .to({
         socket: wsSocketRegistry.get(u2.id),
@@ -109,17 +107,12 @@ async function emitNewFriendEvent(user1_ID: string, user2_ID: string) {
     wsServerToClientMessage
       .send("SOCIAL:FRIEND_NEW")
       .data({
-        activity: {
-          isOnline:
-            ActivityManager.getActivity(
-              user2_ID,
-            ).getClientExposedActivityStatus().isOnline,
-        },
         user: {
           id: u2.id,
           username: u2.name,
           imageURL: u2.image ?? undefined,
         },
+        activity: ActivityManager.getActivity(user2_ID).getSocialActivity(),
       })
       .to({
         socket: wsSocketRegistry.get(u1.id),
@@ -212,9 +205,14 @@ export const trpcSocialRouter = createTRPCRouter({
   }),
   friend: createTRPCRouter({
     getAllFriends: protectedProcedure.query(async ({ ctx }) => {
-      return (await getUserConfirmedFriends(ctx.user.id)).map(
-        ({ id, image, name }) => ({ id, image, name }),
-      );
+      const users: VerboseSocialUser[] = (
+        await getUserConfirmedFriends(ctx.user.id)
+      ).map(({ id, image, name }) => ({
+        user: { id, imageURL: image ?? undefined, username: name },
+        activity: ActivityManager.getActivity(id).getSocialActivity(),
+      }));
+
+      return users;
     }),
 
     request: createTRPCRouter({
@@ -233,14 +231,20 @@ export const trpcSocialRouter = createTRPCRouter({
 
           if (success) {
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: input.targetUserID, new_status: "none" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({
+                targetUserID: input.targetUserID,
+                new_relation: "none",
+              })
               .to({ socket: wsSocketRegistry.get(ctx.user.id) })
               .emit();
 
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: ctx.user.id, new_status: "none" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({
+                targetUserID: ctx.user.id,
+                new_relation: "none",
+              })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
           }
@@ -273,17 +277,20 @@ export const trpcSocialRouter = createTRPCRouter({
 
           if (success) {
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
               .data({
-                playerID: input.targetUserID,
-                new_status: "request_outgoing",
+                targetUserID: input.targetUserID,
+                new_relation: "request_outgoing",
               })
               .to({ socket: wsSocketRegistry.get(ctx.user.id) })
               .emit();
 
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: ctx.user.id, new_status: "request_incoming" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({
+                targetUserID: ctx.user.id,
+                new_relation: "request_incoming",
+              })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
           }
@@ -310,14 +317,17 @@ export const trpcSocialRouter = createTRPCRouter({
 
           if (success) {
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: input.targetUserID, new_status: "confirmed" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({
+                targetUserID: input.targetUserID,
+                new_relation: "confirmed",
+              })
               .to({ socket: wsSocketRegistry.get(ctx.user.id) })
               .emit();
 
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: ctx.user.id, new_status: "confirmed" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({ targetUserID: ctx.user.id, new_relation: "confirmed" })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
 
@@ -344,14 +354,14 @@ export const trpcSocialRouter = createTRPCRouter({
 
           if (success) {
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: input.targetUserID, new_status: "none" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({ targetUserID: input.targetUserID, new_relation: "none" })
               .to({ socket: wsSocketRegistry.get(ctx.user.id) })
               .emit();
 
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: ctx.user.id, new_status: "none" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({ targetUserID: ctx.user.id, new_relation: "none" })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
           }
@@ -376,14 +386,14 @@ export const trpcSocialRouter = createTRPCRouter({
 
           if (success) {
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: input.targetUserID, new_status: "none" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({ targetUserID: input.targetUserID, new_relation: "none" })
               .to({ socket: wsSocketRegistry.get(ctx.user.id) })
               .emit();
 
             wsServerToClientMessage
-              .send("SOCIAL_PERSONAL_UPDATE")
-              .data({ playerID: ctx.user.id, new_status: "none" })
+              .send("SOCIAL:FRIEND_RELATION_UPDATE")
+              .data({ targetUserID: ctx.user.id, new_relation: "none" })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
           }

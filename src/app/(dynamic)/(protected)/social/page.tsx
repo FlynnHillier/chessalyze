@@ -18,7 +18,7 @@ import { useSession } from "~/app/_components/providers/client/session.provider"
 
 import { LuCopyCheck, LuCopy } from "react-icons/lu";
 import { ClassNameValue } from "tailwind-merge";
-import { AllExistingFriends } from "./_components/friends.view";
+import { ViewAllConfirmedFriends } from "./_components/friends.view";
 
 /**
  * A text field to allowing users to copy its contents
@@ -329,7 +329,7 @@ export default function Page() {
             />
           </div>
 
-          <AllExistingFriends />
+          <ViewAllConfirmedFriends />
         </div>
       </div>
     </>

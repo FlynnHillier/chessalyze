@@ -17,7 +17,11 @@ import {
   zNonVerboseLobbySnapshot,
   zVerboseLobbySnapshot,
 } from "~/lib/zod/lobby/lobby.validators";
-import { zSocialUser } from "~/lib/zod/social/social.validators";
+import {
+  zSocialActivity,
+  zSocialUser,
+  zVerboseSocialUser,
+} from "~/lib/zod/social/social.validators";
 
 export const wsServerToClientMessage = new WSMessagesTemplate({
   DEV_ID: z.object({
@@ -36,31 +40,26 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   "LOBBY:END": z.object({}),
   "LOBBY:UPDATE": zVerboseLobbySnapshot,
   SUMMARY_NEW: zGameSummary,
-  SOCIAL_PERSONAL_UPDATE: z.object({
-    playerID: z.string(),
-    new_status: z.union([
+  "SOCIAL:FRIEND_NEW": zVerboseSocialUser,
+  /**
+   * Fires when a user's friend relation with another user is updated. E.g confirmed -> none / none -> request_outgoing
+   */
+  "SOCIAL:FRIEND_RELATION_UPDATE": z.object({
+    targetUserID: z.string(),
+    new_relation: z.union([
       z.literal("confirmed"),
       z.literal("request_incoming"),
       z.literal("none"),
       z.literal("request_outgoing"),
     ]),
   }),
-  "SOCIAL:FRIEND_NEW": z.object({
-    user: zSocialUser,
-    activity: z.object({
-      isOnline: z.boolean(),
-    }),
+  "SOCIAL:FRIEND_ACTIVITY_UPDATE": z.object({
+    targetUserID: z.string(),
+    activity: zSocialActivity,
   }),
   "PROFILE_VIEW:ACTIVITY_STATUS_UPDATE": z.object({
     playerID: z.string(),
-    status: z.object({
-      gameID: z.string().optional(),
-      isOnline: z.boolean(),
-      messages: z.object({
-        primary: z.string().optional(),
-        secondary: z.string().optional(),
-      }),
-    }),
+    status: zSocialActivity,
   }),
   "PROFILE:NEW_GAME_SUMMARY": zGameSummary,
 });

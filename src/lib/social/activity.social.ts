@@ -1,18 +1,14 @@
 import { GameInstance } from "~/lib/game/GameInstance";
 import { log } from "~/lib/logging/logger.winston";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
-import { SocketRoom } from "~/lib/ws/rooms.ws";
 import { getProfileViewSocketRoom } from "~/lib/ws/rooms/categories/profile.room.ws";
 import _ from "lodash";
+import { SocialActivity } from "~/types/social.types";
+import { WebSocket } from "ws";
 
-type ClientExposedActivityStatus = {
-  isOnline: boolean;
-  gameID?: string;
-  messages: {
-    primary?: string;
-    secondary?: string;
-  };
-};
+import { getUserConfirmedFriends } from "~/lib/drizzle/queries/social.queries.drizzle";
+import { wsSocketRegistry } from "~/lib/ws/registry.ws";
+import { getUserFriendsSockets } from "~/lib/ws/runtimeSocketCollections/userFriends.sockets";
 
 class Activity {
   public constructor(public readonly userID: string) {}
@@ -35,6 +31,39 @@ class Activity {
     }, Activity.AWAIT_HEARTBEAT_BEFORE_OFFLINE);
   }
 
+  private events = {
+    onActivityChange: async () => {
+      log("activity").debug(
+        `user '${this.userID} now ${this.activity.online ? "online" : "offline"} ${this.activity.game ? "in-game" : "no-game"}`,
+      );
+
+      const room = getProfileViewSocketRoom({ playerID: this.userID });
+
+      if (room)
+        wsServerToClientMessage
+          .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
+          .data({
+            playerID: this.userID,
+            status: this.getSocialActivity(),
+          })
+          .to({
+            room,
+          })
+          .emit();
+
+      const sockets = await getUserFriendsSockets(this.userID);
+
+      wsServerToClientMessage
+        .send("SOCIAL:FRIEND_ACTIVITY_UPDATE")
+        .data({
+          targetUserID: this.userID,
+          activity: this.getSocialActivity(),
+        })
+        .to({ socket: sockets })
+        .emit();
+    },
+  };
+
   /**
    *
    * @param updateActivity activity to update
@@ -47,7 +76,8 @@ class Activity {
       ...updateActivity,
     };
 
-    if (!_.isEqual(previousActivity, this.activity)) this.onActivityChange();
+    if (!_.isEqual(previousActivity, this.activity))
+      this.events.onActivityChange();
 
     if (this.isAbsolutelyOffline()) {
       ActivityManager._eventHooks.onActivityReportOffline(this.userID);
@@ -60,39 +90,19 @@ class Activity {
     return !this.activity.online && !this.activity.game;
   }
 
-  private onActivityChange() {
-    log("activity").debug(
-      `user '${this.userID} now ${this.activity.online ? "online" : "offline"} ${this.activity.game ? "in-game" : "no-game"}`,
-    );
-
-    const room = getProfileViewSocketRoom({ playerID: this.userID });
-
-    if (room)
-      wsServerToClientMessage
-        .send("PROFILE_VIEW:ACTIVITY_STATUS_UPDATE")
-        .data({
-          playerID: this.userID,
-          status: this.getClientExposedActivityStatus(),
-        })
-        .to({
-          room,
-        })
-        .emit();
-  }
-
-  public getClientExposedActivityStatus(): ClientExposedActivityStatus {
+  public getSocialActivity(): SocialActivity {
     if (this.activity.game)
       return {
         isOnline: true,
-        gameID: this.activity.game.id,
-        messages: {
+        game: this.activity.game.id,
+        status: {
           primary: "in game",
         },
       };
     if (this.activity.online)
       return {
         isOnline: true,
-        messages: {
+        status: {
           primary: "idle",
           secondary: "exploring chessalyze",
         },
@@ -100,7 +110,7 @@ class Activity {
 
     return {
       isOnline: false,
-      messages: {},
+      status: {},
     };
   }
 }
