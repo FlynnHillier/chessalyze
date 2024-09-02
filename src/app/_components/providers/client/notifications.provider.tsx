@@ -7,6 +7,10 @@ import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 
 import "react-toastify/dist/ReactToastify.css";
 import "~/styles/toastify.override.css";
+import {
+  RecievedInviteLobbyNotification,
+  TOAST_ID_LOBBY_INV,
+} from "../../notifications/lobby.notifications";
 
 export default function NotificationProvider({
   children,
@@ -21,8 +25,13 @@ export default function NotificationProvider({
     function onWsMessageEvent(e: MessageEvent) {
       wsServerToClientMessage.receiver({
         "LOBBY:INVITE_RECEIVED": ({ lobbyPreview, user }) => {
-          console.log(lobbyPreview, user);
-          toast("recieved an invite!");
+          toast(
+            <RecievedInviteLobbyNotification
+              from={user}
+              lobby={lobbyPreview}
+            />,
+            { autoClose: false, toastId: TOAST_ID_LOBBY_INV(lobbyPreview.id) },
+          );
         },
       })(e.data);
     }

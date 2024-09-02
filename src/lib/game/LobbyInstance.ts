@@ -257,7 +257,7 @@ export class LobbyInstance {
 
     this.accessibility.invited = newInvited;
 
-    notPreviouslyInvited.forEach((pid) => {
+    playerIDs.forEach((pid) => {
       wsServerToClientMessage
         .send("LOBBY:INVITE_RECEIVED")
         .data({

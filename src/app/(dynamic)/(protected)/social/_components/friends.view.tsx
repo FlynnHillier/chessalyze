@@ -224,7 +224,7 @@ function ExistingFriendPill({ user }: { user: User }) {
       onSuccess(data, variables, context) {
         if (data.success) {
           setHasSentInvite(true);
-          toast.success(`successfully sent game invite to ${user.username}`);
+          toast.success(`Game invite sent to ${user.username}`);
         }
       },
     });
