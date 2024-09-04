@@ -15,7 +15,7 @@ import { log } from "~/lib/logging/logger.winston";
 import { z } from "zod";
 
 function retrieveActivityStatus({ userID }: { userID: string }) {
-  return ActivityManager.getActivity(userID).getClientExposedActivityStatus();
+  return ActivityManager.getActivity(userID).getSocialActivity();
 }
 
 function retrieveGameStats({

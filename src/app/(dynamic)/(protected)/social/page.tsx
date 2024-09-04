@@ -287,8 +287,8 @@ export default function Page() {
             status: {
               isOnline: profile.activity.isOnline,
               messages: {
-                primary: profile.activity.messages.primary,
-                secondary: profile.activity.messages.secondary,
+                primary: profile.activity.status.primary,
+                secondary: profile.activity.status.secondary,
               },
             },
           },
