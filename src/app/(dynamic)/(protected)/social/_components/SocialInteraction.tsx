@@ -365,13 +365,13 @@ export function SocialInteractionButton({
     // update state when websocket events are received
     const onWSMessageEvent = (m: MessageEvent) => {
       wsServerToClientMessage.receiver({
-        SOCIAL_PERSONAL_UPDATE: ({ playerID, new_status }) => {
-          if (playerID === target.id) {
-            if (new_status === "confirmed") setRelation("confirmed");
-            else if (new_status === "none") setRelation("none");
-            else if (new_status === "request_incoming")
+        "SOCIAL:FRIEND_RELATION_UPDATE": ({ targetUserID, new_relation }) => {
+          if (targetUserID === target.id) {
+            if (new_relation === "confirmed") setRelation("confirmed");
+            else if (new_relation === "none") setRelation("none");
+            else if (new_relation === "request_incoming")
               setRelation("request_incoming");
-            else if (new_status === "request_outgoing")
+            else if (new_relation === "request_outgoing")
               setRelation("request_outgoing");
           }
         },
