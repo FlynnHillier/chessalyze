@@ -75,14 +75,22 @@ export class LobbyInstance {
 
   private ended: boolean = false;
 
+  /**
+   * Time taken (in ms) for lobby to automatically end self after being created
+   */
+  private static AUTO_CLOSE_AFTER = 1000 * 60 * 30;
+  private autoCloseTimeout: NodeJS.Timeout;
+
   private readonly events = {
     onAccessibilityChange: () => {
-      if (
-        this.accessibility.invited.size === 0 &&
-        this.accessibility.allowPublicLink === false
-      )
-        this.end();
-      else this._emitLobbyUpdateSocketEvent();
+      // if (
+      //   this.accessibility.invited.size === 0 &&
+      //   this.accessibility.allowPublicLink === false
+      // )
+      //   this.end();
+      // else
+
+      this._emitLobbyUpdateSocketEvent();
     },
     /**
      * Runs on lobby creation
@@ -158,6 +166,11 @@ export class LobbyInstance {
       ...accessibilty,
     };
 
+    this.autoCloseTimeout = setTimeout(
+      this.end,
+      LobbyInstance.AUTO_CLOSE_AFTER,
+    );
+
     this.events.onCreate();
   }
 
@@ -174,6 +187,7 @@ export class LobbyInstance {
   public end() {
     this.validateLobby();
     this.ended = true;
+    clearTimeout(this.autoCloseTimeout);
     this.events.onEnd();
   }
 
@@ -280,7 +294,9 @@ export class LobbyInstance {
   public revokePlayerInvites(...playerIDs: string[]) {
     const prevSize = this.accessibility.invited.size;
 
-    playerIDs.forEach(this.accessibility.invited.delete);
+    playerIDs.forEach((playerID) =>
+      this.accessibility.invited.delete(playerID),
+    );
 
     if (prevSize !== this.accessibility.invited.size)
       this.events.onAccessibilityChange();

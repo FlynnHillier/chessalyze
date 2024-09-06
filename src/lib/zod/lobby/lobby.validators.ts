@@ -33,5 +33,9 @@ export const zLobbyConfigurationPreference = z.object({
       template: zGameTimePreset,
     })
     .optional(),
-  color: zColor.optional(),
+  color: z
+    .object({
+      preference: zColor,
+    })
+    .optional(),
 });

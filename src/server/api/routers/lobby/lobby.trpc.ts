@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { trpcGameIsNotPresentMiddleware } from "~/server/api/routers/game/play/middleware/game.isNotPresent.mw";
 import {
   trpcEnsuredLobbyIsPresentMiddlewareFactory,
+  trpcLobbyIsNotPresentMiddleware,
   trpcLobbyIsPresentMiddleware,
 } from "~/server/api/routers/lobby/middleware/lobby.middleware";
 import { z } from "zod";
@@ -10,6 +11,17 @@ import { TRPCError } from "@trpc/server";
 import { LobbyMaster } from "~/lib/game/LobbyMaster";
 import { zLobbyConfigurationPreference } from "~/lib/zod/lobby/lobby.validators";
 import { LobbyInstance } from "~/lib/game/LobbyInstance";
+import { getUserConfirmedFriends } from "~/lib/drizzle/queries/social.queries.drizzle";
+
+/**
+ * User Lobby interaction flow
+ *
+ * (create lobby on server) .configure.create
+ * -> (open avenue for another user to join) .configure.invite.send / .configure.link.enable
+ * -> (other user join lobby) .join
+ *
+ * Lobbys will automatically close after a specified amount of time, or prematurely if the user requests it.
+ */
 
 export const trpcLobbyRouter = createTRPCRouter({
   join: protectedProcedure
@@ -57,6 +69,33 @@ export const trpcLobbyRouter = createTRPCRouter({
       };
     }),
   configure: createTRPCRouter({
+    create: protectedProcedure
+      .use(trpcGameIsNotPresentMiddleware)
+      .use(trpcLobbyIsNotPresentMiddleware)
+      .input(zLobbyConfigurationPreference)
+      .mutation(({ ctx, input }) => {
+        const DEFAULT_LOBBY_ACCESSIBILITY: LobbyInstance["accessibility"] = {
+          allowPublicLink: false,
+          invited: new Set(),
+        };
+
+        const lobby = new LobbyInstance(
+          {
+            pid: ctx.user.id,
+            username: ctx.user.name,
+            image: ctx.user.image,
+          },
+          {
+            accessibility: DEFAULT_LOBBY_ACCESSIBILITY,
+            config: {
+              color: input.color,
+              time: input.time,
+            },
+          },
+        );
+
+        return lobby.verboseSnapshot();
+      }),
     disband: protectedProcedure
       .use(trpcLobbyIsPresentMiddleware)
       .mutation(({ ctx }) => {
@@ -68,31 +107,31 @@ export const trpcLobbyRouter = createTRPCRouter({
       }),
     invite: createTRPCRouter({
       send: protectedProcedure
-        .use(trpcGameIsNotPresentMiddleware)
-        .use(
-          trpcEnsuredLobbyIsPresentMiddlewareFactory({
-            accessibility: {
-              allowPublicLink: false,
-              invited: new Set(),
-            },
-          }),
-        )
+        .use(trpcLobbyIsPresentMiddleware)
         .input(
           z.object({
             playerID: z.string(),
           }),
         )
-        .mutation(({ ctx, input }) => {
+        .mutation(async ({ ctx, input }) => {
           if (input.playerID === ctx.user.id)
             throw new TRPCError({
               code: "FORBIDDEN",
               message: "You cannot invite yourself.",
             });
 
+          // Users can only players they are friends with.
+          const ownFriends = await getUserConfirmedFriends(ctx.user.id);
+          if (!ownFriends.find(({ id }) => id === input.playerID))
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You can only invite friended players",
+            });
+
           ctx.lobby.invitePlayers(input.playerID);
 
           return {
-            success: true,
+            snapshot: ctx.lobby.verboseSnapshot(),
           };
         }),
       revoke: protectedProcedure
@@ -105,41 +144,18 @@ export const trpcLobbyRouter = createTRPCRouter({
         .mutation(({ ctx, input }) => {
           ctx.lobby.revokePlayerInvites(input.playerID);
 
-          return { success: true };
+          return { snapshot: ctx.lobby.verboseSnapshot() };
         }),
     }),
     link: createTRPCRouter({
       enable: protectedProcedure
-        .use(trpcGameIsNotPresentMiddleware)
-        .input(zLobbyConfigurationPreference)
+        .use(trpcLobbyIsPresentMiddleware)
         .mutation(({ ctx, input }) => {
-          const lobby =
-            LobbyMaster.instance().getByPlayer(ctx.user.id) ??
-            new LobbyInstance(
-              {
-                pid: ctx.user.id,
-                username: ctx.user.name,
-                image: ctx.user.image,
-              },
-              {
-                accessibility: {
-                  allowPublicLink: true,
-                  invited: new Set(),
-                },
-                config: {
-                  color: input.color && {
-                    preference: input.color,
-                  },
-                  time: input.time && {
-                    template: input.time.template,
-                  },
-                },
-              },
-            );
+          ctx.lobby.setAllowPublicLink(true);
 
-          lobby.setAllowPublicLink(true);
-
-          return lobby.verboseSnapshot();
+          return {
+            snapshot: ctx.lobby.verboseSnapshot(),
+          };
         }),
       disable: protectedProcedure
         .use(trpcLobbyIsPresentMiddleware)
@@ -147,10 +163,7 @@ export const trpcLobbyRouter = createTRPCRouter({
           ctx.lobby.setAllowPublicLink(false);
 
           return {
-            lobbyHasEnded: ctx.lobby.isEnded(),
-            snapshot: ctx.lobby.isEnded()
-              ? undefined
-              : ctx.lobby.verboseSnapshot(),
+            snapshot: ctx.lobby.verboseSnapshot(),
           };
         }),
     }),

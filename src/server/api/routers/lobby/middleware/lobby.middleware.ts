@@ -39,6 +39,7 @@ export const trpcLobbyIsPresentMiddleware = createTRPCMiddleware(
     return next({
       ctx: {
         ...ctx,
+        user: ctx.user!,
         lobby: existingUserLobby,
       },
     });
