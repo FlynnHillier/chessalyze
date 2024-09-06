@@ -344,7 +344,10 @@ function ManageChallengeInviteToSocialUserButton({
           <HashLoader size={iconSize ?? DEFAULT_ICON_SIZE} color="white" />
         }
         onMouseEnter={() => {
-          setSelfIsHovered(true);
+          // This check ensures that when user is sorted and pushed to top of view,
+          // That the element is not still considered hovered if it has moved away from the users cursor
+          if (lobby.lobby?.accessibility.invited.includes(user.id))
+            setSelfIsHovered(true);
         }}
         onMouseLeave={() => {
           setSelfIsHovered(false);
@@ -466,51 +469,10 @@ function MappedConfigureFriendedSocialUserChallengeInviteCard({
 export function CreateAndConfigureLobbyInterface() {
   const { lobby, dispatchLobby } = useLobby();
 
-  const { show: showError } = useMutatePanelErrorMessage();
-
   const elementBottomRef = useRef<HTMLSpanElement>(null);
-
-  const [hasCopiedChallengeLink, setHasCopiedChallengeLink] =
-    useState<boolean>(false);
 
   const { challengeConfiguration, dispatchChallengeConfiguration } =
     useChallengeConfiguration();
-
-  /**
-   * For vertical view, scroll bottom of element into view if element height changes due to challenge creation / link copy
-   *
-   */
-  useEffect(() => {
-    elementBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [hasCopiedChallengeLink, lobby.present]);
-
-  /**
-   * If user has copied *current* challenge link
-   *
-   */
-  useEffect(() => {
-    setHasCopiedChallengeLink(false);
-  }, [lobby.present]);
-
-  function isLobbyConfigurationInvalid() {
-    return (
-      (challengeConfiguration.time.preference === "timed" &&
-        !challengeConfiguration.time.preset) ||
-      !challengeConfiguration.color.preference
-    );
-  }
-
-  /**
-   * Generate and copy a link that will join other users to the users created lobby
-   *
-   */
-  function copyChallengeLinkToClipboard() {
-    if (lobby.lobby?.id)
-      navigator.clipboard.writeText(
-        `${window.location.origin}/play/join?challenge=${lobby.lobby.id}`,
-      );
-    setHasCopiedChallengeLink(true);
-  }
 
   return (
     <div className="flex h-fit w-full flex-col gap-2 text-gray-100">
@@ -571,7 +533,6 @@ export function CreateAndConfigureLobbyInterface() {
           />
           <ToggleLobbyLinkAccessibilityButton className={"p-2"} />
           <CopyChallengeLink />
-
           <CancelLobbyButton />
         </>
       )}
