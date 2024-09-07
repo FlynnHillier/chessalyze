@@ -30,11 +30,6 @@ import { Tooltip } from "react-tooltip";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-//TODO: update this such that invited users are shown and can be un-invited. Also allow invites to friends that are not yet invited.
-
-//TODO: RN!! refactor cus this shit is messy. Create some button elements that use the nice set-up context to
-// render conditional styles / disabled status. Put back together so lobby has definitive create/end button.
-
 function CreateLobbyButton() {
   const { show: showError } = useMutatePanelErrorMessage();
   const { challengeConfiguration, dispatchChallengeConfiguration } =
