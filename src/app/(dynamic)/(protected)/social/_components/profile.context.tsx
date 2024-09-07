@@ -40,6 +40,7 @@ type ProfileData = {
   activity: {
     status: {
       isOnline: boolean;
+      game?: string;
       messages: {
         primary?: string;
         secondary?: string;
@@ -100,6 +101,7 @@ function profileReducer<A extends ProfileReducerAction>(
           activity: {
             status: {
               isOnline: payload.isOnline,
+              game: payload.game,
               messages: {
                 primary: payload.messages.primary,
                 secondary: payload.messages.secondary,

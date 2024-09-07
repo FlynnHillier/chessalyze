@@ -113,7 +113,7 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
           },
         )}
         onClick={() => {
-          if (player) router.push(`/user/${player.pid}`);
+          if (player) router.push(`/social/user/${player.pid}`);
         }}
       >
         {

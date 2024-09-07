@@ -2,12 +2,9 @@
 
 import { BsFillPeopleFill } from "react-icons/bs";
 import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
-import { FaChessBoard, FaUserXmark, FaLink } from "react-icons/fa6";
 import { RiUserSearchLine, RiUserShared2Line } from "react-icons/ri";
 import { cn } from "~/lib/util/cn";
-import { Tooltip } from "react-tooltip";
 import { trpc } from "~/app/_trpc/client";
-import { ClipLoader, MoonLoader } from "react-spinners";
 import { ComponentProps, CompositionEvent, useEffect, useState } from "react";
 import { useDispatchProfile } from "./_components/profile.context";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
