@@ -27,9 +27,10 @@ export function ViewAllConfirmedFriends({
         className,
       )}
     >
-      <div className="mb-3 flex w-full flex-shrink flex-grow-0 basis-auto text-nowrap px-3 text-2xl font-semibold">
+      <div className="mb-1 flex w-full flex-shrink flex-grow-0 basis-auto text-nowrap px-3 text-2xl font-semibold">
         Friends
       </div>
+      <hr className="mx-2 mb-2 border-stone-700"></hr>
 
       <div className="flex flex-grow overflow-y-auto">
         <div
