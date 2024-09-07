@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaChessKing, FaHome } from "react-icons/fa";
+import { FaChessKing, FaHome, FaUser, FaUsers } from "react-icons/fa";
 import { BiSolidBinoculars } from "react-icons/bi";
 
 import { RiLogoutBoxRLine } from "react-icons/ri";
@@ -23,6 +23,11 @@ const navOptions: NavOption[] = [
     url: "/play/view",
     text: "view",
     icon: <BiSolidBinoculars />,
+  },
+  {
+    url: "/social",
+    text: "social",
+    icon: <FaUsers />,
   },
   {
     url: "/",
