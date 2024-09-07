@@ -474,6 +474,13 @@ export function CreateAndConfigureLobbyInterface() {
   const { challengeConfiguration, dispatchChallengeConfiguration } =
     useChallengeConfiguration();
 
+  useEffect(() => {
+    //Scroll bottom of panel into view when lobby becomes present
+    if (lobby.present) {
+      elementBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [lobby.present]);
+
   return (
     <div className="flex h-fit w-full flex-col gap-2 text-gray-100">
       <LobbyConfigurationInterface
