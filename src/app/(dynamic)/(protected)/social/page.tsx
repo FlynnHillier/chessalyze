@@ -16,6 +16,13 @@ import { useSession } from "~/app/_components/providers/client/session.provider"
 import { LuCopyCheck, LuCopy } from "react-icons/lu";
 import { ClassNameValue } from "tailwind-merge";
 import { ViewAllConfirmedFriends } from "./_components/friends.view";
+import { useHash } from "~/app/_hooks/common";
+import { clearBrowserURLHash } from "~/app/_functions.tsx/navigation";
+
+// Strings to be used in hash section of URL
+const HASH_STRINGS = {
+  INVITE_FRIEND_BY_ID: "#add",
+} as const satisfies Record<string, `${"#"}${string}`>;
 
 /**
  * A text field to allowing users to copy its contents
@@ -141,7 +148,15 @@ function AddFriendByIDModal({
   }
 
   return (
-    <GenericModal isOpen={isOpen} onRequestClose={close} header="Add friend">
+    <GenericModal
+      isOpen={isOpen}
+      onRequestClose={close}
+      header="Add friend"
+      onAfterClose={clearBrowserURLHash}
+      onAfterOpen={() => {
+        window.location.hash = HASH_STRINGS.INVITE_FRIEND_BY_ID;
+      }}
+    >
       <div className="box-border flex h-full flex-col flex-nowrap items-center gap-2 pt-4 text-center">
         <input
           className="w-3/4 rounded border-none bg-stone-900 p-2 text-lg placeholder-stone-500 caret-stone-300 shadow-inner shadow-stone-800 focus:shadow-stone-600 focus:outline-none"
@@ -224,9 +239,15 @@ export default function Page() {
   const { showGlobalError } = useGlobalError();
   const dispatchProfile = useDispatchProfile();
   const ownProfileQuery = trpc.social.profile.user.self.useQuery();
+  const hash = useHash();
 
-  const [showAddFriendByIDModal, setShowAddFriendByIDModal] =
-    useState<boolean>(false);
+  const [showAddFriendByIDModal, setShowAddFriendByIDModal] = useState<boolean>(
+    window.location.hash === HASH_STRINGS.INVITE_FRIEND_BY_ID,
+  );
+
+  useEffect(() => {
+    setShowAddFriendByIDModal(hash === HASH_STRINGS.INVITE_FRIEND_BY_ID);
+  }, [hash]);
 
   /**
    * Clear previously loaded profile

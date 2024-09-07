@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, ReactNode } from "react";
 import { IoIosLink } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { LuCopyCheck, LuCopy } from "react-icons/lu";
@@ -27,6 +27,7 @@ import { SocialUser, VerboseSocialUser } from "~/types/social.types";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { HashLoader, MoonLoader, PulseLoader } from "react-spinners";
 import { Tooltip } from "react-tooltip";
+import Link from "next/link";
 
 //TODO: update this such that invited users are shown and can be un-invited. Also allow invites to friends that are not yet invited.
 
@@ -406,8 +407,10 @@ function ConfigureSocialUserChallengeInviteCard({
 function MappedConfigureSocialUserChallengeInviteCard({
   users,
   className,
+  showOnEmptyUsersArray,
 }: {
   users?: SocialUser[];
+  showOnEmptyUsersArray?: ReactNode;
   className: ClassNameValue;
 }) {
   const { lobby } = useLobby();
@@ -438,9 +441,14 @@ function MappedConfigureSocialUserChallengeInviteCard({
         </div>
       ) : (
         <>
-          {usersSortedByInviteStatus.map((user) => (
-            <ConfigureSocialUserChallengeInviteCard user={user} key={user.id} />
-          ))}
+          {usersSortedByInviteStatus.length === 0
+            ? showOnEmptyUsersArray
+            : usersSortedByInviteStatus.map((user) => (
+                <ConfigureSocialUserChallengeInviteCard
+                  user={user}
+                  key={user.id}
+                />
+              ))}
         </>
       )}
     </div>
@@ -449,8 +457,10 @@ function MappedConfigureSocialUserChallengeInviteCard({
 
 function MappedConfigureFriendedSocialUserChallengeInviteCard({
   className,
+  showOnEmptyUsersArray,
 }: {
   className?: ClassNameValue;
+  showOnEmptyUsersArray?: ReactNode;
 }) {
   const getAllFriendsQuery =
     trpc.social.friend.getAllFriends.useQuery(undefined);
@@ -459,6 +469,7 @@ function MappedConfigureFriendedSocialUserChallengeInviteCard({
     <MappedConfigureSocialUserChallengeInviteCard
       users={getAllFriendsQuery.data?.map(({ user }) => user)}
       className={className}
+      showOnEmptyUsersArray={showOnEmptyUsersArray}
     />
   );
 }
@@ -537,6 +548,14 @@ export function CreateAndConfigureLobbyInterface() {
         <>
           <MappedConfigureFriendedSocialUserChallengeInviteCard
             className={"border-y border-stone-700 px-1 py-2"}
+            showOnEmptyUsersArray={
+              <span>
+                Add your friends to invite them directly. Add them{" "}
+                <Link href={"/social#add"} className="underline">
+                  here.
+                </Link>
+              </span>
+            }
           />
           <ToggleLobbyLinkAccessibilityButton className={"p-2"} />
           <CopyChallengeLink />
