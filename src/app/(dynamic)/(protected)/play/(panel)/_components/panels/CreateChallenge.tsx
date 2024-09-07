@@ -28,6 +28,7 @@ import { useGlobalError } from "~/app/_components/providers/client/globalError.p
 import { HashLoader, MoonLoader, PulseLoader } from "react-spinners";
 import { Tooltip } from "react-tooltip";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 //TODO: update this such that invited users are shown and can be un-invited. Also allow invites to friends that are not yet invited.
 
@@ -385,17 +386,27 @@ function ConfigureSocialUserChallengeInviteCard({
   className?: ClassNameValue;
   user: SocialUser;
 }) {
+  const router = useRouter();
+
   return (
     <div
       className={cn(
-        "flex h-10 w-full flex-shrink-0 flex-row items-center gap-1.5 rounded bg-stone-700 p-2",
+        "flex h-10 w-full flex-shrink-0 flex-row items-center justify-between gap-1.5 rounded bg-stone-700 p-2",
         className,
       )}
     >
-      <SocialUserSquaredProfilePicture user={user} size={30} />
-      <div className="flex-grow text-ellipsis text-start align-top text-base font-semibold">
-        {user.username}
+      <div
+        className="flex w-fit flex-row gap-1 hover:cursor-pointer"
+        onClick={() => {
+          router.push(`/social/user/${user.id}`);
+        }}
+      >
+        <SocialUserSquaredProfilePicture user={user} size={30} />
+        <div className="flex-grow text-ellipsis text-start align-top text-base font-semibold">
+          {user.username}
+        </div>
       </div>
+
       <ManageChallengeInviteToSocialUserButton
         user={user}
         className={"bg-stone"}
@@ -416,8 +427,6 @@ function MappedConfigureSocialUserChallengeInviteCard({
   const { lobby } = useLobby();
 
   const usersSortedByInviteStatus = useMemo(() => {
-    console.log("recalc!");
-
     if (!users) return [];
 
     return users.sort((userA, userB) => {
