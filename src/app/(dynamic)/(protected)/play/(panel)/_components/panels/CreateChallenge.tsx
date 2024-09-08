@@ -248,7 +248,7 @@ function CopyChallengeLink({ className }: { className?: ClassNameValue }) {
     <button
       onClick={copyChallengeLinkToClipboard}
       className={cn(
-        "flex flex-row items-center justify-center gap-0.5 text-base hover:opacity-80",
+        "flex flex-row items-center justify-center gap-1 text-base hover:opacity-80",
         className,
       )}
     >
