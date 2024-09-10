@@ -37,6 +37,9 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
     user: zSocialUser,
     lobbyPreview: zNonVerboseLobbySnapshot,
   }),
+  "LOBBY:INVITE_REVOKED": z.object({
+    lobbyID: z.string(),
+  }),
   "LOBBY:END": z.object({}),
   "LOBBY:UPDATE": zVerboseLobbySnapshot,
   SUMMARY_NEW: zGameSummary,

@@ -52,7 +52,7 @@ type NotificationReducerAction =
       "INCOMING_CHALLENGE",
       NonNullable<NOTIFICATIONSCONTEXT_DATA_TYPE["challenge"]["incoming"]>
     >
-  | ReducerAction<"INCOMING_CHALLENGE_ENDED", string[]>;
+  | ReducerAction<"INCOMING_CHALLENGE_ENDED", string>;
 
 function reducer<A extends NotificationReducerAction>(
   state: NOTIFICATIONSCONTEXT_DATA_TYPE,
@@ -75,16 +75,46 @@ function reducer<A extends NotificationReducerAction>(
         (user) => user.id === payload,
       );
 
-      if (i === -1 || !i) return state;
+      if (i === -1 || i === undefined) return state;
+
+      toast.dismiss(TOAST_ID_FRIEND_REQUEST(payload));
 
       return {
         ...state,
         friendRequest: {
           ...state.friendRequest,
-          incoming: [
-            ...state.friendRequest.incoming.slice(0, i),
-            ...state.friendRequest.incoming.slice(i + 1),
-          ],
+          incoming:
+            i === 0
+              ? []
+              : [
+                  ...state.friendRequest.incoming.slice(0, i),
+                  ...state.friendRequest.incoming.slice(i + 1),
+                ],
+        },
+      };
+    }
+    case "INCOMING_CHALLENGE_ENDED": {
+      if (!state.challenge.incoming) return state;
+
+      const i = state.challenge.incoming?.findIndex(
+        (lobby) => lobby.id === payload,
+      );
+
+      if (i === -1 || i === undefined) return state;
+
+      toast.dismiss(TOAST_ID_LOBBY_INV(payload));
+
+      return {
+        ...state,
+        challenge: {
+          ...state.challenge,
+          incoming:
+            i === 0
+              ? []
+              : [
+                  ...state.challenge.incoming.slice(0, i),
+                  ...state.challenge.incoming.slice(i + 1),
+                ],
         },
       };
     }
@@ -222,6 +252,12 @@ export default function NotificationsProvider({
           dispatchNotifications({
             type: "INCOMING_FRIEND_REQUEST",
             payload: [user],
+          });
+        },
+        "LOBBY:INVITE_REVOKED": ({ lobbyID }) => {
+          dispatchNotifications({
+            type: "INCOMING_CHALLENGE_ENDED",
+            payload: lobbyID,
           });
         },
       })(e.data);

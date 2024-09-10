@@ -308,6 +308,18 @@ export class LobbyInstance {
     playerIDs.forEach((pid) => {
       this._lobbyMaster._events.onPlayerUnInvited(this.id, pid);
     });
+
+    playerIDs.forEach((pid) => {
+      wsServerToClientMessage
+        .send("LOBBY:INVITE_REVOKED")
+        .data({
+          lobbyID: this.id,
+        })
+        .to({
+          socket: wsSocketRegistry.get(pid),
+        })
+        .emit();
+    });
   }
 
   public playerIsInvited(playerID: string) {
