@@ -6,6 +6,8 @@ import { MdTimerOff, MdTimer } from "react-icons/md";
 import { LiveRelativeTime } from "react-live-relative-time";
 import ImageWithFallback from "../../common/image/ImageWithFallback";
 import { useRouter } from "next/navigation";
+import { cn } from "~/lib/util/cn";
+import { ClassNameValue } from "tailwind-merge";
 
 function PlayerBanner({
   player,
@@ -44,15 +46,20 @@ function PlayerBanner({
 export function GameSummaryPill({
   summary,
   redirect,
+  className,
 }: {
   summary: GameSummary;
   redirect?: boolean;
+  className?: ClassNameValue;
 }) {
   const router = useRouter();
 
   return (
     <div
-      className={`flex h-24 w-60 min-w-fit flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal @sm:h-32 @sm:w-80 ${redirect && "hover:cursor-pointer hover:bg-stone-800"}`}
+      className={cn(
+        `flex h-24 w-60 min-w-fit flex-row items-center gap-2 rounded bg-stone-900 p-2 @container-normal @sm:h-32 @sm:w-80 ${redirect && "hover:cursor-pointer hover:bg-stone-800"}`,
+        className,
+      )}
       onClick={() => {
         if (redirect) router.push(`/play/view/${summary.id}`);
       }}

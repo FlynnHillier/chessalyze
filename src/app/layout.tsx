@@ -3,6 +3,7 @@ import "./globals.css";
 import { SideNavBar } from "./_components/layout/SideNavBar";
 
 import SessionProvider from "./_components/providers/client/session.provider";
+import { GlobalErrorProvider } from "./_components/providers/client/globalError.provider";
 import { getServerSession } from "~/lib/lucia/util.lucia";
 
 export const metadata: Metadata = {
@@ -20,13 +21,15 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full">
       <head></head>
-      <body className="bg-stone-700 text-orange-50">
+      <body className="bg-stone-700 text-orange-50" id="root">
         <div className="flex h-screen w-full flex-row ">
           <SessionProvider session={session} user={user}>
-            <SideNavBar />
-            <div className="h-full w-full overflow-y-auto p-3 lg:p-5">
-              {children}
-            </div>
+            <GlobalErrorProvider className="flex flex-row">
+              <SideNavBar />
+              <div className="h-screen w-full overflow-y-auto p-5">
+                {children}
+              </div>
+            </GlobalErrorProvider>
           </SessionProvider>
         </div>
       </body>

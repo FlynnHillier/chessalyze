@@ -14,6 +14,8 @@ import { useSession } from "~/app/_components/providers/client/session.provider"
 import { FaChessKing, FaChess } from "react-icons/fa";
 import { FaRegChessKing } from "react-icons/fa6";
 import Image from "next/image";
+import { cn } from "~/lib/util/cn";
+import { useRouter } from "next/navigation";
 
 /**
  * Overlay shown when game is over.
@@ -80,6 +82,8 @@ function GameEndOverlay({
  * @param time remaining time for specified player
  */
 function GameBanner({ player, time }: { player?: Player; time?: number }) {
+  const router = useRouter();
+
   /**
    * Timestamp string generated from passed ms number
    *
@@ -101,7 +105,17 @@ function GameBanner({ player, time }: { player?: Player; time?: number }) {
 
   return (
     <div className="flex h-fit w-full flex-row justify-between bg-inherit bg-stone-900 px-2 font-semibold">
-      <div className="flex w-full flex-row items-center gap-2 bg-stone-900 py-1.5 text-center">
+      <div
+        className={cn(
+          "flex w-full flex-row items-center gap-2 bg-stone-900 py-1.5 text-center",
+          {
+            "cursor-pointer": !!player,
+          },
+        )}
+        onClick={() => {
+          if (player) router.push(`/social/user/${player.pid}`);
+        }}
+      >
         {
           <div className="relative aspect-square h-full w-fit overflow-hidden rounded">
             <Image

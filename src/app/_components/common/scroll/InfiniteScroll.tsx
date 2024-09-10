@@ -1,4 +1,5 @@
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactHTMLElement, ReactNode, useEffect, useRef } from "react";
+import { cn } from "~/lib/util/cn";
 
 type Props = {
   children: ReactNode;
@@ -6,6 +7,10 @@ type Props = {
   isMore: boolean;
   onLoading?: ReactNode;
   onNoMore?: ReactNode;
+  className?: React.DetailedHTMLProps<
+    React.HTMLAttributes<HTMLDivElement>,
+    HTMLDivElement
+  >["className"];
 };
 
 /**
@@ -18,6 +23,7 @@ export default function InfiniteScroller({
   isMore,
   onLoading,
   onNoMore,
+  className,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -74,11 +80,18 @@ export default function InfiniteScroller({
 
   return (
     <div
-      className="relative flex h-full w-full flex-col gap-3 overflow-y-scroll scrollbar-hide"
+      className={cn(
+        "flex h-full w-full flex-col items-center gap-3 overflow-y-scroll scrollbar-hide",
+      )}
       onScroll={loadNextIfNecessary}
       ref={containerRef}
     >
-      <div className="flex h-fit w-full flex-row flex-wrap justify-center gap-2">
+      <div
+        className={cn(
+          "flex h-fit w-full flex-row flex-wrap justify-center gap-2",
+          className,
+        )}
+      >
         {children}
         <span ref={triggerRef} />
       </div>

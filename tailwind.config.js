@@ -6,10 +6,14 @@ const config = {
   plugins: [containerQueries, scrollbarHide],
   theme: {
     extend: {
+      fontSize: {
+        "3xl": "2rem",
+      },
       fontFamily: {
         roboto: ["Roboto", "sans-serif"],
       },
       spacing: {
+        0.25: "1px",
         88: "22rem",
         104: "26rem",
         106: "27rem",
@@ -22,6 +26,9 @@ const config = {
         132: "34rem",
         136: "35rem",
         140: "36rem",
+        224: "58rem",
+        256: "66rem",
+        280: "72rem",
       },
       keyframes: {
         fade: {

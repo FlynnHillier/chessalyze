@@ -6,17 +6,7 @@ import { env } from "~/env";
 import { lucia } from "~/lib/lucia/lucia";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
 import { onWsClientToServerMessage } from "~/app/api/ws/listeners";
-
-interface WebSocketClient {
-  id: string;
-}
-
-declare module "ws" {
-  interface WebSocket extends WebSocketClient {}
-  namespace WebSocket {
-    type id = string;
-  }
-}
+import { ActivityManager } from "~/lib/social/activity.social";
 
 function closeConnection(client: WebSocket, reason?: string): void {
   const message = `Closing socket connection${reason ? `: '${reason}'` : ""}`;
@@ -37,15 +27,12 @@ export async function SOCKET(
   request: IncomingMessage,
   server: WebSocketServer,
 ) {
-  //Apply a basic id to socket for identification purposes during development
-  client.id = String(count);
-  count++;
-
   const { auth_session } = parseCookie(request.headers.cookie ?? "");
   const { user } = await lucia.validateSession(auth_session); //TODO: this could call 'fresh' on lucia session, but we cannot set cookie
 
   if (user) {
     wsSocketRegistry.register(client, user.id);
+    ActivityManager._eventHooks.onHeartbeat(user.id);
   }
 
   const onWSMessage = (m: MessageEvent) => {

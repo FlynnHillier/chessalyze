@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useState, ReactNode, cloneElement } from "react";
 import {
   useMutatePanelErrorMessage,
@@ -35,6 +35,16 @@ export default function Panel<
   const [selection, setSelection] = useState<K | undefined>(content?.default);
   const error = useReadPanelErrorMessage();
   const { hide } = useMutatePanelErrorMessage();
+
+  const PanelErrorMessageElementRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (PanelErrorMessageElementRef.current) {
+      PanelErrorMessageElementRef.current.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  }, [error]);
 
   return (
     <div
@@ -88,9 +98,12 @@ export default function Panel<
             </div>
           )}
 
-        <div className="lg:max-h-124 max-h-108 box-border flex flex-col items-center gap-2 overflow-y-auto bg-stone-900  p-3 text-center font-semibold scrollbar-hide ">
+        <div className="box-border flex max-h-108 flex-col items-center gap-2 overflow-y-auto bg-stone-900 p-3  text-center font-semibold scrollbar-hide lg:max-h-124 ">
           {error && (
-            <div className="w-full text-wrap rounded bg-red-800 p-2 text-center">
+            <div
+              className="w-full text-wrap rounded bg-red-800 p-2 text-center"
+              ref={PanelErrorMessageElementRef}
+            >
               {error}
             </div>
           )}

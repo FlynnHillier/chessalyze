@@ -22,7 +22,8 @@
       "~/*": ["./src/*"],
       "@lib/*": ["./src/lib/*"],
       "@constants/*": ["./src/constants/*"],
-      "@validators/*": ["./src/lib/zod/*"]
+      "@validators/*": ["./src/lib/zod/*"],
+      "react": ["./node_modules/@types/react"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

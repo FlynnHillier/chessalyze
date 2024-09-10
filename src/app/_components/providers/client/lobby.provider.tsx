@@ -9,24 +9,30 @@ import {
   ReactNode,
 } from "react";
 import { ReducerAction } from "~/types/util/context.types";
-import { UUID } from "~/types/common.types";
 import { BW, GameTimePreset } from "~/types/game.types";
 import { trpc } from "~/app/_trpc/client";
 import { Color } from "chess.js";
-import { ExactlyOneKey } from "~/types/util/util.types";
+import { AtleastOneKey } from "~/types/util/util.types";
+import { useWebSocket } from "next-ws/client";
+import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { useGlobalError } from "./globalError.provider";
 
 export interface LOBBYCONTEXT {
   present: boolean;
   lobby?: {
     id: string;
     config: {
-      time?: ExactlyOneKey<{
-        absolute: BW<number>;
-        template: GameTimePreset;
+      time?: AtleastOneKey<{
+        absolute?: BW<number>;
+        template?: GameTimePreset;
       }>;
       color?: {
         preference: Color;
       };
+    };
+    accessibility: {
+      invited: string[];
+      isPublicLinkAllowed: boolean;
     };
   };
 }
@@ -38,15 +44,7 @@ const defaultContext: LOBBYCONTEXT = {
 
 type LobbyRdcrActn =
   | ReducerAction<"LOAD", LOBBYCONTEXT>
-  | ReducerAction<
-      "START",
-      {
-        lobby: {
-          id: UUID;
-          config: NonNullable<LOBBYCONTEXT["lobby"]>["config"];
-        };
-      }
-    >
+  | ReducerAction<"UPDATE", NonNullable<LOBBYCONTEXT["lobby"]>>
   | ReducerAction<"END", {}>;
 
 function reducer<A extends LobbyRdcrActn>(
@@ -58,20 +56,16 @@ function reducer<A extends LobbyRdcrActn>(
   switch (type) {
     case "LOAD":
       return payload;
-    case "START":
+    case "UPDATE":
       return {
         present: true,
-        lobby: {
-          id: payload.lobby.id,
-          config: payload.lobby.config,
-        },
+        lobby: payload,
       };
     case "END":
       return {
         present: false,
         lobby: undefined,
       };
-
     default:
       return { ...state };
   }
@@ -89,18 +83,59 @@ export function useLobby() {
 }
 
 export const LobbyProvider = ({ children }: { children: ReactNode }) => {
+  const { showGlobalError } = useGlobalError();
+
   const [lobby, dispatchLobby] = useReducer(reducer, defaultContext);
-  const query = trpc.lobby.status.useQuery();
+  const ownLobbyStatusQuery = trpc.lobby.query.own.useQuery(undefined, {
+    onSettled(data, error) {
+      if (error) showGlobalError(error.message);
+      else if (data)
+        dispatchLobby({
+          type: "LOAD",
+          payload: {
+            present: data.exists,
+            lobby: data.lobby && {
+              id: data.lobby.id,
+              config: {
+                color: data.lobby.config.color,
+                time: data.lobby.config.time,
+              },
+              accessibility: {
+                invited: data.lobby.accessibility.invited,
+                isPublicLinkAllowed:
+                  data.lobby.accessibility.isPublicLinkAllowed,
+              },
+            },
+          },
+        });
+    },
+  });
+  const ws = useWebSocket();
 
   useEffect(() => {
-    //load initial lobby context
-    if (query.isFetched && query.data) {
-      dispatchLobby({
-        type: "LOAD",
-        payload: query.data,
-      });
+    function onWSMessageEvent(e: MessageEvent) {
+      wsServerToClientMessage.receiver({
+        "LOBBY:END": ({}) => {
+          dispatchLobby({
+            type: "END",
+            payload: {},
+          });
+        },
+        "LOBBY:UPDATE": (lobby) => {
+          dispatchLobby({
+            type: "UPDATE",
+            payload: lobby,
+          });
+        },
+      })(e.data);
     }
-  }, [query.isLoading]);
+
+    ws?.addEventListener("message", onWSMessageEvent);
+
+    return () => {
+      ws?.removeEventListener("message", onWSMessageEvent);
+    };
+  }, [ws]);
 
   return (
     <LobbyContext.Provider value={{ lobby, dispatchLobby }}>

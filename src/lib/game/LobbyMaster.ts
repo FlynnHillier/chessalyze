@@ -27,6 +27,11 @@ export class LobbyMaster {
    */
   private playerLobbyInstances: Map<UUID, LobbyInstance> = new Map();
 
+  /**
+   * Map player id's agasint any incoming invites
+   */
+  private playerLobbyIncomingInvites: Map<UUID, Set<UUID>> = new Map();
+
   private constructor() {}
 
   /**
@@ -57,6 +62,16 @@ export class LobbyMaster {
     return this.playerLobbyInstances.get(playerID) ?? null;
   }
 
+  /**
+   * Get ID's of lobby's a player is invited to
+   *
+   * @param playerID player id
+   * @returns string[]
+   */
+  public getPlayerIncomingInvites(playerID: UUID): string[] {
+    return Array.from(this.playerLobbyIncomingInvites.get(playerID) ?? []);
+  }
+
   public _events = {
     /**
      * Ran when lobby is created
@@ -85,6 +100,19 @@ export class LobbyMaster {
       });
       this.lobbyInstances.delete(lobby.id);
       this.playerLobbyInstances.delete(lobby.player.pid);
+      lobby.getInvited().forEach((pid) => {
+        this.playerLobbyIncomingInvites.get(pid)?.delete(lobby.id);
+      });
     }).bind(this),
+    onPlayerInvited: ((lobbyID: string, playerID: string) => {
+      const invitedToTheseLobbys =
+        this.playerLobbyIncomingInvites.get(playerID) ?? new Set();
+
+      invitedToTheseLobbys.add(lobbyID);
+      this.playerLobbyIncomingInvites.set(playerID, invitedToTheseLobbys);
+    }).bind(this),
+    onPlayerUnInvited: (lobbyID: string, playerID: string) => {
+      this.playerLobbyIncomingInvites.get(playerID)?.delete(lobbyID);
+    },
   };
 }

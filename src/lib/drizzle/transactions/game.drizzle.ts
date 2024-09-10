@@ -8,11 +8,6 @@ import {
   timings,
 } from "~/lib/drizzle/games.schema";
 import { users } from "~/lib/drizzle/auth.schema";
-import {
-  logDev,
-  loggingCategories,
-  loggingColourCode,
-} from "~/lib/logging/dev.logger";
 import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
 import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
@@ -21,6 +16,8 @@ import { PUBLIC_FOLDER_PATH } from "~/config/config";
 import fs from "fs";
 import { recentGameSummarysSocketRoom } from "~/lib/ws/rooms/standalone/recentGameSummarys.room.ws";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
+import { log } from "~/lib/logging/logger.winston";
+import { socketRoom_ProfileRecentGames } from "~/lib/ws/rooms/categories/profile.room.ws";
 
 type PgUser = InferSelectModel<typeof users>;
 
@@ -175,40 +172,42 @@ export async function saveGameSummary(summary: GameSummary) {
         p_white_id: summary.players.w?.pid,
       });
 
-      await tx.insert(moves).values(
-        summary.moves.map((move, i) => ({
-          gameID: summary.id,
-          turn: i,
-          fen: move.fen,
-          initiator_pid: move.initiator.player?.pid,
-          initiator_color: move.initiator.color,
-          piece: move.move.piece,
-          source: move.move.source,
-          target: move.move.target,
-          promotion: move.move.promotion,
-          t_timestamp: move.time.timestamp,
-          t_duration: move.time.moveDuration,
-          t_w_remaining: move.time.remaining?.w,
-          t_b_remaining: move.time.remaining?.b,
-        })),
-      );
+      if (summary.moves.length > 0) {
+        await tx.insert(moves).values(
+          summary.moves.map((move, i) => ({
+            gameID: summary.id,
+            turn: i,
+            fen: move.fen,
+            initiator_pid: move.initiator.player?.pid,
+            initiator_color: move.initiator.color,
+            piece: move.move.piece,
+            source: move.move.source,
+            target: move.move.target,
+            promotion: move.move.promotion,
+            t_timestamp: move.time.timestamp,
+            t_duration: move.time.moveDuration,
+            t_w_remaining: move.time.remaining?.w,
+            t_b_remaining: move.time.remaining?.b,
+          })),
+        );
 
-      await tx.insert(captured).values(
-        summary.moves.map((move, i) => ({
-          gameID: summary.id,
-          turnIndex: i,
-          b_b: move.captured.b.b,
-          b_n: move.captured.b.n,
-          b_p: move.captured.b.p,
-          b_q: move.captured.b.q,
-          b_r: move.captured.b.r,
-          w_b: move.captured.w.b,
-          w_n: move.captured.w.n,
-          w_p: move.captured.w.p,
-          w_q: move.captured.w.q,
-          w_r: move.captured.w.r,
-        })),
-      );
+        await tx.insert(captured).values(
+          summary.moves.map((move, i) => ({
+            gameID: summary.id,
+            turnIndex: i,
+            b_b: move.captured.b.b,
+            b_n: move.captured.b.n,
+            b_p: move.captured.b.p,
+            b_q: move.captured.b.q,
+            b_r: move.captured.b.r,
+            w_b: move.captured.w.b,
+            w_n: move.captured.w.n,
+            w_p: move.captured.w.p,
+            w_q: move.captured.w.q,
+            w_r: move.captured.w.r,
+          })),
+        );
+      }
 
       await tx.insert(conclusions).values({
         gameID: summary.id,
@@ -244,31 +243,46 @@ export async function saveGameSummary(summary: GameSummary) {
         path.join(FOLDER, `${summary.id}.png`),
       );
     } catch (e) {
-      logDev({
-        category: loggingCategories.misc,
-        message: ["failed to store game image to public folder"],
-        color: loggingColourCode.FgRed,
-      });
+      log("general").error("failed to store game image to public folder.", e);
     }
 
-    logDev({
-      category: loggingCategories.db,
-      color: loggingColourCode.FgGreen,
-      message: [`successfully stored game summary '${summary.id}' to db`],
-    });
+    log("db").debug(`successfully stored game summary '${summary.id}' to db`);
 
     wsServerToClientMessage
       .send("SUMMARY_NEW")
       .data(summary)
       .to({ room: recentGameSummarysSocketRoom })
       .emit();
+
+    if (summary.players.w) {
+      const room = socketRoom_ProfileRecentGames.get({
+        playerID: summary.players.w.pid,
+      });
+      if (room)
+        wsServerToClientMessage
+          .send("PROFILE:NEW_GAME_SUMMARY")
+          .data(summary)
+          .to({
+            room,
+          })
+          .emit();
+    }
+
+    if (summary.players.b) {
+      const room = socketRoom_ProfileRecentGames.get({
+        playerID: summary.players.b.pid,
+      });
+      if (room)
+        wsServerToClientMessage
+          .send("PROFILE:NEW_GAME_SUMMARY")
+          .data(summary)
+          .to({
+            room,
+          })
+          .emit();
+    }
   } catch (e) {
-    //TODO: add physical storage logging here.
-    logDev({
-      category: loggingCategories.db,
-      message: ["failed to store game in database"],
-      color: loggingColourCode.FgRed,
-    });
+    log("db").error("failed to store game in database.", e);
   }
 }
 

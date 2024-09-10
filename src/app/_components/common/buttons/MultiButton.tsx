@@ -37,7 +37,7 @@ export default function MultiButton<O extends string | undefined>({
   disabled?: boolean;
 }) {
   return (
-    <div className={`flex h-fit w-full flex-row ${customTailwind?.container}`}>
+    <div className={`flex h-fit flex-row gap-1 ${customTailwind?.container}`}>
       {Object.entries(options).map(([_key, _option]) => {
         const key = _key as NonNullable<O>;
         const { element, text, tailwind } = _option as Option;
