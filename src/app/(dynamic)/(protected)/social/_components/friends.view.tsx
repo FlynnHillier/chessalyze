@@ -84,7 +84,8 @@ function ExistingFriendPill({ user }: { user: VerboseSocialUser }) {
     return (
       <button
         className="border-none"
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           removeConfirmedFriendMutation.mutate({ targetUserID: user.user.id });
         }}
         disabled={removeConfirmedFriendMutation.isLoading}
