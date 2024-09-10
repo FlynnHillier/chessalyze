@@ -3,15 +3,12 @@ import { cn } from "~/lib/util/cn";
 import { ComponentProps, useState } from "react";
 import { ClipLoader, MoonLoader } from "react-spinners";
 import { Tooltip } from "react-tooltip";
-import { resizeGoogleProfilePictureURL } from "~/lib/lucia/misc/profile.imageResize";
 import { FaUserXmark, FaChessBoard, FaC } from "react-icons/fa6";
-import { FaCheck } from "react-icons/fa";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
-import { useGame } from "~/app/_components/providers/client/game.provider";
-import { toast } from "react-toastify";
 import { useFriendsContext } from "~/app/_components/providers/client/friends.provider";
 import { VerboseSocialUser } from "~/types/social.types";
 import { VerboseSocialUserSquaredProfilePicture } from "~/app/_components/social.components";
+import { useRouter } from "next/navigation";
 
 export function ViewAllConfirmedFriends({
   className,
@@ -60,6 +57,7 @@ export function ViewAllConfirmedFriends({
 function ExistingFriendPill({ user }: { user: VerboseSocialUser }) {
   const { dispatchFriends } = useFriendsContext();
   const { showGlobalError } = useGlobalError();
+  const router = useRouter();
 
   const TOOLTIP_ID = {
     remove: "tooltip-social-remove_" + user.user.id,
@@ -107,7 +105,12 @@ function ExistingFriendPill({ user }: { user: VerboseSocialUser }) {
         content="remove friend"
         className="z-10"
       />
-      <div className="flex h-20 w-full min-w-64 flex-row  flex-nowrap justify-start gap-2 rounded p-2 shadow-lg shadow-stone-900 hover:bg-stone-900 lg:w-[calc(50%-(0.75rem/2))]  xl:w-[calc(32.8%-0.25rem)]  ">
+      <div
+        className="flex h-20 w-full min-w-64 flex-row  flex-nowrap justify-start gap-2 rounded p-2 shadow-lg shadow-stone-900 hover:cursor-pointer hover:bg-stone-900  lg:w-[calc(50%-(0.75rem/2))]  xl:w-[calc(32.8%-0.25rem)]"
+        onClick={() => {
+          router.push(`/social/user/${user.user.id}`);
+        }}
+      >
         <VerboseSocialUserSquaredProfilePicture verboseUser={user} size={60} />
         <div className="flex flex-grow flex-col justify-between overflow-hidden whitespace-nowrap">
           <span className="inline-block text-ellipsis whitespace-nowrap text-xl font-semibold">
