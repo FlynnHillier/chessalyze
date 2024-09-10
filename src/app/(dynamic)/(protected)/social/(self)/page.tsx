@@ -15,7 +15,6 @@ import { LuCopyCheck, LuCopy } from "react-icons/lu";
 import { ClassNameValue } from "tailwind-merge";
 import { ViewAllConfirmedFriends } from "../_components/friends.view";
 import { SocialInteractionButton } from "../_components/SocialInteraction";
-import { useHash } from "~/app/_hooks/common";
 import { clearBrowserURLHash } from "~/app/_functions.tsx/navigation";
 import { SocialTemplateLayout } from "../_components/social.layout";
 
@@ -236,15 +235,8 @@ function AddFriendByIDButton({ onClick }: ComponentProps<"button">) {
 }
 
 export default function SocialOwnProfilePage() {
-  const hash = useHash();
-
-  const [showAddFriendByIDModal, setShowAddFriendByIDModal] = useState<boolean>(
-    window.location.hash === HASH_STRINGS.INVITE_FRIEND_BY_ID,
-  );
-
-  useEffect(() => {
-    setShowAddFriendByIDModal(hash === HASH_STRINGS.INVITE_FRIEND_BY_ID);
-  }, [hash]);
+  const [showAddFriendByIDModal, setShowAddFriendByIDModal] =
+    useState<boolean>(false);
 
   return (
     <>

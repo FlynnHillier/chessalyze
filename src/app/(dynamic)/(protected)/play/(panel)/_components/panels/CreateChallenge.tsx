@@ -555,7 +555,7 @@ export function CreateAndConfigureLobbyInterface() {
             showOnEmptyUsersArray={
               <span>
                 Add your friends to invite them directly. Add them{" "}
-                <Link href={"/social#add"} className="underline">
+                <Link href={"/social"} className="underline">
                   here.
                 </Link>
               </span>
