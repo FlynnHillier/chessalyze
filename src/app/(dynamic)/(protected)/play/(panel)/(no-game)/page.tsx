@@ -3,6 +3,7 @@
 import Panel from "~/app/(dynamic)/(protected)/play/(panel)/_components/Panel";
 import { ChallengeConfigurationContextProvider } from "~/app/(dynamic)/(protected)/play/(panel)/_components/providers/ChallengeConfiguration.provider";
 import { CreateAndConfigureLobbyInterface } from "~/app/(dynamic)/(protected)/play/(panel)/_components/panels/CreateChallenge";
+import { JoinChallengeInterface } from "../_components/panels/JoinChallenge";
 
 /**
  * Gives uses opportunity to redirect to other panels.
@@ -14,14 +15,10 @@ export default function DefaultPlayPanel() {
         subtitle="VS"
         content={{
           elements: {
-            friend: <CreateAndConfigureLobbyInterface />,
-            online: (
-              <div className="h-10">
-                <span>coming soon</span>
-              </div>
-            ),
+            create: <CreateAndConfigureLobbyInterface />,
+            join: <JoinChallengeInterface />,
           },
-          default: "friend",
+          default: "create",
         }}
       />
     </ChallengeConfigurationContextProvider>

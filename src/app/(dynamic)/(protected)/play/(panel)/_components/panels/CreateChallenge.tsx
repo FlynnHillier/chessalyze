@@ -18,17 +18,19 @@ import { cn } from "~/lib/util/cn";
 import { ClassNameValue } from "tailwind-merge";
 
 import { HiOutlineLockOpen, HiOutlineLockClosed } from "react-icons/hi";
-import { FaCross, FaPlus } from "react-icons/fa";
 import { LuMailPlus, LuMailX, LuMailCheck } from "react-icons/lu";
 
 import { useTimeout } from "usehooks-ts";
-import { SocialUserSquaredProfilePicture } from "~/app/_components/social.components";
-import { SocialUser, VerboseSocialUser } from "~/types/social.types";
+import { SocialUser } from "~/types/social.types";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
-import { HashLoader, MoonLoader, PulseLoader } from "react-spinners";
+import { HashLoader } from "react-spinners";
 import { Tooltip } from "react-tooltip";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  CommonConfigureSocialUserCard,
+  CommonMappedSocialUserCardContainer,
+} from "./_common";
 
 function CreateLobbyButton() {
   const { show: showError } = useMutatePanelErrorMessage();
@@ -411,29 +413,12 @@ function ConfigureSocialUserChallengeInviteCard({
   const router = useRouter();
 
   return (
-    <div
-      className={cn(
-        "flex h-10 w-full flex-shrink-0 flex-row items-center justify-between gap-1.5 rounded bg-stone-700 p-2",
-        className,
-      )}
-    >
-      <div
-        className="flex w-fit flex-row gap-1 hover:cursor-pointer"
-        onClick={() => {
-          router.push(`/social/user/${user.id}`);
-        }}
-      >
-        <SocialUserSquaredProfilePicture user={user} size={30} />
-        <div className="flex-grow text-ellipsis text-start align-top text-base font-semibold">
-          {user.username}
-        </div>
-      </div>
-
+    <CommonConfigureSocialUserCard user={user}>
       <ManageChallengeInviteToSocialUserButton
         user={user}
         className={"bg-stone"}
       />
-    </div>
+    </CommonConfigureSocialUserCard>
   );
 }
 
@@ -460,12 +445,7 @@ function MappedConfigureSocialUserChallengeInviteCard({
   }, [users, lobby.lobby?.accessibility.invited]);
 
   return (
-    <div
-      className={cn(
-        "flex h-60 w-full flex-col flex-wrap justify-start gap-x-1 gap-y-1.5 overflow-auto scrollbar-hide",
-        className,
-      )}
-    >
+    <CommonMappedSocialUserCardContainer className={className}>
       {users === undefined ? (
         <div className="flex h-fit w-full justify-center">
           <HashLoader />
@@ -482,7 +462,7 @@ function MappedConfigureSocialUserChallengeInviteCard({
               ))}
         </>
       )}
-    </div>
+    </CommonMappedSocialUserCardContainer>
   );
 }
 
@@ -578,7 +558,6 @@ export function CreateAndConfigureLobbyInterface() {
       ) : (
         <>
           <MappedConfigureFriendedSocialUserChallengeInviteCard
-            className={"border-y border-stone-700 px-1 py-2"}
             showOnEmptyUsersArray={
               <span>
                 Add your friends to invite them directly. Add them{" "}
