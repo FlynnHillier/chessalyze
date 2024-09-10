@@ -140,6 +140,11 @@ function ToggleLobbyLinkAccessibilityButton({
 }: {
   className?: ClassNameValue;
 }) {
+  const TOOLTIP_IDS = {
+    PUBLIC: "TOOLTIP_ACCESSIBILITY_SELECT:PUBLIC",
+    PRIVATE: "TOOLTIP_ACCESSIBILITY_SELECT:PRIVATE",
+  };
+
   const { lobby, dispatchLobby } = useLobby();
   const { show: showError } = useMutatePanelErrorMessage();
 
@@ -180,34 +185,56 @@ function ToggleLobbyLinkAccessibilityButton({
   }
 
   return (
-    <AsyncButton
-      isLoading={
-        setChallengeLinkAccessibilityPrivateMutation.isLoading ||
-        setChallengeLinkAccessibilityPublicMutation.isLoading
-      }
-      onLoading={<SyncLoader customTailwind="bg-stone-700" />}
-      onClick={handleButtonClick}
-      className={cn(
-        "flex items-center justify-center rounded",
-        {
-          "bg-stone-600": !lobby.lobby?.accessibility.isPublicLinkAllowed,
-          "bg-green-600": lobby.lobby?.accessibility.isPublicLinkAllowed,
-        },
-        className,
-      )}
-    >
-      {lobby.lobby?.accessibility.isPublicLinkAllowed ? (
-        <>
-          <HiOutlineLockOpen />
-          public
-        </>
-      ) : (
-        <>
-          <HiOutlineLockClosed />
-          invite only
-        </>
-      )}
-    </AsyncButton>
+    <>
+      <Tooltip
+        hidden={lobby.lobby?.accessibility.isPublicLinkAllowed !== true}
+        float={true}
+        id={TOOLTIP_IDS.PUBLIC}
+        content="Anyone with the link can join"
+        delayShow={1000}
+      />
+      <Tooltip
+        hidden={lobby.lobby?.accessibility.isPublicLinkAllowed !== false}
+        float={true}
+        id={TOOLTIP_IDS.PRIVATE}
+        content="Only those invited can join"
+        delayShow={1000}
+      />
+      <AsyncButton
+        isLoading={
+          setChallengeLinkAccessibilityPrivateMutation.isLoading ||
+          setChallengeLinkAccessibilityPublicMutation.isLoading
+        }
+        onLoading={<SyncLoader customTailwind="bg-stone-700" />}
+        onClick={handleButtonClick}
+        className={cn(
+          "flex items-center justify-center rounded",
+          {
+            "bg-stone-600": !lobby.lobby?.accessibility.isPublicLinkAllowed,
+            "bg-green-600": lobby.lobby?.accessibility.isPublicLinkAllowed,
+          },
+          className,
+        )}
+      >
+        {lobby.lobby?.accessibility.isPublicLinkAllowed ? (
+          <div
+            className="flex w-full flex-row items-center justify-center gap-1"
+            data-tooltip-id={TOOLTIP_IDS.PUBLIC}
+          >
+            <HiOutlineLockOpen />
+            public
+          </div>
+        ) : (
+          <div
+            className="flex w-full flex-row items-center justify-center gap-1"
+            data-tooltip-id={TOOLTIP_IDS.PRIVATE}
+          >
+            <HiOutlineLockClosed />
+            invite only
+          </div>
+        )}
+      </AsyncButton>
+    </>
   );
 }
 
