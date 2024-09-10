@@ -26,7 +26,7 @@ export default async function RootLayout({
           <SessionProvider session={session} user={user}>
             <GlobalErrorProvider className="flex flex-row">
               <SideNavBar />
-              <div className="h-screen w-full overflow-y-auto p-3 lg:p-5">
+              <div className="h-screen w-full overflow-y-auto p-5">
                 {children}
               </div>
             </GlobalErrorProvider>
