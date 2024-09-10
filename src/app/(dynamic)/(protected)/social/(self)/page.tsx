@@ -172,7 +172,7 @@ function AddFriendByIDModal({
             setFriendID(target.value);
             setTimeUntilQueryFriendID(TIME_AFTER_INPUT_TO_QUERY);
           }}
-          placeholder="Your friend's ID"
+          placeholder="Search by friend ID"
         />
 
         {(profileQueryMutation.data?.profile || isAwaitingFetch) &&
@@ -229,7 +229,7 @@ function AddFriendByIDButton({ onClick }: ComponentProps<"button">) {
   return (
     <SocialButton onClick={onClick}>
       <RiUserSearchLine />
-      Add friend by ID
+      Add friend
     </SocialButton>
   );
 }
@@ -253,7 +253,6 @@ export default function SocialOwnProfilePage() {
       >
         <div className="flex w-full flex-grow flex-col">
           <div className="m-3 flex flex-row gap-3">
-            <ShareOwnProfileButton />
             <AddFriendByIDButton
               onClick={() => {
                 setShowAddFriendByIDModal(true);
