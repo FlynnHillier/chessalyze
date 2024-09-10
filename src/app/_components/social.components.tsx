@@ -20,7 +20,7 @@ export function BaseSocialUserSquaredProfilePicture({
       style={{ width: size ?? DEFAULT_SIZE_PX }}
     >
       <img
-        className="left-0 top-0 h-full w-full overflow-hidden rounded border-0 bg-stone-600 bg-cover"
+        className="left-0 top-0 h-full w-full flex-shrink-0 overflow-hidden rounded border-0 bg-stone-600 bg-cover"
         src={
           user.imageURL
             ? resizeGoogleProfilePictureURL(

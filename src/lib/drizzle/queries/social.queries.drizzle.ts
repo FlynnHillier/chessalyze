@@ -72,13 +72,14 @@ export async function getUserIncomingFriendRequests(
   userID: string,
 ): Promise<DBUser[]> {
   const r = await db.query.friends.findMany({
-    where: and(eq(friends.user2_ID, userID), eq(friends.status, "pending")),
+    where: eq(friends.pending_accept, userID),
     with: {
       user1: true,
+      user2: true,
     },
   });
 
-  return r.map(({ user1 }) => user1);
+  return r.map(({ user1, user2 }) => (user1.id === userID ? user2 : user1));
 }
 
 /**

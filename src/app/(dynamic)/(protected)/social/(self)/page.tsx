@@ -6,18 +6,18 @@ import { RiUserSearchLine, RiUserShared2Line } from "react-icons/ri";
 import { cn } from "~/lib/util/cn";
 import { trpc } from "~/app/_trpc/client";
 import { ComponentProps, CompositionEvent, useEffect, useState } from "react";
-import { useDispatchProfile } from "./_components/profile.context";
 import { useGlobalError } from "~/app/_components/providers/client/globalError.provider";
 import { GenericModal } from "~/app/_components/modal/modals";
 import { useTimeout } from "usehooks-ts";
-import { SocialInteractionButton } from "./_components/SocialInteraction";
 import { useSession } from "~/app/_components/providers/client/session.provider";
 
 import { LuCopyCheck, LuCopy } from "react-icons/lu";
 import { ClassNameValue } from "tailwind-merge";
-import { ViewAllConfirmedFriends } from "./_components/friends.view";
+import { ViewAllConfirmedFriends } from "../_components/friends.view";
+import { SocialInteractionButton } from "../_components/SocialInteraction";
 import { useHash } from "~/app/_hooks/common";
 import { clearBrowserURLHash } from "~/app/_functions.tsx/navigation";
+import { SocialTemplateLayout } from "../_components/social.layout";
 
 // Strings to be used in hash section of URL
 const HASH_STRINGS = {
@@ -235,10 +235,7 @@ function AddFriendByIDButton({ onClick }: ComponentProps<"button">) {
   );
 }
 
-export default function Page() {
-  const { showGlobalError } = useGlobalError();
-  const dispatchProfile = useDispatchProfile();
-  const ownProfileQuery = trpc.social.profile.user.self.useQuery();
+export default function SocialOwnProfilePage() {
   const hash = useHash();
 
   const [showAddFriendByIDModal, setShowAddFriendByIDModal] = useState<boolean>(
@@ -249,94 +246,19 @@ export default function Page() {
     setShowAddFriendByIDModal(hash === HASH_STRINGS.INVITE_FRIEND_BY_ID);
   }, [hash]);
 
-  /**
-   * Clear previously loaded profile
-   */
-  useEffect(() => {
-    dispatchProfile({
-      type: "CLEAR_LOADED_PROFILE",
-      payload: {},
-    });
-  }, []);
-
-  /**
-   * Load own profile into context
-   */
-  useEffect(() => {
-    if (ownProfileQuery.data) {
-      const { profile } = ownProfileQuery.data;
-
-      if (!profile) {
-        showGlobalError("user does not exist", 1000 * 60);
-        return;
-      }
-
-      dispatchProfile({
-        type: "LOAD_PROFILE",
-        payload: {
-          user: {
-            id: profile.user.id,
-            imageURL: profile.user.imageURL,
-            username: profile.user.username,
-          },
-          stats: {
-            won: {
-              total: profile.stats.games.won.total,
-              asBlack: profile.stats.games.won.asBlack,
-              asWhite: profile.stats.games.won.asWhite,
-            },
-            lost: {
-              total: profile.stats.games.lost.total,
-              asBlack: profile.stats.games.lost.asBlack,
-              asWhite: profile.stats.games.lost.asWhite,
-            },
-            drawn: {
-              total: profile.stats.games.drawn.total,
-              asBlack: profile.stats.games.drawn.asBlack,
-              asWhite: profile.stats.games.drawn.asWhite,
-            },
-            all: {
-              total: profile.stats.games.all.total,
-              asBlack: profile.stats.games.all.asBlack,
-              asWhite: profile.stats.games.all.asWhite,
-            },
-          },
-          activity: {
-            status: {
-              isOnline: profile.activity.isOnline,
-              messages: {
-                primary: profile.activity.status.primary,
-                secondary: profile.activity.status.secondary,
-              },
-            },
-          },
-          friend: profile.friend &&
-            profile.friend.relation && {
-              status:
-                profile.friend.relation === "confirmed"
-                  ? "confirmed"
-                  : profile.friend.relation === "requestIncoming"
-                    ? "request_incoming"
-                    : profile.friend.relation === "requestOutgoing"
-                      ? "request_outgoing"
-                      : "none",
-            },
-        },
-      });
-    }
-  }, [ownProfileQuery.dataUpdatedAt]);
-
   return (
     <>
       <AddFriendByIDModal
         isOpen={showAddFriendByIDModal}
         close={() => setShowAddFriendByIDModal(false)}
       />
-
-      <div className="flex flex-grow flex-col gap-1 ">
-        <div className="flex flex-row flex-nowrap items-center gap-2 bg-stone-800 px-3 pb-3 pt-3 text-3xl font-bold tracking-wide shadow-2xl">
-          <BsFillPeopleFill /> Social
-        </div>
+      <SocialTemplateLayout
+        header={
+          <>
+            <BsFillPeopleFill /> Social
+          </>
+        }
+      >
         <div className="flex w-full flex-grow flex-col">
           <div className="m-3 flex flex-row gap-3">
             <ShareOwnProfileButton />
@@ -349,7 +271,7 @@ export default function Page() {
 
           <ViewAllConfirmedFriends />
         </div>
-      </div>
+      </SocialTemplateLayout>
     </>
   );
 }

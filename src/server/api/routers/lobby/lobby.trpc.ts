@@ -233,4 +233,14 @@ export const trpcLobbyRouter = createTRPCRouter({
         };
       }),
   }),
+  invites: createTRPCRouter({
+    incoming: protectedProcedure.query(({ ctx }) => {
+      return LobbyMaster.instance()
+        .getPlayerIncomingInvites(ctx.user.id)
+        .map((lobbyID) => {
+          return LobbyMaster.instance().get(lobbyID)?.nonVerboseSnapshot();
+        })
+        .filter((v) => v !== undefined);
+    }),
+  }),
 });

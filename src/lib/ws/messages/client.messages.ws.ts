@@ -41,6 +41,7 @@ export const wsServerToClientMessage = new WSMessagesTemplate({
   "LOBBY:UPDATE": zVerboseLobbySnapshot,
   SUMMARY_NEW: zGameSummary,
   "SOCIAL:FRIEND_NEW": zVerboseSocialUser,
+  "SOCIAL:INCOMING_FRIEND_REQUEST": zSocialUser,
   /**
    * Fires when a user's friend relation with another user is updated. E.g confirmed -> none / none -> request_outgoing
    */

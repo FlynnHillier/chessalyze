@@ -7,9 +7,9 @@ import { trpc } from "~/app/_trpc/client";
 import {
   useDispatchProfile,
   useProfile,
-} from "../../_components/profile.context";
+} from "../../../_components/profile.context";
 import { cn } from "~/lib/util/cn";
-import { PlayerRecentGameSummarys } from "../../_components/PlayerRecentGamesScroller";
+import { PlayerRecentGameSummarys } from "../../../_components/PlayerRecentGamesScroller";
 
 /**
  * Page to view a user's social profile

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zBW, zColor, zGameTimePreset } from "~/lib/zod/game/game.validators";
+import { zSocialUser } from "~/lib/zod/social/social.validators";
 
 const NonVerboseLobbySnapshot = {
   id: z.string(),
@@ -15,6 +16,7 @@ const NonVerboseLobbySnapshot = {
       })
       .optional(),
   }),
+  player: zSocialUser,
 };
 
 export const zNonVerboseLobbySnapshot = z.object(NonVerboseLobbySnapshot);

@@ -288,6 +288,10 @@ export class LobbyInstance {
         .emit();
     });
 
+    playerIDs.forEach((pid) => {
+      this._lobbyMaster._events.onPlayerInvited(this.id, pid);
+    });
+
     if (notPreviouslyInvited.length > 0) this.events.onAccessibilityChange();
   }
 
@@ -300,6 +304,10 @@ export class LobbyInstance {
 
     if (prevSize !== this.accessibility.invited.size)
       this.events.onAccessibilityChange();
+
+    playerIDs.forEach((pid) => {
+      this._lobbyMaster._events.onPlayerUnInvited(this.id, pid);
+    });
   }
 
   public playerIsInvited(playerID: string) {
@@ -328,6 +336,11 @@ export class LobbyInstance {
         time: this.config.time && {
           template: this.config.time.template,
         },
+      },
+      player: {
+        id: this.player.pid,
+        username: this.player.username,
+        imageURL: this.player.image ?? undefined,
       },
     };
   }

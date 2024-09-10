@@ -9,6 +9,7 @@ import DrizzleSocialTransaction from "~/lib/drizzle/transactions/social.transact
 import {
   getFriendRelation,
   getUserConfirmedFriends,
+  getUserIncomingFriendRequests,
 } from "~/lib/drizzle/queries/social.queries.drizzle";
 import { wsServerToClientMessage } from "~/lib/ws/messages/client.messages.ws";
 import { wsSocketRegistry } from "~/lib/ws/registry.ws";
@@ -23,7 +24,7 @@ import { trpcSocialProfileProcedure } from "~/server/api/routers/social/social.p
 import { ActivityManager } from "~/lib/social/activity.social";
 import { db } from "~/lib/drizzle/db";
 import { log } from "~/lib/logging/logger.winston";
-import { VerboseSocialUser } from "~/types/social.types";
+import { SocialUser, VerboseSocialUser } from "~/types/social.types";
 
 class UserNotExistError extends TRPCError {
   constructor(playerID: string) {
@@ -214,7 +215,17 @@ export const trpcSocialRouter = createTRPCRouter({
 
       return users;
     }),
+    getAllIncomingFriendRequests: protectedProcedure.query(async ({ ctx }) => {
+      const IncomingFriendRequestUsers: SocialUser[] = (
+        await getUserIncomingFriendRequests(ctx.user.id)
+      ).map(({ id, image, name }) => ({
+        id,
+        username: name,
+        imageURL: image ?? undefined,
+      }));
 
+      return IncomingFriendRequestUsers;
+    }),
     request: createTRPCRouter({
       remove: protectedProcedure
         .input(z.object({ targetUserID: z.string() }))
@@ -290,6 +301,16 @@ export const trpcSocialRouter = createTRPCRouter({
               .data({
                 targetUserID: ctx.user.id,
                 new_relation: "request_incoming",
+              })
+              .to({ socket: wsSocketRegistry.get(input.targetUserID) })
+              .emit();
+
+            wsServerToClientMessage
+              .send("SOCIAL:INCOMING_FRIEND_REQUEST")
+              .data({
+                id: ctx.user.id,
+                username: ctx.user.name,
+                imageURL: ctx.user.image ?? undefined,
               })
               .to({ socket: wsSocketRegistry.get(input.targetUserID) })
               .emit();
