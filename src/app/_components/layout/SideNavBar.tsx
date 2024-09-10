@@ -29,11 +29,6 @@ const navOptions: NavOption[] = [
     text: "social",
     icon: <FaUsers />,
   },
-  {
-    url: "/",
-    text: "home",
-    icon: <FaHome />,
-  },
 ];
 
 async function logout() {
