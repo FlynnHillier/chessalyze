@@ -208,8 +208,12 @@ export default function NotificationsProvider({
     {
       onSuccess(data) {
         dispatchNotifications({
-          type: "INCOMING_CHALLENGE",
-          payload: data,
+          type: "LOAD",
+          payload: {
+            challenge: {
+              incoming: data,
+            },
+          },
         });
       },
     },
