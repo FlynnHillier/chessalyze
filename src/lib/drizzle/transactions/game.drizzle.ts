@@ -10,7 +10,7 @@ import {
 import { users } from "~/lib/drizzle/auth.schema";
 import { eq, InferSelectModel, or } from "drizzle-orm";
 import { InferQueryResultType, QueryConfig } from "~/types/drizzle.types";
-import { ChessImageGenerator } from "@flynnhillier/chessboard-image-gen";
+import { ChessImageGenerator } from "~/lib/ChessImageGen/ChessBoardImageGen";
 import path from "path";
 import { PUBLIC_FOLDER_PATH } from "~/config/config";
 import fs from "fs";
