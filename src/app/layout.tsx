@@ -7,7 +7,7 @@ import { GlobalErrorProvider } from "./_components/providers/client/globalError.
 import { getServerSession } from "~/lib/lucia/util.lucia";
 
 export const metadata: Metadata = {
-  title: "next Chessalyze",
+  title: "Chessalyze",
   description: "chess with your friends!",
 };
 
