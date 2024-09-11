@@ -20,7 +20,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="h-full">
-      <head></head>
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body className="bg-stone-700 text-orange-50" id="root">
         <div className="flex h-screen w-full flex-row ">
           <SessionProvider session={session} user={user}>
