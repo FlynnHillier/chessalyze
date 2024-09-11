@@ -24,9 +24,7 @@ class WSSocketRegistry {
     this.sockets.set(uid, sockets);
     this.socketsToUsersMap.set(socket, uid);
 
-    log("socket").debug(
-      `Registered socket connection for user: ${uid}. Socket id: ${socket.id}`,
-    );
+    log("socket").debug(`Registered socket connection for user: ${uid}.`);
 
     //De-register socket from user on socket close
     socket.on(
@@ -35,13 +33,6 @@ class WSSocketRegistry {
         this.deregister(uid, socket);
       }).bind(this),
     );
-
-    if (env.NODE_ENV === "development")
-      wsServerToClientMessage
-        .send("DEV_ID")
-        .data({ id: socket.id })
-        .to({ socket })
-        .emit();
   }
 
   public deregister(uid: string, socket: WebSocket): boolean {
@@ -50,10 +41,6 @@ class WSSocketRegistry {
 
     const registeredToUser = this.socketsToUsersMap.get(socket);
     if (registeredToUser === uid) this.socketsToUsersMap.delete(socket);
-
-    log("socket").debug(
-      `Deregistered socket connection for user ${uid}. Socket id: ${socket.id}`,
-    );
 
     return present;
   }
