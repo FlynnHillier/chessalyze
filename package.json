@@ -6,6 +6,8 @@
   "author": "FlynnHillier <flynnhillier@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "start": "next start",
+    "build": "next build",
     "dev": "next dev",
     "postinstall": "npx next-ws-cli@latest patch",
     "postuninstall": "npx next-ws-cli@latest patch",
