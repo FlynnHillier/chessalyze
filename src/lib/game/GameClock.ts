@@ -169,6 +169,7 @@ export class ChessClock {
    */
   public start() {
     if (!this.active) {
+      this.active = true;
       this.clocks[this.turn].start();
     }
   }
@@ -178,6 +179,7 @@ export class ChessClock {
    */
   public stop() {
     if (this.active) {
+      this.active = false;
       this.clocks[this.turn].pause();
     }
   }
