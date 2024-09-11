@@ -45,7 +45,8 @@ const defaultContext: NOTIFICATIONSCONTEXT_DATA_TYPE = {
 };
 
 type NotificationReducerAction =
-  | ReducerAction<"LOAD", Partial<NOTIFICATIONSCONTEXT_DATA_TYPE>>
+  | ReducerAction<"LOAD_FRIEND_REQUESTS", SocialUser[]>
+  | ReducerAction<"LOAD_INCOMING_CHALLENGES", NonVerboseLobbySnapshot[]>
   | ReducerAction<"INCOMING_FRIEND_REQUEST", SocialUser[]>
   | ReducerAction<"INCOMING_FRIEND_REQUEST_ENDED", string>
   | ReducerAction<
@@ -61,11 +62,20 @@ function reducer<A extends NotificationReducerAction>(
   const { type, payload } = action;
 
   switch (type) {
-    case "LOAD": {
+    case "LOAD_FRIEND_REQUESTS": {
       return {
         ...state,
-        challenge: payload.challenge ?? state.challenge,
-        friendRequest: payload.friendRequest ?? state.friendRequest,
+        friendRequest: {
+          incoming: payload,
+        },
+      };
+    }
+    case "LOAD_INCOMING_CHALLENGES": {
+      return {
+        ...state,
+        challenge: {
+          incoming: payload,
+        },
       };
     }
     case "INCOMING_FRIEND_REQUEST_ENDED": {
@@ -207,14 +217,11 @@ export default function NotificationsProvider({
     undefined,
     {
       onSuccess(data) {
-        dispatchNotifications({
-          type: "LOAD",
-          payload: {
-            challenge: {
-              incoming: data,
-            },
-          },
-        });
+        if (data)
+          dispatchNotifications({
+            type: "LOAD_INCOMING_CHALLENGES",
+            payload: data as NonVerboseLobbySnapshot[],
+          });
       },
     },
   );
@@ -225,14 +232,11 @@ export default function NotificationsProvider({
   const queryIncomingFriendRequests =
     trpc.social.friend.getAllIncomingFriendRequests.useQuery(undefined, {
       onSuccess(data) {
-        dispatchNotifications({
-          type: "LOAD",
-          payload: {
-            friendRequest: {
-              incoming: data,
-            },
-          },
-        });
+        if (data)
+          dispatchNotifications({
+            type: "LOAD_FRIEND_REQUESTS",
+            payload: data,
+          });
       },
     });
 
