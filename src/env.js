@@ -20,6 +20,7 @@ export const env = createEnv({
       ),
     OAUTH_GOOGLE_CLIENTID: z.string(),
     OAUTH_GOOGLE_CLIENTSECRET: z.string(),
+    OAUTH_GOOGLE_REDIRECT_URI: z.string(),
   },
 
   client: {},
@@ -40,6 +41,7 @@ export const env = createEnv({
     POSTGRES_URL: process.env.POSTGRES_URL,
     OAUTH_GOOGLE_CLIENTID: process.env.OAUTH_GOOGLE_CLIENTID,
     OAUTH_GOOGLE_CLIENTSECRET: process.env.OAUTH_GOOGLE_CLIENTSECRET,
+    OAUTH_GOOGLE_REDIRECT_URI: process.env.OAUTH_GOOGLE_REDIRECT_URI,
     NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
   },
   /**

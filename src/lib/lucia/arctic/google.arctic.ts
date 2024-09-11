@@ -4,5 +4,5 @@ import { env } from "~/env";
 export const google = new Google(
   env.OAUTH_GOOGLE_CLIENTID,
   env.OAUTH_GOOGLE_CLIENTSECRET,
-  `http://localhost:${env.PORT}/api/auth/callback/google`,
+  env.OAUTH_GOOGLE_REDIRECT_URI,
 );
