@@ -37,7 +37,9 @@ function HeartBeat() {
  */
 export function WSProvider({ children }: { children: ReactNode }) {
   return (
-    <WebSocketProvider url={`ws://${env.NEXT_PUBLIC_WS_DOMAIN}/api/ws`}>
+    <WebSocketProvider
+      url={`${env.NODE_ENV === "production" ? "wss" : "ws"}://${env.NEXT_PUBLIC_WS_DOMAIN}/api/ws`}
+    >
       <HeartBeat />
       {children}
     </WebSocketProvider>
