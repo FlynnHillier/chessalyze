@@ -27,6 +27,8 @@ export async function SOCKET(
   request: IncomingMessage,
   server: WebSocketServer,
 ) {
+  console.log("HIT /API/WS SOCKET ROUTE!");
+
   const { auth_session } = parseCookie(request.headers.cookie ?? "");
   const { user } = await lucia.validateSession(auth_session); //TODO: this could call 'fresh' on lucia session, but we cannot set cookie
 
@@ -47,6 +49,8 @@ export async function SOCKET(
 }
 
 export function GET() {
+  console.log("HIT /API/WS GET ROUTE!");
+
   const headers = new Headers();
   headers.set("Connection", "Upgrade");
   headers.set("Upgrade", "websocket");
