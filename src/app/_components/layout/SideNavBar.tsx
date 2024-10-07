@@ -43,7 +43,7 @@ export function SideNavBar() {
   const { user } = useSession();
 
   return (
-    <div className="inline-block h-screen w-fit bg-stone-800 text-orange-100 md:p-0">
+    <div className="inline-block h-[100dvh] w-fit bg-stone-800 text-orange-100 md:p-0">
       <div className="flex h-full select-none flex-col justify-between">
         <div className="hidden p-1 px-2 text-center text-3xl font-bold md:inline-block">
           Chessalyze
