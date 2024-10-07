@@ -12,16 +12,16 @@ export async function GET(): Promise<Response> {
 
   cookies().set("google_oauth_state", state, {
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    // secure: process.env.NODE_ENV === "production",
     httpOnly: true,
-    maxAge: 60 * 10,
+    maxAge: 1000 * 60 * 2,
     sameSite: "lax",
   });
 
   cookies().set("code_verifier", codeVerifier, {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    maxAge: 60 * 10,
+    // secure: env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 2,
     path: "/",
   });
 
