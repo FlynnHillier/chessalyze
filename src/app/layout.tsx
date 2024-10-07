@@ -24,11 +24,11 @@ export default async function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="bg-stone-700 text-orange-50" id="root">
-        <div className="flex h-screen w-full flex-row ">
+        <div className="flex h-[100dvh] w-full flex-row ">
           <SessionProvider session={session} user={user}>
             <GlobalErrorProvider className="flex flex-row">
               <SideNavBar />
-              <div className="h-screen w-full overflow-y-auto p-5">
+              <div className="h-[100dvh] w-full overflow-y-auto p-5">
                 {children}
               </div>
             </GlobalErrorProvider>
