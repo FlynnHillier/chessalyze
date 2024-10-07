@@ -24,7 +24,7 @@ export async function GET(request: Request): Promise<Response> {
     state !== stateCookie.value ||
     !codeVerifierCookie
   ) {
-    return new Response(null, {
+    return new Response("Invalid request #1", {
       status: 400,
     });
   }
@@ -46,7 +46,7 @@ export async function GET(request: Request): Promise<Response> {
     const googleUser = await googleUserResponse.json();
 
     if (!googleUser.email || !googleUser.name) {
-      return new Response(null, {
+      return new Response("Invalid request #2", {
         status: 400,
       });
     }
@@ -119,10 +119,10 @@ export async function GET(request: Request): Promise<Response> {
   } catch (e) {
     if (e instanceof OAuth2RequestError) {
       //invalid code
-      return new Response(null, { status: 400 });
+      return new Response("Invalid request #3", { status: 400 });
     }
 
-    return new Response(null, {
+    return new Response("Server Error", {
       status: 500,
     });
   }
