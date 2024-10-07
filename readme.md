@@ -10,7 +10,10 @@ As of 06/10/24 I've got the project to a state I'm happy enough to consider as a
 
 You can find the site hosted live (for now) at <https://chessalyze.com>
 
-**The site is not suitable for viewing on mobile** - for the best experience please view on a computer with a standard viewport.
+<del>The site is not suitable for viewing on mobile</del>I have made an effort to improve the viewing experience of smaller viewports, however - for the best experience I'd still reccomend viewing on a standard desktop-sized viewport.
+
+**Mobile authentication bug** </br>
+For an unkown reason, the server does not respond nicely to the google redirect uri when loadded on mobile. For this reason, mobile is currently effectively unusable, as it does not seem you can log in. </br> This is obviously a pretty major pitfall, but considering the project is simply a passion project - I will leave it until I have some time available to play around and discover its cause.
 
 ## **Demo**
 
