@@ -7,6 +7,7 @@ import { useSession } from "~/app/_components/providers/client/session.provider"
 import { cn } from "~/lib/util/cn";
 import { ClassNameValue } from "tailwind-merge";
 import { SocialInteractionButton } from "./_components/SocialInteraction";
+import { GrFormViewHide, GrFormView } from "react-icons/gr";
 
 /**
  *
@@ -165,20 +166,41 @@ function ProfileBanner({ className }: { className: ClassNameValue }) {
   const { user } = useSession();
   const { profile } = useProfile();
 
+  const [closetSelfOnMobile, setClosetSelfOnMobile] = useState<boolean>(true);
+
   return (
     <div
       className={cn(
-        "flex h-full w-88 min-w-fit flex-col items-center bg-stone-900 p-3",
+        "relative flex h-full max-w-88 flex-col items-center bg-stone-900 p-3 md:min-w-fit",
         className,
+        {
+          "w-12": closetSelfOnMobile,
+        },
       )}
     >
-      <div className="overflow-auto scrollbar-hide">
+      <div
+        className="absolute right-2 top-2 inline-block hover:cursor-pointer md:hidden"
+        onClick={() => {
+          setClosetSelfOnMobile((prev) => !prev);
+        }}
+      >
+        {closetSelfOnMobile ? (
+          <GrFormView className="h-8 w-8" />
+        ) : (
+          <GrFormViewHide className="h-8 w-8" />
+        )}
+      </div>
+      <div
+        className={cn("overflow-auto scrollbar-hide md:inline-block", {
+          hidden: closetSelfOnMobile,
+        })}
+      >
         <div className="flex min-h-min flex-col items-center">
           <ProfilePicture />
           <div className={cn("inline-block w-fit max-w-full text-center")}>
-            <div className="mt-5 text-balance px-5 pb-3 text-4xl font-bold">
+            <div className="mt-5 text-balance px-5 pb-3 text-2xl font-bold md:text-4xl">
               {!profile ? (
-                <div className="h-12 w-52 animate-pulse rounded-sm bg-stone-600"></div>
+                <div className="inline-block h-6 w-36 animate-pulse rounded-sm bg-stone-600 md:h-12 md:w-52"></div>
               ) : (
                 <span>{profile?.user.username ?? "username"}</span>
               )}
@@ -207,7 +229,7 @@ function ProfilePicture() {
 
   return (
     <div
-      className={cn("h-48 w-48 overflow-hidden rounded-full ", {
+      className={cn("h-24 w-24 overflow-hidden rounded-full md:h-48 md:w-48 ", {
         "bg-stone-600": !!profile,
       })}
     >
@@ -229,7 +251,7 @@ function ProfilePicture() {
 
 function SocialLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="box-border flex h-full w-full flex-row flex-nowrap ">
+    <div className="box-border flex h-full w-full flex-nowrap md:flex-row ">
       <ProfileBanner className="rounded-l-md rounded-r-none bg-stone-900 " />
       <div className="flex flex-grow flex-col overflow-hidden rounded-r-md bg-stone-800">
         {children}

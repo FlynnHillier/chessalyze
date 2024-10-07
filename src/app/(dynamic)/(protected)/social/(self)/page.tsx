@@ -207,7 +207,7 @@ function SocialButton({
     <button
       {...otherProps}
       className={cn(
-        "flex flex-row flex-nowrap items-center gap-2 text-nowrap rounded bg-stone-700 p-3 text-lg font-semibold tracking-wide hover:bg-stone-600",
+        "flex flex-row flex-nowrap items-center gap-2 text-nowrap rounded bg-stone-700 p-2 text-sm font-semibold tracking-wide hover:bg-stone-600 md:p-3 md:text-lg",
         className,
       )}
     >

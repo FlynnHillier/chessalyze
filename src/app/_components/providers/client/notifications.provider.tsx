@@ -283,7 +283,7 @@ export default function NotificationsProvider({
       value={{ notifications, dispatchNotifications }}
     >
       <div className="relative h-full w-full">
-        <NotificationInboxIcon className="absolute right-0 top-0" />
+        <NotificationInboxIcon className="absolute -right-5 -top-5 z-50 md:right-0 md:top-0" />
         <ToastContainer theme="dark" position="bottom-right" stacked={true} />
         {children}
       </div>

@@ -48,7 +48,7 @@ export default function Panel<
 
   return (
     <div
-      className="w-full min-w-96 overflow-hidden rounded bg-stone-800 pt-2 text-center lg:max-w-96"
+      className="mb-3 w-full min-w-88 overflow-hidden rounded bg-stone-800 pt-2 text-center lg:max-w-96"
       onClick={() => {
         if (error) hide();
       }}
