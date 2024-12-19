@@ -8,7 +8,7 @@ Chessalyze's tech stack consists of the following: **Next 14, tRPC, Drizzle ORM,
 
 As of 06/10/24 I've got the project to a state I'm happy enough to consider as a finished state. I do not plan on making anymore considerable, if any, changes to the site.
 
-You can find the site hosted live (for now) at <https://chessalyze.com>
+<del>You can find the site hosted live (for now) at <https://chessalyze.com></del> (site taken down to save on costs 19/12/24)
 
 <del>The site is not suitable for viewing on mobile</del>I have made an effort to improve the viewing experience of smaller viewports, although for the best experience I'd still reccomend viewing on a standard desktop-sized viewport.
 
