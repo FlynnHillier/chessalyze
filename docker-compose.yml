@@ -1,0 +1,61 @@
+# Chessalyze: app + Postgres + Caddy (HTTPS).
+# Settings come from .env next to this file: see .env.docker.example.
+#
+#   docker compose up -d --build                     # build and start
+#   docker compose logs -f app                        # follow the app's logs
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chessalyze
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: chessalyze
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chessalyze -d chessalyze"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    # Apply any new database migrations (./drizzle), then start the server.
+    command: ["sh", "-c", "yarn db:migrate && yarn start"]
+    environment:
+      POSTGRES_URL: postgresql://chessalyze:${POSTGRES_PASSWORD}@db:5432/chessalyze
+      OAUTH_GOOGLE_CLIENTID: ${OAUTH_GOOGLE_CLIENTID:?set OAUTH_GOOGLE_CLIENTID in .env}
+      OAUTH_GOOGLE_CLIENTSECRET: ${OAUTH_GOOGLE_CLIENTSECRET:?set OAUTH_GOOGLE_CLIENTSECRET in .env}
+      OAUTH_GOOGLE_REDIRECT_URI: https://${SITE_DOMAIN:?set SITE_DOMAIN in .env}/api/auth/callback/google
+    volumes:
+      # Starts as a copy of the image's public/chess/games (holds _default.png).
+      - games:/app/public/chess/games
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - games:/srv/public/chess/games:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  games:
+  caddy_data:
+  caddy_config:

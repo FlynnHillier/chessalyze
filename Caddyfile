@@ -1,0 +1,18 @@
+# HTTPS in front of the app. Caddy gets a certificate for SITE_DOMAIN automatically
+# (Let's Encrypt for a public domain; its own local CA for "localhost").
+{$SITE_DOMAIN} {
+	encode gzip
+
+	# Board images of finished games. The app writes them at runtime into a volume;
+	# `next start` only serves public/ files that existed at build time, so Caddy
+	# serves these straight from the volume.
+	handle /chess/games/* {
+		root * /srv/public
+		file_server
+	}
+
+	# Everything else, including the WebSocket upgrade on /api/ws.
+	handle {
+		reverse_proxy app:3000
+	}
+}

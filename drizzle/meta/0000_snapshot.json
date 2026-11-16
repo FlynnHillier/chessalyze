@@ -1,0 +1,872 @@
+{
+  "id": "b318006a-f13a-4214-a6aa-41ae0c25be57",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "game_captured": {
+      "name": "game_captured",
+      "schema": "",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "turn": {
+          "name": "turn",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "w_p": {
+          "name": "w_p",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "w_r": {
+          "name": "w_r",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "w_n": {
+          "name": "w_n",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "w_q": {
+          "name": "w_q",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "w_b": {
+          "name": "w_b",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "b_p": {
+          "name": "b_p",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "b_r": {
+          "name": "b_r",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "b_n": {
+          "name": "b_n",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "b_q": {
+          "name": "b_q",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "b_b": {
+          "name": "b_b",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_captured_game_id_games_id_fk": {
+          "name": "game_captured_game_id_games_id_fk",
+          "tableFrom": "game_captured",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "game_captured_game_id_turn_pk": {
+          "name": "game_captured_game_id_turn_pk",
+          "columns": [
+            "game_id",
+            "turn"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "game_captured_game_id_turn_unique": {
+          "name": "game_captured_game_id_turn_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "game_id",
+            "turn"
+          ]
+        }
+      }
+    },
+    "game_conclusions": {
+      "name": "game_conclusions",
+      "schema": "",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fen": {
+          "name": "fen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "termination_message": {
+          "name": "termination_message",
+          "type": "termination_message",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "termination_type": {
+          "name": "termination_type",
+          "type": "termination_type",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "victor_pid": {
+          "name": "victor_pid",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_conclusions_game_id_games_id_fk": {
+          "name": "game_conclusions_game_id_games_id_fk",
+          "tableFrom": "game_conclusions",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "game_conclusions_victor_pid_user_id_fk": {
+          "name": "game_conclusions_victor_pid_user_id_fk",
+          "tableFrom": "game_conclusions",
+          "tableTo": "user",
+          "columnsFrom": [
+            "victor_pid"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "games": {
+      "name": "games",
+      "schema": "",
+      "columns": {
+        "p_white": {
+          "name": "p_white",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_black": {
+          "name": "p_black",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "serial": {
+          "name": "serial",
+          "type": "serial",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "games_p_white_user_id_fk": {
+          "name": "games_p_white_user_id_fk",
+          "tableFrom": "games",
+          "tableTo": "user",
+          "columnsFrom": [
+            "p_white"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "games_p_black_user_id_fk": {
+          "name": "games_p_black_user_id_fk",
+          "tableFrom": "games",
+          "tableTo": "user",
+          "columnsFrom": [
+            "p_black"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "game_moves": {
+      "name": "game_moves",
+      "schema": "",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fen": {
+          "name": "fen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "turn": {
+          "name": "turn",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "initiator_id": {
+          "name": "initiator_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "initiator_color": {
+          "name": "initiator_color",
+          "type": "color",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "piece": {
+          "name": "piece",
+          "type": "piece",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "tile",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target": {
+          "name": "target",
+          "type": "tile",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "promotion": {
+          "name": "promotion",
+          "type": "promotion_piece",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "t_duration": {
+          "name": "t_duration",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "t_timestamp": {
+          "name": "t_timestamp",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "t_w_remaining": {
+          "name": "t_w_remaining",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "t_b_remaining": {
+          "name": "t_b_remaining",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_moves_game_id_games_id_fk": {
+          "name": "game_moves_game_id_games_id_fk",
+          "tableFrom": "game_moves",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "game_moves_initiator_id_user_id_fk": {
+          "name": "game_moves_initiator_id_user_id_fk",
+          "tableFrom": "game_moves",
+          "tableTo": "user",
+          "columnsFrom": [
+            "initiator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "game_moves_game_id_turn_pk": {
+          "name": "game_moves_game_id_turn_pk",
+          "columns": [
+            "game_id",
+            "turn"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "game_moves_game_id_turn_unique": {
+          "name": "game_moves_game_id_turn_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "game_id",
+            "turn"
+          ]
+        }
+      }
+    },
+    "game_time": {
+      "name": "game_time",
+      "schema": "",
+      "columns": {
+        "game_id": {
+          "name": "game_id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "t_start": {
+          "name": "t_start",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "t_end": {
+          "name": "t_end",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "t_duration": {
+          "name": "t_duration",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clock": {
+          "name": "clock",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clock_template": {
+          "name": "clock_template",
+          "type": "time_preset",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_start_w": {
+          "name": "clock_start_w",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_start_b": {
+          "name": "clock_start_b",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_end_w": {
+          "name": "clock_end_w",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_end_b": {
+          "name": "clock_end_b",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_time_game_id_games_id_fk": {
+          "name": "game_time_game_id_games_id_fk",
+          "tableFrom": "game_time",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "account_connections": {
+      "name": "account_connections",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_account_id": {
+          "name": "provider_account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_type": {
+          "name": "token_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_state": {
+          "name": "session_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_connections_id_user_id_fk": {
+          "name": "account_connections_id_user_id_fk",
+          "tableFrom": "account_connections",
+          "tableTo": "user",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_connections_type_provider_account_id_pk": {
+          "name": "account_connections_type_provider_account_id_pk",
+          "columns": [
+            "type",
+            "provider_account_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(255)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires": {
+          "name": "expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_userId_user_id_fk": {
+          "name": "session_userId_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(255)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "permission": {
+          "name": "permission",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "friends": {
+      "name": "friends",
+      "schema": "",
+      "columns": {
+        "user1": {
+          "name": "user1",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user2": {
+          "name": "user2",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "status",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending_accept": {
+          "name": "pending_accept",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "friends_user1_user_id_fk": {
+          "name": "friends_user1_user_id_fk",
+          "tableFrom": "friends",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user1"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "friends_user2_user_id_fk": {
+          "name": "friends_user2_user_id_fk",
+          "tableFrom": "friends",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user2"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "friends_user1_user2_pk": {
+          "name": "friends_user1_user2_pk",
+          "columns": [
+            "user1",
+            "user2"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "friends_user1_user2_unique": {
+          "name": "friends_user1_user2_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user1",
+            "user2"
+          ]
+        }
+      }
+    }
+  },
+  "enums": {
+    "color": {
+      "name": "color",
+      "values": {
+        "w": "w",
+        "b": "b"
+      }
+    },
+    "piece": {
+      "name": "piece",
+      "values": {
+        "p": "p",
+        "r": "r",
+        "n": "n",
+        "b": "b",
+        "q": "q",
+        "k": "k"
+      }
+    },
+    "promotion_piece": {
+      "name": "promotion_piece",
+      "values": {
+        "r": "r",
+        "n": "n",
+        "b": "b",
+        "q": "q"
+      }
+    },
+    "termination_message": {
+      "name": "termination_message",
+      "values": {
+        "3-fold repitition": "3-fold repitition",
+        "50 move rule": "50 move rule",
+        "insufficient material": "insufficient material",
+        "stalemate": "stalemate",
+        "timeout vs insufficient material": "timeout vs insufficient material",
+        "checkmate": "checkmate",
+        "timeout": "timeout",
+        "resignation": "resignation"
+      }
+    },
+    "termination_type": {
+      "name": "termination_type",
+      "values": {
+        "w": "w",
+        "b": "b",
+        "draw": "draw"
+      }
+    },
+    "tile": {
+      "name": "tile",
+      "values": {
+        "a1": "a1",
+        "a2": "a2",
+        "a3": "a3",
+        "a4": "a4",
+        "a5": "a5",
+        "a6": "a6",
+        "a7": "a7",
+        "a8": "a8",
+        "b1": "b1",
+        "b2": "b2",
+        "b3": "b3",
+        "b4": "b4",
+        "b5": "b5",
+        "b6": "b6",
+        "b7": "b7",
+        "b8": "b8",
+        "c1": "c1",
+        "c2": "c2",
+        "c3": "c3",
+        "c4": "c4",
+        "c5": "c5",
+        "c6": "c6",
+        "c7": "c7",
+        "c8": "c8",
+        "d1": "d1",
+        "d2": "d2",
+        "d3": "d3",
+        "d4": "d4",
+        "d5": "d5",
+        "d6": "d6",
+        "d7": "d7",
+        "d8": "d8",
+        "e1": "e1",
+        "e2": "e2",
+        "e3": "e3",
+        "e4": "e4",
+        "e5": "e5",
+        "e6": "e6",
+        "e7": "e7",
+        "e8": "e8",
+        "f1": "f1",
+        "f2": "f2",
+        "f3": "f3",
+        "f4": "f4",
+        "f5": "f5",
+        "f6": "f6",
+        "f7": "f7",
+        "f8": "f8",
+        "g1": "g1",
+        "g2": "g2",
+        "g3": "g3",
+        "g4": "g4",
+        "g5": "g5",
+        "g6": "g6",
+        "g7": "g7",
+        "g8": "g8",
+        "h1": "h1",
+        "h2": "h2",
+        "h3": "h3",
+        "h4": "h4",
+        "h5": "h5",
+        "h6": "h6",
+        "h7": "h7",
+        "h8": "h8"
+      }
+    },
+    "time_preset": {
+      "name": "time_preset",
+      "values": {
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m",
+        "10m": "10m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1h"
+      }
+    },
+    "status": {
+      "name": "status",
+      "values": {
+        "pending": "pending",
+        "confirmed": "confirmed"
+      }
+    }
+  },
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
