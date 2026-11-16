@@ -61,10 +61,9 @@ Settings for both options below live in one `.env` file: copy `.env.example` to 
 Postgres runs in Docker; the app runs on your machine.
 
 ```sh
-docker compose -f docker-compose.dev.yml up -d   # Postgres on localhost:5432
-yarn                                             # install (also patches Next.js for WebSockets)
-yarn db:migrate                                  # create the schema
-yarn dev                                         # http://localhost:3000
+yarn          # install (also patches Next.js for WebSockets)
+yarn dev      # starts Postgres (Docker) on localhost:5432, applies migrations, then the app: http://localhost:3000
+yarn db:down  # stop Postgres when you're done (data is kept)
 ```
 
 After changing the schema in `src/lib/drizzle/`, run `yarn db:generate` to create a migration, then `yarn db:migrate`.

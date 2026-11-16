@@ -1,9 +1,9 @@
 # Development database. The app itself runs on your machine with `yarn dev`
 # (hot reload), and connects to this Postgres on localhost:5432.
 #
-#   docker compose -f docker-compose.dev.yml up -d    # start the database
-#   yarn db:migrate                                   # create/update the schema
-#   yarn dev                                          # http://localhost:3000
+#   yarn dev       # starts this database, applies migrations, then the app
+#                  # (via the predev script); http://localhost:3000
+#   yarn db:down   # stop the database (data is kept)
 #
 # Its own project name, so it never shares a database with docker-compose.yml.
 
@@ -22,6 +22,12 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Lets `up --wait` (yarn db:up) return only once Postgres accepts connections.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chessalyze -d chessalyze"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
 
 volumes:
   pgdata:

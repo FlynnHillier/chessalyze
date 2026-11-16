@@ -9,12 +9,15 @@
   "scripts": {
     "start": "next start",
     "build": "next build",
+    "predev": "yarn -s db:up && yarn -s db:migrate",
     "dev": "next dev",
     "postinstall": "npx next-ws-cli@latest patch",
     "postuninstall": "npx next-ws-cli@latest patch",
     "drizzle": "drizzle-kit push:pg --config=./drizzle.config.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:generate": "drizzle-kit generate:pg --config=./drizzle.config.ts"
+    "db:generate": "drizzle-kit generate:pg --config=./drizzle.config.ts",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d --wait",
+    "db:down": "docker compose -f docker-compose.dev.yml stop"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",
