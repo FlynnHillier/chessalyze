@@ -23,9 +23,7 @@ export const env = createEnv({
     OAUTH_GOOGLE_REDIRECT_URI: z.string(),
   },
 
-  client: {
-    NEXT_PUBLIC_WS_DOMAIN: z.string(),
-  },
+  client: {},
 
   shared: {
     NODE_ENV: z
@@ -45,11 +43,16 @@ export const env = createEnv({
     OAUTH_GOOGLE_CLIENTSECRET: process.env.OAUTH_GOOGLE_CLIENTSECRET,
     OAUTH_GOOGLE_REDIRECT_URI: process.env.OAUTH_GOOGLE_REDIRECT_URI,
     NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
-    NEXT_PUBLIC_WS_DOMAIN: process.env.NEXT_PUBLIC_WS_DOMAIN,
   },
   /**
    * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
    * `SOME_VAR=''` will throw an error.
    */
   emptyStringAsUndefined: true,
+  /**
+   * Set SKIP_ENV_VALIDATION=1 for steps that import this file but never use the
+   * values, such as `next build` and `drizzle-kit generate`. The running server still
+   * validates, when a route first loads this file (on its first request).
+   */
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });

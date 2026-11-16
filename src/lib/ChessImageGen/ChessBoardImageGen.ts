@@ -3,7 +3,7 @@ import fs from "fs";
 import { Chess, Square } from "chess.js";
 import { applyDefaultConfig, Config } from "~/lib/ChessImageGen/config";
 import path from "path";
-import { fileURLToPath } from "url";
+import { CHESS_IMAGE_ASSETS_PATH } from "~/config/config";
 
 export class ChessImageGenerator {
   /**
@@ -67,10 +67,9 @@ export class ChessImageGenerator {
 
         if (piece) {
           //Tile contains piece
-          const imagePath = `images/${_config.pieceStyle}/${piece.color}/${piece.type}.png`;
-          const dir = path.dirname(fileURLToPath(import.meta.url));
+          const imagePath = `${_config.pieceStyle}/${piece.color}/${piece.type}.png`;
           const image = await PImage.decodePNGFromStream(
-            fs.createReadStream(path.join(dir, imagePath)),
+            fs.createReadStream(path.join(CHESS_IMAGE_ASSETS_PATH, imagePath)),
           );
 
           ctx.drawImage(
