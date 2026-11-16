@@ -1,14 +1,9 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-/**
- * Use dotenv to load .env variables for createEnv to validate.
- *
- * This is necessary because if app is launched in development mode via executing ./src/server/server.ts
- * createEnv will not load .env variables in themselves.
- */
-import { config } from "dotenv";
-config();
+// .env files are loaded by Next.js (next dev / build / start). Scripts that run
+// outside Next.js and need them load dotenv themselves (drizzle.config.ts,
+// scripts/migrate.ts).
 
 export const env = createEnv({
   server: {

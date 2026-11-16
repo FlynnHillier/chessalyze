@@ -1,0 +1,27 @@
+# Development database. The app itself runs on your machine with `yarn dev`
+# (hot reload), and connects to this Postgres on localhost:5432.
+#
+#   docker compose -f docker-compose.dev.yml up -d    # start the database
+#   yarn db:migrate                                   # create/update the schema
+#   yarn dev                                          # http://localhost:3000
+#
+# Its own project name, so it never shares a database with docker-compose.yml.
+
+name: chessalyze-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      # Fixed dev credentials: the port is only reachable from this machine.
+      POSTGRES_USER: chessalyze
+      POSTGRES_PASSWORD: chessalyze
+      POSTGRES_DB: chessalyze
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -54,12 +54,28 @@ As of _06/10/24_ I do not plan on working on this project any longer. It will li
 
 ## **Try it yourself**
 
-If you'd like to try and host the site for yourself on your local machine:
+Settings for both options below live in one `.env` file: copy `.env.example` to `.env` and fill it in. You'll need Google OAuth credentials ([get those here](https://developers.google.com/identity/protocols/oauth2)); `.env.example` lists the redirect URI for each option.
 
-- create a `.env` file in the top level directory and fill it with the keys specified in `.env.example`
-  - Postgres db url
-  - google oauth credentials [get those here](https://developers.google.com/identity/protocols/oauth2)
-- install dependencies using `yarn` or `npm install`
-- run the `drizzle` script using `npm run drizzle` or `yarn run drizzle`
-- start the application using `npm run dev` or `yarn run dev`
-- visit `http://localhost:<your port>/play` and get stuck in!
+### Development (hot reload)
+
+Postgres runs in Docker; the app runs on your machine.
+
+```sh
+docker compose -f docker-compose.dev.yml up -d   # Postgres on localhost:5432
+yarn                                             # install (also patches Next.js for WebSockets)
+yarn db:migrate                                  # create the schema
+yarn dev                                         # http://localhost:3000
+```
+
+After changing the schema in `src/lib/drizzle/`, run `yarn db:generate` to create a migration, then `yarn db:migrate`.
+
+### Production (Docker)
+
+The app, Postgres, and [Caddy](https://caddyserver.com/) for HTTPS. Set `SITE_DOMAIN` to `localhost` on your machine, or to a domain that points at your server.
+
+```sh
+docker compose up -d --build   # https://<SITE_DOMAIN>
+docker compose logs -f app     # follow the app's logs
+```
+
+Migrations are applied each time the app starts.

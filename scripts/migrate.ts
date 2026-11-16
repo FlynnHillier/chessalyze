@@ -3,8 +3,11 @@
  * Safe to run on every start: drizzle records applied migrations and skips them.
  *
  * Create a new migration after changing the schema:
- *   yarn drizzle-kit generate:pg --config=./drizzle.config.ts
+ *   yarn db:generate
  */
+// Loads .env when run on your machine (yarn dev setup). In the Docker image there
+// is no .env, so this does nothing and POSTGRES_URL comes from the container.
+import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";

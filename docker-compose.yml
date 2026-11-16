@@ -1,8 +1,11 @@
 # Chessalyze: app + Postgres + Caddy (HTTPS).
-# Settings come from .env next to this file: see .env.docker.example.
+# Settings come from .env next to this file: see .env.example.
+# For development, see docker-compose.dev.yml.
 #
 #   docker compose up -d --build                     # build and start
 #   docker compose logs -f app                        # follow the app's logs
+
+name: chessalyze
 
 services:
   db:

@@ -1,3 +1,5 @@
+// drizzle-kit runs outside Next.js, so nothing else loads .env for it.
+import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 
 import { env } from "~/env";
