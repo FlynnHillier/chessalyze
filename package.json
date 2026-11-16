@@ -1,6 +1,7 @@
 {
   "name": "chessalyze",
   "version": "1.0.0",
+  "packageManager": "yarn@1.22.22",
   "main": "index.js",
   "repository": "https://github.com/FlynnHillier/chessalyze.git",
   "author": "FlynnHillier <flynnhillier@gmail.com>",
